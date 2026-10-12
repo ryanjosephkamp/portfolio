@@ -591,7 +591,7 @@ img, svg, canvas { display: block; max-width: 100%; }
 }
 .also dd { margin: 0; font-size: var(--step-2); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; }
 .also dd + dd { margin-top: 0.3rem; }
-.also dd span { color: var(--ink-2); font-weight: 450; }
+.also dd .dim { color: var(--ink-2); font-weight: 450; }
 
 .swap {
   display: inline-block;
@@ -606,10 +606,10 @@ img, svg, canvas { display: block; max-width: 100%; }
   from { transform: rotateX(80deg); opacity: 0; }
 }
 
-.crescendo span { display: block; line-height: 1.05; }
-.crescendo span:nth-child(1) { font-size: 0.72em; font-weight: 400; }
-.crescendo span:nth-child(2) { font-size: 1em; font-weight: 700; }
-.crescendo span:nth-child(3) { font-size: 1.42em; font-weight: 1000; letter-spacing: -0.035em; color: var(--blue); }
+.crescendo span { display: block; line-height: 1.08; }
+.crescendo span:nth-child(1) { font-size: 0.7em; font-weight: 400; color: var(--ink-2); }
+.crescendo span:nth-child(2) { font-size: 1.05em; font-weight: 700; }
+.crescendo span:nth-child(3) { font-size: 1.55em; font-weight: 1000; letter-spacing: -0.035em; color: var(--blue); }
 
 /* ---------- Writing ---------- */
 

@@ -455,7 +455,7 @@ function arsMagna() {
   });
   new IntersectionObserver(([entry]) => {
     clearInterval(timer);
-    if (entry.isIntersecting && !held && !reduceMotion.matches) timer = setInterval(flip, 3400);
+    if (entry.isIntersecting && !held && !reduceMotion.matches) timer = setInterval(flip, 4200);
   }, { threshold: 0.5 }).observe(root);
 }
 
@@ -555,12 +555,15 @@ function splats() {
     if (visible && !reduceMotion.matches) raf = requestAnimationFrame(loop);
   };
   const box = canvas.parentElement;
-  box.addEventListener('pointermove', (e) => {
+  const aim = (e) => {
     const r = canvas.getBoundingClientRect();
     pointer.x = e.clientX - r.left;
     pointer.y = e.clientY - r.top;
     pointer.on = true;
-  });
+  };
+  box.addEventListener('pointermove', aim);
+  box.addEventListener('pointerdown', aim);
+  box.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') pointer.on = false; });
   box.addEventListener('pointerleave', () => { pointer.on = false; });
   new ResizeObserver(() => { resize(); draw(performance.now()); }).observe(canvas);
   new IntersectionObserver(([entry]) => {
