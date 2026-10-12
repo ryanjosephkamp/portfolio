@@ -24,11 +24,11 @@ function seeded(seed) {
 
 /* ---------- Recipes ---------- */
 
-// Every recipe returns n splats: a centre, the direction its stroke is laid
+// Every recipe returns n splats: a center, the direction its stroke is laid
 // in, and which of the two inks it takes (0 teal, 1 orange).
 const blank = (n) => ({ pos: new Float32Array(n * 3), tan: new Float32Array(n * 3), ink: new Float32Array(n), aspect: 1 });
 
-// Centre the form and scale it to fit: a ball of radius 1, or, for a flat
+// Center the form and scale it to fit: a ball of radius 1, or, for a flat
 // form, a half-width of 1. A framed form is already in its final units and
 // is left where it is. Strokes are cut to one length.
 function finish(out, stroke, flat = false, framed = false) {
@@ -323,7 +323,7 @@ const SHELF = ['name', 'lorenz', 'klein', 'gyroid', 'yours'];
 /* ---------- The press: WebGL2 ---------- */
 
 // Pass one lays every splat onto two plates at once (red channel teal, green
-// channel orange), adding as it goes. A splat is a Gaussian with a centre, a
+// channel orange), adding as it goes. A splat is a Gaussian with a center, a
 // long axis that follows its stroke through the turn and the perspective, and
 // a short radius.
 const SPLAT_VERT = `#version 300 es
@@ -339,10 +339,10 @@ uniform float uMorph;
 uniform float uTime;
 uniform float uCalm;
 uniform vec2 uView;    // canvas size, in device pixels
-uniform vec2 uCentre;  // where the form sits, from the canvas centre, y up
+uniform vec2 uCenter;  // where the form sits, from the canvas center, y up
 uniform float uScale;  // device pixels to one unit of the form
 uniform float uWidth;  // a splat's short radius, in units
-uniform vec3 uPointer; // xy measured like uCentre; z is its reach
+uniform vec3 uPointer; // xy measured like uCenter; z is its reach
 out vec2 vUv;
 out float vInk;
 out float vWeight;
@@ -365,8 +365,8 @@ void main() {
   p += lively * 0.006 * vec3(sin(uTime * 0.9 + seed * 50.0), cos(uTime * 0.7 + seed * 80.0), sin(uTime * 0.8 + seed * 20.0));
 
   vec3 q = uTurn * p;
-  vec2 c = project(q) + uCentre;
-  vec2 major = project(q + uTurn * t) + uCentre - c;
+  vec2 c = project(q) + uCenter;
+  vec2 major = project(q + uTurn * t) + uCenter - c;
   float minor = max(uWidth * aMisc.w * uScale * CAM / (CAM - q.z), 0.85);
 
   // the pointer parts the cloud
@@ -413,7 +413,7 @@ uniform float uDpr;
 uniform vec3 uPaper;
 uniform vec3 uInkA;
 uniform vec3 uInkB;
-out vec4 colour;
+out vec4 color;
 
 float grain(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -429,7 +429,7 @@ void main() {
   vec2 cell = floor(at / uDpr);
   float da = min((1.0 - exp(-a * 3.2)) * (0.84 + 0.22 * grain(cell)), 1.0);
   float db = min((1.0 - exp(-b * 3.2)) * (0.84 + 0.22 * grain(cell + 19.0)), 1.0);
-  colour = vec4(uPaper * mix(vec3(1.0), uInkA, da) * mix(vec3(1.0), uInkB, db), 1.0);
+  color = vec4(uPaper * mix(vec3(1.0), uInkA, da) * mix(vec3(1.0), uInkB, db), 1.0);
 }`;
 
 function program(gl, vertex, fragment) {
@@ -461,7 +461,7 @@ class Cloud {
     this.splats = program(gl, SPLAT_VERT, SPLAT_FRAG);
     this.press = program(gl, PRINT_VERT, PRINT_FRAG);
 
-    // Where each splat is coming from and going to: centre then stroke.
+    // Where each splat is coming from and going to: center then stroke.
     this.from = new Float32Array(count * 6);
     this.to = new Float32Array(count * 6);
     this.misc = new Float32Array(count * 4);
@@ -554,7 +554,7 @@ class Cloud {
     this.seconds = seconds;
   }
 
-  draw({ time, dt, turn, centre, scale, width, gain, pointer, calm }) {
+  draw({ time, dt, turn, center, scale, width, gain, pointer, calm }) {
     const { gl, canvas, dpr } = this;
     this.morph = calm ? 1 : Math.min(1, this.morph + dt / this.seconds);
     const w = canvas.width;
@@ -573,7 +573,7 @@ class Cloud {
     gl.uniform1f(p.u.uTime, time);
     gl.uniform1f(p.u.uCalm, calm ? 1 : 0);
     gl.uniform2f(p.u.uView, w, h);
-    gl.uniform2f(p.u.uCentre, centre[0] * dpr, centre[1] * dpr);
+    gl.uniform2f(p.u.uCenter, center[0] * dpr, center[1] * dpr);
     gl.uniform1f(p.u.uScale, scale * dpr);
     gl.uniform1f(p.u.uWidth, width);
     gl.uniform3f(p.u.uPointer, pointer[0] * dpr, pointer[1] * dpr, pointer[2] * dpr);
@@ -1039,11 +1039,11 @@ function decide() {
 
 /* ---------- The page: which form, where, and who is turning it ---------- */
 
-// Where the form sits for a section, in CSS pixels from the canvas centre
+// Where the form sits for a section, in CSS pixels from the canvas center
 // (y up), and the room it has.
 function spot(at, w, h) {
   if (at === 'hero') return { cx: 0, cy: h * 0.11, room: [w * 0.9, h * 0.48] };
-  if (at === 'centre') return { cx: 0, cy: h * 0.2, room: [w * 0.84, h * 0.36] };
+  if (at === 'center') return { cx: 0, cy: h * 0.2, room: [w * 0.84, h * 0.36] };
   if (w < 960) return { cx: 0, cy: h * 0.21, room: [w * 0.9, h * 0.46] };
   return { cx: (at === 'left' ? -1 : 1) * w * 0.24, cy: 0, room: [w * 0.46, h * 0.74] };
 }
@@ -1291,7 +1291,7 @@ function start() {
         time: t,
         dt,
         turn: [cy, sp * sy, -cp * sy, 0, cp, sp, sy, -sp * cy, cp * cy],
-        centre: [view.cx, view.cy],
+        center: [view.cx, view.cy],
         scale: view.scale,
         width: view.width,
         gain: view.gain,
