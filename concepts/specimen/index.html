@@ -68,11 +68,11 @@
       </figure>
     </div>
 
-    <p class="keeps" id="keeps">At level <b id="lvl">12</b> of 12, as at every other: mass <b id="mass">1.000000000</b> · centre <b id="centre">(0.000000, 0.000000, 0.000000)</b> · spread σ <b id="spread">(0.551374, 0.155302, 0.094986)</b>. Turn the focus and watch these not move.</p>
+    <p class="keeps" id="keeps">At level <b id="lvl">12</b> of 12, as at every other: mass <b id="mass">1.000000000</b> · center <b id="center">(0.000000, 0.000000, 0.000000)</b> · spread σ <b id="spread">(0.551374, 0.155302, 0.094986)</b>. Turn the focus and watch these not move.</p>
 
     <div class="hero__intro">
       <p class="lede">I&rsquo;m a master&rsquo;s student in computer science at the <a href="https://www.uc.edu/">University of Cincinnati</a>, with degrees in mathematics and neuroscience from the same place. What I want to make is <em>splats that explain</em>: pictures of science you can take apart until the thing makes sense.</p>
-      <p>The cell on the slide is the smallest example I could build. Turn the focus down and its 4,096 Gaussians merge, pair by pair, until the whole neuron is one soft blob with the same mass, centre and spread it started with. Turn it back up and tap: the spike you see is the Hodgkin&ndash;Huxley equations, solved while you watch.</p>
+      <p>The cell on the slide is the smallest example I could build. Turn the focus down and its 4,096 Gaussians merge, pair by pair, until the whole neuron is one soft blob with the same mass, center and spread it started with. Turn it back up and tap: the spike you see is the Hodgkin&ndash;Huxley equations, solved while you watch.</p>
     </div>
   </header>
 
@@ -99,17 +99,17 @@
             <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=brain" data-toy="brain" data-note="In Splashery, the Slice effect sweeps a plane through it and shows the insides."><small>Body</small><b>Brain</b><span>slices open</span></a></li>
             <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=orbital" data-toy="orbital" data-note="Splashery holds the orbitals from 1s to 4f."><small>Atoms</small><b>Electron orbitals</b><span>1s to 4f</span></a></li>
             <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=molecule" data-toy="molecule" data-note="Splashery builds molecules from water to caffeine and C60, or your own from a name, a formula or a file."><small>Atoms</small><b>Molecules</b><span>water to C60</span></a></li>
-            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=protein" data-toy="protein" data-note="Splashery has ubiquitin, insulin, GFP and haemoglobin, or your own PDB or mmCIF file."><small>Atoms</small><b>Proteins</b><span>or your own PDB</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=protein" data-toy="protein" data-note="Splashery has ubiquitin, insulin, GFP and hemoglobin, or your own PDB or mmCIF file."><small>Atoms</small><b>Proteins</b><span>or your own PDB</span></a></li>
             <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=saturn" data-toy="saturn" data-note="One of the eight planets on Splashery's space shelf."><small>Space</small><b>Saturn</b><span>and its rings</span></a></li>
             <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=black-hole" data-toy="black-hole" data-note="A black hole with its disc."><small>Space</small><b>Black hole</b><span>with its disc</span></a></li>
-            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=lorenz" data-toy="lorenz" data-note="From the maths shelf, beside the Klein bottle and the gyroid."><small>Maths</small><b>Lorenz attractor</b><span>from the maths shelf</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=lorenz" data-toy="lorenz" data-note="From the math shelf, beside the Klein bottle and the gyroid."><small>Math</small><b>Lorenz attractor</b><span>from the math shelf</span></a></li>
           </ul>
         </div>
 
         <div class="ledger">
           <div class="ledger__role">
             <h3>What I did</h3>
-            <p>I defined the project vision and toy categories, directed multi-agent development, refined interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
+            <p>I defined the project vision and toy categories, refined interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
             <p class="links">
               <a class="link" href="https://ryanjosephkamp.github.io/splashery/">Open Splashery</a>
               <a class="link" href="https://ryanjosephkamp.github.io/splashery/manual/">The Tinkerer&rsquo;s Manual</a>
@@ -136,11 +136,11 @@
         <ol class="notes">
           <li>
             <h3>One splat</h3>
-            <p>A Gaussian: a centre, a spread in three directions (its covariance <i>Σ</i>), a weight and a stain. Turn it by a rotation <i>R</i> and its shadow on the screen is a Gaussian again, with spread <i>RΣR</i><sup>T</sup>. That is how every blob here is drawn, from every side.</p>
+            <p>A Gaussian: a center, a spread in three directions (its covariance <i>Σ</i>), a weight and a stain. Turn it by a rotation <i>R</i> and its shadow on the screen is a Gaussian again, with spread <i>RΣR</i><sup>T</sup>. That is how every blob here is drawn, from every side.</p>
           </li>
           <li>
             <h3>Focus</h3>
-            <p>Lowering the focus pairs splats up. Each pair becomes the one Gaussian with the same mass, centre and covariance, so level 0 is the whole cell as a single splat and no level in between has gained or lost anything. <a href="verify.mjs">A script</a> checks all 4,095 merges against the splats beneath them, and all 13 levels against the finest. The largest disagreement is about 10<sup>&minus;15</sup>.</p>
+            <p>Lowering the focus pairs splats up. Each pair becomes the one Gaussian with the same mass, center and covariance, so level 0 is the whole cell as a single splat and no level in between has gained or lost anything. <a href="verify.mjs">A script</a> checks all 4,095 merges against the splats beneath them, and all 13 levels against the finest. The largest disagreement is about 10<sup>&minus;15</sup>.</p>
           </li>
           <li>
             <h3>Light</h3>
@@ -148,7 +148,7 @@
           </li>
           <li>
             <h3>Spike</h3>
-            <p>Fire integrates the Hodgkin&ndash;Huxley equations, with the 1952 squid-axon constants, from rest after one millisecond of current. The chart is that solution. The colour that runs down the axon is the same solution, delayed by distance, pausing at each gap in the myelin.</p>
+            <p>Fire integrates the Hodgkin&ndash;Huxley equations, with the 1952 squid-axon constants, from rest after one millisecond of current. The chart is that solution. The color that runs down the axon is the same solution, delayed by distance, pausing at each gap in the myelin.</p>
           </li>
         </ol>
       </div>

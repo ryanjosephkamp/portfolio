@@ -1,6 +1,6 @@
 // node concepts/specimen/verify.mjs
 // The detail nobody asked for, checked exhaustively: every coarser splat on the page keeps the
-// mass, centre and covariance of the finer splats beneath it.
+// mass, center and covariance of the finer splats beneath it.
 
 import { neuron, buildTree, moments, level, hodgkinHuxley, DEPTH } from './specimen.js';
 
@@ -48,6 +48,6 @@ if (!(hh.peak > 20 && hh.peak < 50 && hh.trough < -70 && hh.trough > -77)) throw
 if (Math.abs(hodgkinHuxley({ current: 0 }).peak - -65) > 0.05) throw new Error('the membrane does not rest at −65 mV');
 if (hodgkinHuxley({ current: 2 }).peak > -50) throw new Error('a weak pulse should not fire');
 
-console.log(`ok · ${checks} checks · largest drift in mass, centre or covariance ${worst.toExponential(2)}`);
-console.log(`centre ${finest.m.map((v) => v.toFixed(12)).join(', ')} · σ ${finest.S.slice(0, 3).map((v) => Math.sqrt(v).toFixed(4)).join(', ')}`);
+console.log(`ok · ${checks} checks · largest drift in mass, center or covariance ${worst.toExponential(2)}`);
+console.log(`center ${finest.m.map((v) => v.toFixed(12)).join(', ')} · σ ${finest.S.slice(0, 3).map((v) => Math.sqrt(v).toFixed(4)).join(', ')}`);
 console.log(`spike: rest ${hh.rest} mV, peak ${hh.peak.toFixed(1)} mV, undershoot ${hh.trough.toFixed(1)} mV`);

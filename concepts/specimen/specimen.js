@@ -1,9 +1,9 @@
-// SPECIMEN — the maths, with no DOM in it, so verify.mjs can run the same code in Node.
+// SPECIMEN — the math, with no DOM in it, so verify.mjs can run the same code in Node.
 //
-// A specimen is a list of 3D Gaussians ("splats"): a centre m, a covariance S, a weight w,
-// a stain (absorbance per colour channel), and two numbers that say when and how strongly
+// A specimen is a list of 3D Gaussians ("splats"): a center m, a covariance S, a weight w,
+// a stain (absorbance per color channel), and two numbers that say when and how strongly
 // a splat takes part in a spike. buildTree() pairs them up, level by level, into coarser
-// splats that keep the same mass, centre and covariance.
+// splats that keep the same mass, center and covariance.
 
 export const DEPTH = 12; // 2^12 = 4,096 splats at full focus
 export const WAVE_MS = 16; // length of the stored spike waveform, in milliseconds
@@ -52,7 +52,7 @@ function needle(d, along, across) {
   return [c + k * d[0] * d[0], c + k * d[1] * d[1], c + k * d[2] * d[2], k * d[0] * d[1], k * d[0] * d[2], k * d[1] * d[2]];
 }
 
-// Stains are stored as absorbance, −ln(transmitted colour): light passes through, and is lost.
+// Stains are stored as absorbance, −ln(transmitted color): light passes through, and is lost.
 export const stain = (r, g, b) => [-Math.log(r), -Math.log(g), -Math.log(b)];
 export const STAINS = {
   violet: stain(0.34, 0.17, 0.56), // cell bodies and neurites
@@ -176,11 +176,11 @@ export function neuron(seed = 1952) {
     put(add(tip.p, mul(inBall(r), 0.034)), ball(0.014), STAINS.deep, time + tip.s / SPEED, 1);
   }
 
-  return normalise(leaves);
+  return normalize(leaves);
 }
 
-// Equal weights that sum to 1, centre of mass at the origin, longest half-extent 1.
-export function normalise(leaves) {
+// Equal weights that sum to 1, center of mass at the origin, longest half-extent 1.
+export function normalize(leaves) {
   const n = leaves.length;
   const c = [0, 0, 0];
   for (const l of leaves) for (let k = 0; k < 3; k += 1) c[k] += l.m[k] / n;
@@ -193,7 +193,7 @@ export function normalise(leaves) {
 /* ---------- the tree ---------- */
 
 /**
- * Moment matching: the one Gaussian with the same mass, centre and covariance as the pair.
+ * Moment matching: the one Gaussian with the same mass, center and covariance as the pair.
  *   w = wa + wb,  m = (wa·ma + wb·mb) / w,
  *   S = (wa·(Sa + da·daᵀ) + wb·(Sb + db·dbᵀ)) / w,  with da = ma − m.
  */
@@ -258,7 +258,7 @@ export function buildTree(leaves) {
   return { depth, nodes };
 }
 
-// Mass, centre and covariance of a set of splats taken together.
+// Mass, center and covariance of a set of splats taken together.
 export function moments(splats) {
   let w = 0;
   const m = [0, 0, 0];

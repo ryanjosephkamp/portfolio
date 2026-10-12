@@ -55,7 +55,7 @@ sup { font-size: 0.7em; line-height: 0; }
 .skip { position: absolute; left: -999rem; }
 .skip:focus { left: 1rem; top: 1rem; z-index: 9; background: var(--glass); padding: 0.5rem 0.8rem; }
 
-/* small capitals for catalogue numbers and field names */
+/* small capitals for catalog numbers and field names */
 .nav, .slide__no, dt, .head__no, .knob label, .knob__ticks, .drawer small, .strip text, figcaption, .keeps, .foot h2 {
   font-size: 0.78rem;
   letter-spacing: 0.09em;

@@ -1,6 +1,6 @@
-// SPECIMEN — Ryan Kamp. No dependencies. The maths is in specimen.js; this file draws it.
+// SPECIMEN — Ryan Kamp. No dependencies. The math is in specimen.js; this file draws it.
 
-import { neuron, buildTree, pack, moments, level, hodgkinHuxley, normalise, rng, STAINS, WAVE_MS, T_SOMA } from './specimen.js';
+import { neuron, buildTree, pack, moments, level, hodgkinHuxley, normalize, rng, STAINS, WAVE_MS, T_SOMA } from './specimen.js';
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const $ = (s, el = document) => el.querySelector(s);
@@ -16,7 +16,7 @@ precision highp float;
 layout(location=0) in vec2 corner;
 layout(location=1) in vec4 aMW; layout(location=2) in vec4 aSd; layout(location=3) in vec4 aSo; layout(location=4) in vec4 aInk;
 layout(location=5) in vec4 pMW; layout(location=6) in vec4 pSd; layout(location=7) in vec4 pSo; layout(location=8) in vec4 pInk;
-uniform mat3 uR; uniform vec3 uCentre; uniform vec2 uScale;
+uniform mat3 uR; uniform vec3 uCenter; uniform vec2 uScale;
 uniform float uT, uTime, uBlur, uDensity, uWaveMs;
 uniform vec3 uSpike; uniform sampler2D uWave;
 out vec2 vD; out vec3 vConic; out vec3 vAbs;
@@ -26,7 +26,7 @@ void main() {
   mat3 C = uR * S * transpose(uR);
   float a = C[0][0] + uBlur, b = C[0][1], c = C[1][1] + uBlur;
   float det = max(a * c - b * b, 1e-12);
-  vec3 mu = uR * (mw.xyz - uCentre);
+  vec3 mu = uR * (mw.xyz - uCenter);
   vD = corner * 3.0 * sqrt(vec2(a, c));
   vConic = vec3(c, -b, a) / det;
   float act = 0.0;
@@ -98,13 +98,13 @@ class Slide {
       hi = Math.max(hi, s.m[0] + pad);
       around = Math.max(around, Math.hypot(s.m[1], s.m[2]) + pad);
     }
-    this.centre = [(lo + hi) / 2, 0, 0];
+    this.center = [(lo + hi) / 2, 0, 0];
     this.half = [(hi - lo) / 2, around];
 
     this.prog = program(gl, VERT, FRAG);
     this.post = program(gl, POST_VERT, POST_FRAG);
     this.u = {};
-    for (const n of ['uR', 'uCentre', 'uScale', 'uT', 'uTime', 'uBlur', 'uDensity', 'uWaveMs', 'uSpike', 'uWave', 'uDirect']) this.u[n] = gl.getUniformLocation(this.prog, n);
+    for (const n of ['uR', 'uCenter', 'uScale', 'uT', 'uTime', 'uBlur', 'uDensity', 'uWaveMs', 'uSpike', 'uWave', 'uDirect']) this.u[n] = gl.getUniformLocation(this.prog, n);
 
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
@@ -198,7 +198,7 @@ class Slide {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.wave);
     gl.uniformMatrix3fv(u.uR, true, R);
-    gl.uniform3fv(u.uCentre, this.centre);
+    gl.uniform3fv(u.uCenter, this.center);
     gl.uniform2f(u.uScale, (2 * scale) / W, (2 * scale) / H);
     gl.uniform1f(u.uTime, this.time);
     gl.uniform1f(u.uBlur, (0.6 * (W / canvas.clientWidth) / scale) ** 2);
@@ -261,7 +261,7 @@ function hero() {
   const END = Math.max(...level(tree, DEPTH).map((s) => s.delay)) + 9; // ms until the cell is quiet again
   const SLOW = 7; // model milliseconds shown per second
   const stats = Array.from({ length: DEPTH + 1 }, (_, L) => moments(level(tree, L)));
-  const out = { count: $('#count'), lvl: $('#lvl'), mass: $('#mass'), centre: $('#centre'), spread: $('#spread') };
+  const out = { count: $('#count'), lvl: $('#lvl'), mass: $('#mass'), center: $('#center'), spread: $('#spread') };
   const fmt = (v, d) => (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d);
 
   let target = Number(focus.value);
@@ -284,7 +284,7 @@ function hero() {
     out.lvl.textContent = String(L);
     const s = stats[L];
     out.mass.textContent = s.w.toFixed(9);
-    out.centre.textContent = `(${s.m.map((v) => fmt(v, 6)).join(', ')})`;
+    out.center.textContent = `(${s.m.map((v) => fmt(v, 6)).join(', ')})`;
     out.spread.textContent = `(${s.S.slice(0, 3).map((v) => Math.sqrt(v).toFixed(6)).join(', ')})`;
     focus.setAttribute('aria-valuetext', out.count.textContent);
   }
@@ -527,7 +527,7 @@ function emblem([draw, when], seed) {
       gain: 1,
     });
   }
-  return buildTree(normalise(leaves));
+  return buildTree(normalize(leaves));
 }
 
 function cabinet() {

@@ -1,11 +1,11 @@
 # Specimen
 
 A concept portfolio for Ryan Kamp as a scientific visualization researcher, with
-[Splashery](https://ryanjosephkamp.github.io/splashery/) as the centrepiece. One page, static files,
+[Splashery](https://ryanjosephkamp.github.io/splashery/) as the centerpiece. One page, static files,
 no dependencies, no build step.
 
 **The signature:** a microscope slide holding a neuron made of 4,096 Gaussian splats. Turn the
-focus and they merge, pair by pair, down to one Gaussian with the same mass, centre and covariance;
+focus and they merge, pair by pair, down to one Gaussian with the same mass, center and covariance;
 tap the cell and a Hodgkin–Huxley spike runs down its axon, hopping the myelin.
 
 ## Run it
@@ -22,7 +22,7 @@ from the repository root, then open http://localhost:4175/concepts/specimen/.
 |---|---|
 | `index.html` | All of the content. Edit copy and links here. |
 | `styles.css` | Design tokens at the top (`:root`), then one block per section. |
-| `specimen.js` | The maths, with no DOM: the neuron recipe, the splat tree (`merge`, `buildTree`), and the Hodgkin–Huxley integrator. |
+| `specimen.js` | The math, with no DOM: the neuron recipe, the splat tree (`merge`, `buildTree`), and the Hodgkin–Huxley integrator. |
 | `main.js` | The WebGL2 stage (`Slide`), the hero controls, the cabinet emblems, and the lazy Splashery embeds. |
 | `verify.mjs` | The check behind the page's claim. `node concepts/specimen/verify.mjs`. |
 | `assets/fonts/` | [Newsreader](https://fonts.google.com/specimen/Newsreader) variable font, roman and italic, latin subset (SIL Open Font License). |
