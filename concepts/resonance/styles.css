@@ -1,0 +1,961 @@
+/* Resonance: a brass plate, black sand, a violin bow.
+   The page is the brass; the type is the sand; verdigris is the one accent. */
+
+@font-face {
+  font-family: 'Archivo';
+  src: url('assets/fonts/archivo-variable-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+
+:root {
+  --brass: #c3a04b;
+  --brass-hi: #e9d28c;
+  --brass-pale: #dcc070;
+  --brass-lo: #9c7b2f;
+  --brass-deep: #6f551c;
+  --sand: #16120a;
+  --sand-soft: #3b3018;
+  --verdigris: #0f7f76;
+  --verdigris-hi: #3fd0bf;
+  --hair: #f7f0dc;
+  --cut: 0 1px 0 rgba(255, 240, 190, 0.55); /* the lit lower lip of an engraved line */
+  --wdth: 104; /* the name's width: the bowed note's wavelength */
+  --ring: 0; /* how hard the plate rings, 0..1 */
+  --gutter: clamp(16px, 4vw, 56px);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  color: var(--sand);
+  font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  font-weight: 430;
+  font-stretch: 100%;
+  background-color: var(--brass);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255, 246, 210, 0.05) 0 1px, rgba(60, 40, 0, 0.035) 1px 2px, transparent 2px 4px),
+    linear-gradient(100deg, #b8943f 0%, #d2b461 22%, #bf9c47 45%, #d8bc6a 68%, #b38e3b 100%);
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--verdigris);
+}
+a:hover {
+  background: var(--sand);
+  color: var(--brass-hi);
+  text-decoration-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--verdigris);
+  outline-offset: 3px;
+}
+
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 8px;
+  background: var(--sand);
+  color: var(--brass-hi);
+  padding: 8px 14px;
+  z-index: 10;
+}
+.skip:focus {
+  left: 8px;
+}
+
+/* Small stamped capitals. */
+.stamp {
+  margin: 0 0 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 650;
+  font-stretch: 118%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: var(--cut);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 0.95;
+  text-shadow: var(--cut);
+}
+
+/* ---- Hero ----------------------------------------------------------------- */
+
+.hero {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 78svh, 640px));
+  gap: clamp(24px, 5vw, 80px);
+  align-items: center;
+  padding: clamp(20px, 4vw, 48px) var(--gutter) clamp(28px, 4vw, 56px);
+  /* room on the right for the bow's frog */
+  padding-right: calc(var(--gutter) + clamp(40px, 9vw, 150px));
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.name {
+  font-size: clamp(3.6rem, 11.2vw, 10.5rem);
+  font-weight: 860;
+  font-stretch: calc(var(--wdth) * 1%);
+  font-variation-settings: 'wdth' var(--wdth);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.84;
+  margin: 0.1em 0 0.28em -0.04em;
+  transition: font-variation-settings 0.18s ease-out;
+}
+.name span {
+  display: block;
+}
+
+.lede {
+  font-size: clamp(1.2rem, 1.9vw, 1.6rem);
+  line-height: 1.3;
+  font-weight: 560;
+  max-width: 30ch;
+  margin: 0 0 1rem;
+  text-shadow: var(--cut);
+}
+.lede-2 {
+  max-width: 46ch;
+  margin: 0 0 1.4rem;
+}
+
+.how {
+  list-style: none;
+  margin: 0;
+  padding: 0.9rem 0 0;
+  border-top: 2px solid var(--sand);
+  box-shadow: 0 -1px 0 rgba(255, 240, 190, 0.5) inset;
+  font-size: 0.92rem;
+  max-width: 46ch;
+}
+.how li {
+  margin: 0.2rem 0;
+}
+.how b {
+  font-weight: 750;
+}
+
+.bench {
+  min-width: 0;
+}
+
+.stage {
+  position: relative;
+  aspect-ratio: 1;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: 6px;
+}
+.stage:active {
+  cursor: grabbing;
+}
+
+/* The plate: polished where the page is brushed. */
+.plate {
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background:
+    radial-gradient(120% 90% at 22% 12%, rgba(255, 250, 225, 0.75), transparent 46%),
+    radial-gradient(90% 70% at 85% 95%, rgba(120, 86, 14, 0.42), transparent 60%),
+    linear-gradient(135deg, #f0dc9c 0%, #e2c672 34%, #d3b257 62%, #e6cd80 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 250, 220, 0.85),
+    inset 0 0 0 3px rgba(120, 88, 20, 0.35),
+    inset 0 -6px 14px rgba(110, 78, 10, 0.25),
+    0 2px 0 #8a6a22,
+    0 5px 0 #6f551c,
+    0 22px 38px rgba(50, 32, 0, 0.5),
+    0 0 calc(var(--ring) * 46px) calc(var(--ring) * 4px) rgba(63, 208, 191, calc(var(--ring) * 0.5));
+  overflow: hidden;
+}
+.plate canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The clamp that holds the plate by its middle. */
+.clamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4.6%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    linear-gradient(45deg, transparent 44%, rgba(40, 26, 0, 0.75) 44% 56%, transparent 56%),
+    radial-gradient(circle at 35% 30%, #fff4c8, #b8923a 60%, #7a5c1c);
+  box-shadow:
+    0 1px 2px rgba(40, 24, 0, 0.6),
+    inset 0 0 0 1px rgba(60, 40, 0, 0.5);
+}
+.maker {
+  position: absolute;
+  left: 4.5%;
+  bottom: 3.2%;
+  font-size: clamp(0.5rem, 1vw, 0.68rem);
+  font-weight: 700;
+  font-stretch: 125%;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(70, 48, 6, 0.72);
+  text-shadow: 0 1px 0 rgba(255, 248, 215, 0.8);
+  pointer-events: none;
+}
+
+/* The ruler cut into the bowed edge: one tick per figure. */
+.rail {
+  position: absolute;
+  right: 0;
+  top: 4%;
+  bottom: 4%;
+  width: 5.5%;
+  pointer-events: none;
+}
+.rail i {
+  position: absolute;
+  right: 0;
+  height: 1.5px;
+  width: 45%;
+  background: rgba(60, 40, 4, 0.7);
+  box-shadow: 0 1px 0 rgba(255, 248, 215, 0.7);
+  transform: translateY(-50%);
+}
+.rail i.long {
+  width: 80%;
+}
+.rail i.on {
+  width: 100%;
+  height: 3px;
+  background: var(--verdigris);
+}
+
+/* The bow lies across the right edge; its hair meets the edge at the note. */
+.bow {
+  position: absolute;
+  width: 88%;
+  left: 38%;
+  top: 50%;
+  margin-top: -5.2%;
+  transform: translate3d(var(--bx, 0px), 0, 0) rotate(-7deg);
+  transform-origin: 54% 70%;
+  filter: drop-shadow(0 9px 6px rgba(40, 24, 0, 0.42));
+  pointer-events: none;
+  overflow: visible;
+}
+.bow-stick {
+  fill: #5b2a17;
+  stroke: #2d130a;
+  stroke-width: 0.8;
+}
+.bow-tip {
+  fill: #4a2112;
+}
+.bow-hair {
+  fill: var(--hair);
+  stroke: rgba(90, 70, 30, 0.6);
+  stroke-width: 0.5;
+}
+.bow-frog {
+  fill: #17120d;
+}
+.bow-eye {
+  fill: #e8f4ee;
+  stroke: var(--verdigris);
+  stroke-width: 1.4;
+}
+.bow-screw {
+  fill: #d8d2c0;
+  stroke: #57503c;
+  stroke-width: 0.6;
+}
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 1.6rem;
+  margin-top: clamp(22px, 3.2vw, 38px);
+  padding-top: 0.8rem;
+  border-top: 2px solid var(--sand);
+}
+.fig {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  font-stretch: 118%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+.fig b {
+  font-size: 3.1rem;
+  font-weight: 860;
+  font-stretch: 75%;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: var(--cut);
+}
+.readout dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  margin: 0;
+}
+.readout dt {
+  font-size: 0.66rem;
+  font-weight: 650;
+  font-stretch: 118%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.readout dd {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+/* A key: a stamped brass tag. */
+.key {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sand);
+  padding: 0.7em 1.05em;
+  min-height: 44px;
+  border: 2px solid var(--sand);
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass-pale));
+  box-shadow:
+    0 3px 0 var(--sand),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+.key:hover {
+  background: var(--hair);
+}
+.key:active,
+.key.is-down {
+  transform: translateY(3px);
+  box-shadow:
+    0 0 0 var(--sand),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.key-loud {
+  background: var(--sand);
+  color: var(--brass-hi);
+  box-shadow:
+    0 3px 0 var(--verdigris),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.key-loud:hover {
+  background: #2a2212;
+}
+.key[aria-pressed='false']#sound-btn {
+  background: transparent;
+}
+
+/* ---- Sections ------------------------------------------------------------- */
+
+.sec {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: clamp(48px, 8vw, 120px) var(--gutter);
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(20px, 4vw, 64px);
+  align-items: start;
+  position: relative;
+}
+/* An engraved rule between sections. */
+.sec::before {
+  content: '';
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 0;
+  height: 3px;
+  background: var(--sand);
+  box-shadow: 0 1px 0 rgba(255, 240, 190, 0.6);
+}
+
+.sec-head h2 {
+  font-size: clamp(2.9rem, 8.6vw, 8rem);
+  font-weight: 860;
+  font-stretch: 70%;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+#grooph .sec-head h2 {
+  text-transform: none;
+}
+.sec-head .thumb {
+  margin-top: 1.4rem;
+  width: clamp(120px, 15vw, 200px);
+}
+
+.big {
+  font-size: clamp(1.25rem, 2.1vw, 1.75rem);
+  line-height: 1.28;
+  font-weight: 540;
+  margin: 0 0 1rem;
+  text-shadow: var(--cut);
+  max-width: 34ch;
+}
+.sec-body p {
+  max-width: 58ch;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 1rem 0;
+  padding: 0;
+}
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0.35em 0.9em;
+  border: 2px solid var(--sand);
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 2px 0 var(--sand);
+}
+.links a:first-child {
+  background: var(--sand);
+  color: var(--brass-hi);
+  box-shadow: 0 2px 0 var(--verdigris);
+}
+.links a:hover {
+  background: var(--hair);
+  color: var(--sand);
+}
+.part {
+  font-size: 0.95rem;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--verdigris);
+}
+
+/* A small plate with a project's figure on it. */
+.thumb {
+  display: block;
+  padding: 0;
+  border: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background:
+    radial-gradient(120% 90% at 22% 12%, rgba(255, 250, 225, 0.7), transparent 50%),
+    linear-gradient(135deg, #efdb9a, #dcc06a 50%, #e6cd80);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 250, 220, 0.85),
+    0 2px 0 #8a6a22,
+    0 4px 0 #6f551c,
+    0 10px 16px rgba(50, 32, 0, 0.38);
+  cursor: pointer;
+  transition: transform 0.08s;
+}
+.thumb canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.thumb:hover {
+  transform: translateY(-2px);
+}
+.thumb:active {
+  transform: translateY(3px);
+}
+.thumb.is-ringing {
+  animation: ring 0.5s ease-out;
+}
+@keyframes ring {
+  0% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 250, 220, 0.85),
+      0 2px 0 #8a6a22,
+      0 4px 0 #6f551c,
+      0 0 0 0 rgba(63, 208, 191, 0.9);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 250, 220, 0.85),
+      0 2px 0 #8a6a22,
+      0 4px 0 #6f551c,
+      0 0 0 18px rgba(63, 208, 191, 0);
+  }
+}
+
+/* ---- Splashery's four ways ------------------------------------------------- */
+
+.ways {
+  grid-column: 1 / -1;
+  margin-top: clamp(16px, 3vw, 40px);
+}
+.ways-h {
+  font-size: clamp(1.5rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+  font-stretch: 80%;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  padding-bottom: 0.7rem;
+  border-bottom: 2px solid var(--sand);
+}
+.way {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(20px, 4vw, 64px);
+  padding: clamp(24px, 4vw, 48px) 0;
+  border-bottom: 1px solid rgba(22, 18, 10, 0.55);
+  box-shadow: 0 1px 0 rgba(255, 240, 190, 0.45);
+  align-items: start;
+}
+.way-last {
+  border-bottom: 0;
+  box-shadow: none;
+  padding-bottom: 0;
+}
+.way h4 {
+  font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+  font-weight: 780;
+  font-stretch: 86%;
+  line-height: 1.02;
+  margin-bottom: 0.8rem;
+}
+.way-text p {
+  max-width: 54ch;
+  margin: 0 0 0.8rem;
+}
+.formula {
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  font-weight: 650;
+  font-stretch: 90%;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--sand);
+  border-bottom: 1px solid var(--sand);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.note {
+  font-size: 0.95rem;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--verdigris);
+}
+
+/* The contact sheet: every figure the plate can make. */
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(8px, 1.4vw, 16px);
+}
+.sheet button {
+  position: relative;
+}
+.sheet .num {
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  font-size: 0.62rem;
+  font-weight: 750;
+  font-stretch: 112%;
+  letter-spacing: 0.06em;
+  color: rgba(70, 48, 6, 0.8);
+  pointer-events: none;
+}
+.sheet .is-current {
+  outline: 3px solid var(--verdigris);
+  outline-offset: 2px;
+}
+
+.screens {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.6vw, 18px);
+}
+.screen {
+  margin: 0;
+  min-width: 0;
+}
+.screen-wide {
+  grid-column: 1 / -1;
+}
+.screen canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #ecd795, #dcc06a 55%, #e3c97b);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 250, 220, 0.85),
+    inset 0 0 0 3px rgba(120, 88, 20, 0.28),
+    0 2px 0 #8a6a22,
+    0 4px 0 #6f551c,
+    0 12px 18px rgba(50, 32, 0, 0.35);
+}
+.screen figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.7rem;
+  font-weight: 650;
+  font-stretch: 116%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---- grooph's loop --------------------------------------------------------- */
+
+.loop {
+  grid-column: 1 / -1;
+  position: relative;
+  max-width: 900px;
+  margin-top: 0.5rem;
+}
+.loop-art {
+  position: relative;
+}
+.loop svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.loop .edge {
+  fill: none;
+  stroke: var(--sand);
+  stroke-width: 2.5;
+}
+.loop .edge-back {
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+  stroke-width: 3.5;
+}
+.loop .arrow {
+  fill: var(--sand);
+}
+.loop-nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  inset: 0;
+}
+.loop-nodes li {
+  position: absolute;
+  left: var(--x);
+  top: 43.6%;
+  transform: translate(-50%, -50%);
+  padding: 0.5em 0.9em;
+  border: 2px solid var(--sand);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass-pale));
+  font-size: clamp(0.62rem, 1.5vw, 0.86rem);
+  font-weight: 750;
+  font-stretch: 100%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 var(--sand);
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+}
+.loop-nodes li.loop-stop {
+  border-radius: 3px;
+}
+.loop-nodes li.is-on {
+  background: var(--sand);
+  color: var(--brass-hi);
+  box-shadow:
+    0 3px 0 var(--verdigris),
+    0 0 0 6px rgba(63, 208, 191, 0.45);
+}
+.loop-back {
+  position: absolute;
+  left: 13.7%;
+  top: 90%;
+  margin: 0;
+  font-size: clamp(0.6rem, 1.4vw, 0.74rem);
+  font-weight: 650;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.loop-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 1.6rem 0 0;
+  font-weight: 600;
+}
+
+/* ---- The other figures ------------------------------------------------------ */
+
+.works {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  grid-column: 2;
+}
+.work {
+  display: grid;
+  grid-template-columns: clamp(84px, 10vw, 132px) minmax(0, 1fr);
+  gap: clamp(14px, 2.4vw, 32px);
+  padding: clamp(18px, 2.6vw, 30px) 0;
+  border-bottom: 1px solid rgba(22, 18, 10, 0.55);
+  box-shadow: 0 1px 0 rgba(255, 240, 190, 0.45);
+  align-items: start;
+}
+.work:first-child {
+  padding-top: 0;
+}
+.work-last {
+  border-bottom: 0;
+  box-shadow: none;
+}
+.work h3 {
+  font-size: clamp(1.5rem, 2.8vw, 2.3rem);
+  font-weight: 800;
+  font-stretch: 82%;
+  line-height: 1;
+  margin-bottom: 0.6rem;
+  overflow-wrap: anywhere;
+}
+.work-last h3 {
+  font-size: clamp(1.1rem, 1.7vw, 1.35rem);
+  font-stretch: 92%;
+  line-height: 1.12;
+}
+.work p {
+  margin: 0 0 0.6rem;
+  max-width: 60ch;
+}
+.work .links {
+  margin: 0.8rem 0 0;
+}
+.art-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Amordle's bars: one per word length. */
+.bars-wrap {
+  margin: 0.9rem 0 0.4rem;
+}
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: clamp(110px, 16vw, 170px);
+  touch-action: pan-y;
+}
+.bars button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px 2px 0 0;
+  background: var(--sand);
+  height: var(--h);
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 240, 190, 0.35);
+}
+.bars button:hover,
+.bars button:focus-visible,
+.bars button.is-hit {
+  background: var(--verdigris);
+}
+.bars-say {
+  margin: 0.5rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 2px solid var(--sand);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+/* ---- About and links -------------------------------------------------------- */
+
+.tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 1.6rem 0 0;
+  padding: 0;
+}
+.tags a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.4em 1em;
+  border: 2px solid var(--sand);
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass-pale));
+  box-shadow: 0 3px 0 var(--sand);
+  font-size: 0.82rem;
+  font-weight: 750;
+  font-stretch: 112%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.tags a:hover {
+  background: var(--sand);
+  color: var(--brass-hi);
+  box-shadow: 0 3px 0 var(--verdigris);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 22px var(--gutter) 34px;
+  background: var(--sand);
+  color: var(--brass-pale);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.foot p {
+  margin: 0;
+}
+.foot a {
+  text-decoration-color: var(--verdigris-hi);
+}
+.foot a:hover {
+  background: var(--brass-hi);
+  color: var(--sand);
+}
+
+/* ---- Narrower --------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: var(--gutter);
+    gap: 26px;
+    min-height: 0;
+  }
+  .bench {
+    order: -1;
+    width: min(100%, 74svh, 560px);
+    padding-right: clamp(22px, 9vw, 70px);
+  }
+  .hero-text {
+    order: 0;
+  }
+  .name {
+    font-size: clamp(3.4rem, 19vw, 8rem);
+  }
+  .name span {
+    display: inline;
+  }
+  .sec,
+  .way {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .works {
+    grid-column: 1;
+  }
+  .sec-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 16px;
+    align-items: end;
+  }
+  .sec-head .stamp {
+    grid-column: 1 / -1;
+  }
+  .sec-head .thumb {
+    width: clamp(72px, 18vw, 120px);
+    margin: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .sheet {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .screens {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fig b {
+    font-size: 2.6rem;
+  }
+  .loop-nodes li {
+    padding: 0.45em 0.6em;
+    letter-spacing: 0;
+    font-stretch: 75%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .name,
+  .key,
+  .thumb,
+  .loop-nodes li {
+    transition: none;
+  }
+  .thumb.is-ringing {
+    animation: none;
+  }
+  .thumb:hover {
+    transform: none;
+  }
+}
