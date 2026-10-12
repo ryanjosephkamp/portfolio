@@ -26,17 +26,20 @@ plate, the contact links are tiles, and the dictionary-gloss voice of the hero n
    `index.html` and `main.js`. Done when each project you plan to feature has a description you can
    trace to a line you read.
 2. **Find the signature.** Start from what is literally true and specific about Ryan and the
-   direction, and look for the thing a visitor can do with it. Done when it passes the test above
+   direction, and look for the thing a visitor can do with it. Build it on Splashery or another of
+   the first nine projects. Done when it passes the test above
    and you have checked that it is true (v1 confirmed each anagram letter by letter).
 3. **Choose the look from the signature.** One sentence of physical scene (who is looking, where,
    in what light) decides light or dark. One typeface family picked for a reason the signature
    supplies (v1: Recursive, because its axes let the letters loosen when the name becomes a joke).
    One committed color and one loud accent, unlike every territory in the registry. Done when you
    can say why each choice follows from the signature.
-4. **Build the hero first**, working, before any other section. Then the core set from FACTS.md,
-   Splashery first, each project with a small live piece of art built for it in code (v1: tiles, a
-   tile staircase, a splat blob that scatters, an animated loop graph) in place of a screenshot.
-   Then the shelf projects that fit, research interests, and links.
+4. **Build the hero first**, working, before any other section. Then all ten projects from
+   FACTS.md: Splashery first and largest, grooph second, the capstone last. Give Splashery, grooph
+   and the two or three projects nearest the concept's direction a small live piece of art built
+   in code (v1: tiles, a tile staircase, a splat blob that scatters, an animated loop graph) in
+   place of a screenshot; the rest can share a plainer list, with the capstone as its last, short
+   entry. Then research interests and links.
 5. **Add the detail nobody asked for, and verify it exhaustively.** v1 shows the current
    arrangement's rank among all 20,160 orderings, between its alphabetical neighbors; the ranking
    was checked against a brute-force list of every permutation. Done when your detail has a check

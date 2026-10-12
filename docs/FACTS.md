@@ -14,10 +14,15 @@ when it is in neither, leave it out.
 - **Research interests, verbatim:** scientific visualization, computer graphics, digital media,
   software engineering, and information retrieval. A concept leads with the one it is built on.
 
-## The core set
+## The projects
 
-Every concept site presents these five, Splashery first and largest. The text under each is what
-the project does, ready to adapt.
+Every concept site presents all ten. **Splashery is first and largest, grooph is second, and the
+capstone is last and brief.** The order of the rest is free. Ryan groups them as below; a page may
+use the groups or not.
+
+The text under each is what the project does, ready to adapt.
+
+### Visualization and graphics
 
 1. **Splashery** (2026 to present). An interactive Gaussian splat playground that runs entirely in
    the browser. Pick a toy (a real captured object, or one generated from a seed), spin it, poke
@@ -28,6 +33,9 @@ the project does, ready to adapt.
    [Tinkerer's Manual](https://ryanjosephkamp.github.io/splashery/manual/).
    Ryan's part, where a page needs it: he defined the project's vision and its toy categories,
    refined the interaction design through hands-on testing, and contributed mathematical recipes.
+
+### Software engineering
+
 2. **grooph** (2026 to present). Visual loop graphs for coding-agent workflows. You draw who
    builds, who checks, where a person decides and when the work stops. grooph checks that every
    loop names a stop, then compiles the graph into a prompt package for a separate coding-agent
@@ -35,42 +43,58 @@ the project does, ready to adapt.
    [Open](https://ryanjosephkamp.github.io/grooph/) ·
    [docs](https://ryanjosephkamp.github.io/grooph/docs/) ·
    [code](https://github.com/ryanjosephkamp/grooph).
-3. **The Speed-Accuracy Trade-Off in Perceptual Decision-Making** (April 2025). Ryan's
-   undergraduate research capstone. It models evidence accumulation as a diffusion process and
-   uses dynamic programming and value iteration to study decision boundaries in a simulated
-   autonomous-vehicle obstacle-avoidance scenario.
-   [Code](https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone) ·
-   [video](https://youtu.be/LRAP1YHy3g0).
-4. **English OpenList** (December 2025 to present). A free, open, continuously maintained list of
+3. **reword_nerd.** A local-first browser workbench that turns a reviewed document, or a set of
+   images, into a portable workbook of rewriting prompts. Everything stays reviewable in the
+   browser, the download is a separate, explicit step, and the application contacts no model
+   provider itself.
+   [Open](https://ryanjosephkamp.github.io/reword-nerd/) ·
+   [write-up](https://ryanjosephkamp.github.io/blog/articles/reword-nerd/) ·
+   [code](https://github.com/ryanjosephkamp/reword-nerd).
+
+### Information retrieval
+
+4. **resmon** (April 2026 to present). A local-first literature-monitoring desktop application. It
+   runs scheduled searches across open-access scholarly sources, removes duplicates, and compiles
+   reading reports, with optional summaries.
+   [Code](https://github.com/ryanjosephkamp/resmon).
+5. **Link Meteor.** A Chrome extension that collects links with their anchor text and URL in
+   separate fields, for reviewing sources and exporting a research collection. No account, ads,
+   telemetry or backend. [Website](https://ryanjosephkamp.github.io/link-meteor/) ·
+   [code](https://github.com/ryanjosephkamp/link-meteor).
+
+### Words
+
+6. **English OpenList** (December 2025 to present). A free, open, continuously maintained list of
    valid English words, about 345,000 of them, with the provenance of every word (which sources
    attested it, and when), auditable correction records, and a browser explorer.
    [Explore](https://english-openlist.pages.dev/) ·
    [code](https://github.com/ryanjosephkamp/english-openlist) ·
    [dataset](https://huggingface.co/datasets/ryanjosephkamp/english-openlist).
-5. **resmon** (April 2026 to present). A local-first literature-monitoring desktop application. It
-   runs scheduled searches across open-access scholarly sources, removes duplicates, and compiles
-   reading reports, with optional summaries.
-   [Code](https://github.com/ryanjosephkamp/resmon).
+   This project is about to be expanded; keep its entry easy to change.
+7. **Ars Magna.** An anagram finder. Give it any text and it returns every way those exact letters
+   can be re-partitioned into real English words, by a deterministic search.
+   [Try](https://ars-magna.pages.dev/) · [code](https://github.com/ryanjosephkamp/ars-magna).
+8. **aqrobat.** A local text and emoji QR lab: QR artwork built from letters, symbols or emoji.
+   [Make one](https://ryanjosephkamp.github.io/aqrobat/) ·
+   [code](https://github.com/ryanjosephkamp/aqrobat).
+9. **Amordle.** A free word game: any word length from 2 to 35 letters, three difficulties, a daily
+   puzzle, and ranked multiplayer with an Elo rating.
+   [Play](https://amordle.vercel.app) · [code](https://github.com/ryanjosephkamp/amordle) ·
+   [write-up](https://ryanjosephkamp.github.io/blog/articles/amordle/).
 
-## The shelf
+### Last
 
-Add the two or three that suit the concept.
+10. **The Speed-Accuracy Trade-Off in Perceptual Decision-Making** (April 2025). Ryan's
+    undergraduate research capstone. It models evidence accumulation as a diffusion process and
+    uses dynamic programming and value iteration to study decision boundaries in a simulated
+    autonomous-vehicle obstacle-avoidance scenario.
+    [Code](https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone) ·
+    [video](https://youtu.be/LRAP1YHy3g0).
 
-- **Ars Magna.** An anagram finder. Give it any text and it returns every way those exact letters
-  can be re-partitioned into real English words, by a deterministic search.
-  [Try](https://ars-magna.pages.dev/) · [code](https://github.com/ryanjosephkamp/ars-magna).
-- **Amordle.** A free word game: any word length from 2 to 35 letters, three difficulties, a daily
-  puzzle, and ranked multiplayer with an Elo rating.
-  [Play](https://amordle.vercel.app) · [code](https://github.com/ryanjosephkamp/amordle).
-- **aqrobat.** A local text and emoji QR lab: QR artwork built from letters, symbols or emoji.
-  [Make one](https://ryanjosephkamp.github.io/aqrobat/) ·
-  [code](https://github.com/ryanjosephkamp/aqrobat).
-- **Link Meteor.** A Chrome extension that collects links with their anchor text and URL in
-  separate fields. [Website](https://ryanjosephkamp.github.io/link-meteor/) ·
-  [code](https://github.com/ryanjosephkamp/link-meteor).
+**The capstone is listed, never featured.** It gets one short entry at the end of the list. A
+concept, a hero, a signature or a section's art is built on any of the other nine.
 
-Leave out unless a prompt asks for it: the Spring 2026 AI Research Prototype Portfolio, reword-nerd,
-and any repository that is not public.
+Leave out: the Spring 2026 AI Research Prototype Portfolio, and any repository that is not public.
 
 ## Splashery, in depth
 
