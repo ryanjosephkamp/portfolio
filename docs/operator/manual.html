@@ -119,14 +119,14 @@
 <div class="wrap">
   <header class="mast">
     <h1>Portfolio Operator Manual</h1>
-    <p>Twelve concept portfolio sites, six built. The rules they follow, where each one stands, and a prompt maker for every change you will want to make to them.</p>
+    <p>Twelve concept portfolio sites, six built and six ready to launch. The rules they follow, where each one stands, and a prompt maker for every change you will want to make to them.</p>
     <ul class="strip" aria-label="State at a glance">
       <li class="chip done">6 of 12 concepts built</li>
-      <li class="chip done">Rules on main</li>
-      <li class="chip wait">8 pull requests open, none merged</li>
-      <li class="chip wait">Overprint: spelling not fixed yet</li>
+      <li class="chip done">All six spelling-clean</li>
+      <li class="chip done">v1, homepage and blog merged</li>
+      <li class="chip wait">6 concepts approved, not launched</li>
+      <li class="chip wait">5 concept pull requests open</li>
       <li class="chip live">Staging: localhost:4180/concepts/</li>
-      <li class="chip">Rollback: tag v1-anagram-tiles</li>
     </ul>
   </header>
 </div>
@@ -146,17 +146,19 @@
 <main class="wrap">
   <section id="now">
     <h2>Where things stand</h2>
-    <p class="lede">As of October 12, 2026. This section is the handoff: what was done, what is waiting on you, and what I would choose.</p>
+    <p class="lede">As of the afternoon of October 12, 2026, after your decisions. This section is the handoff: what was done, what is waiting on you, and what I would choose.</p>
 
     <div class="stack">
       <h3>What was just completed</h3>
       <ul class="bullets">
-        <li><b>The ground rules are written down and checkable.</b> Three rules now load into every session on this repo: American English, project-first, and claim-safe. A small checker (<code>tools/us-spelling.mjs</code>) finds British spellings and date formats and can fix them, so "American English" is a test a session must pass, not a request it might forget.</li>
-        <li><b>British spellings are fixed in five of the six concepts.</b> v1 (3 words), One Splat (14), Specimen (39), Workshop (4) and Toy Box (12). Each concept's own test suite was run again afterward and passes, and each page loads with an empty console.</li>
-        <li><b>Overprint was left alone on purpose.</b> Its session was in the middle of uncommitted work. I applied the fix, saw the work in progress, and undid my change exactly, so its files are as that session left them. It has 22 spellings to fix.</li>
-        <li><b>The "how it was made" clause is gone</b> from One Splat, Specimen, Toy Box and the v1 update. Splashery is now described by what it does. Workshop is unchanged, as you asked.</li>
-        <li><b>Every concept is on one local server.</b> A staging checkout merges all six branches, with an index page, so you can walk through them in one place.</li>
-        <li><b>A core set of projects and six more concepts are proposed</b> below, waiting on your word.</li>
+        <li><b>Your ten projects are now the rule.</b> Every concept site presents all ten: Splashery first and largest, grooph second, the capstone last and brief. The S26 AIRP is out everywhere. The list, in your groups, is in <a href="#projects">Projects</a> and in <code>docs/FACTS.md</code>.</li>
+        <li><b>The capstone is listed, never featured.</b> That sentence is in the facts, the playbook and the registry, so no new session builds a concept, a hero or a signature on it.</li>
+        <li><b>v1 has all ten and is merged.</b> The capstone was the one project it lacked; it is now the last entry. grooph moved up to second, reword_nerd gained a link to its live workbench, and the S26 AIRP post came off the writing list.</li>
+        <li><b>The homepage and blog pull requests are merged</b>, and both live sites show the new CV link. The homepage shows the new research interests and LinkedIn address.</li>
+        <li><b>Molecule replaced Threshold</b> in the registry and in the launch pack below.</li>
+        <li><b>Overprint is fixed:</b> 22 spellings, plus three project-first edits (the build-process clause about Splashery, a sentence about how grooph was built, and its S26 AIRP entry). Its page loads with an empty console.</li>
+        <li><b>American English is a standing instruction for every project now</b>, in a new file, <code>~/.claude/CLAUDE.md</code>.</li>
+        <li><b>Not touched, as you asked:</b> the project lists of the other five concept pull requests.</li>
       </ul>
     </div>
 
@@ -167,7 +169,7 @@
 
     <div class="stack">
       <h3>What comes next</h3>
-      <p>Six more concept sites, built in parallel, about 45 minutes each, one session and one worktree apiece. Their prompts are ready in the <a href="#launch">launch pack</a>. Then you walk through all twelve on staging and give notes; each note becomes a prompt from the <a href="#maker">prompt maker</a>.</p>
+      <p>Launching the six approved concepts: Molecule, Ripple, Resonance, Slice, Atlas and Query. Each is one new session with its own worktree, about 45 minutes, and their prompts are in the <a href="#launch">launch pack</a>. When they finish, I add them to the registry and to staging, and you walk through all twelve.</p>
     </div>
 
     <div class="stack">
@@ -178,7 +180,7 @@ flowchart LR
   A[Ground rules] --> B[Six concepts built]
   B --> C[Six more concepts]
   C --> D[Your walkthrough]
-  D --> E[Refine from notes]
+  D --> E[Refine case by case]
   E --> F[Pick favorites]
   F --> G[Publish on your site]
   style A fill:#dff3e6,stroke:#1f7a4d
@@ -190,11 +192,11 @@ flowchart LR
         <table>
           <thead><tr><th>Phase</th><th>What it is</th><th>State</th></tr></thead>
           <tbody>
-            <tr><td><b>Ground rules</b></td><td>American English, project-first, a core set, a registry, a spelling checker</td><td><span class="chip done">Done</span></td></tr>
-            <tr><td><b>Six concepts</b></td><td>Anagram Tiles, One Splat, Specimen, Toy Box, Workshop, Overprint</td><td><span class="chip done">Built, in review</span></td></tr>
-            <tr><td><b>Six more</b></td><td>Threshold, Ripple, Resonance, Slice, Atlas, Query</td><td><span class="chip wait">Waiting on you</span></td></tr>
+            <tr><td><b>Ground rules</b></td><td>American English, project-first, claim-safe, ten projects, a registry, a spelling checker</td><td><span class="chip done">Done</span></td></tr>
+            <tr><td><b>Six concepts</b></td><td>Anagram Tiles (merged), One Splat, Specimen, Toy Box, Workshop, Overprint</td><td><span class="chip done">Built, in review</span></td></tr>
+            <tr><td><b>Six more</b></td><td>Molecule, Ripple, Resonance, Slice, Atlas, Query</td><td><span class="chip wait">Approved, yours to launch</span></td></tr>
             <tr><td><b>Walkthrough</b></td><td>You look at all twelve on staging and write notes</td><td><span class="chip">Next</span></td></tr>
-            <tr><td><b>Refine</b></td><td>One prompt per concept: your notes plus the core-set pass</td><td><span class="chip">Later</span></td></tr>
+            <tr><td><b>Refine</b></td><td>Case by case: your notes, and the ten-project pass where a concept needs it</td><td><span class="chip">Later</span></td></tr>
             <tr><td><b>Publish</b></td><td>Your favorites under a Portfolio section of your personal site. Provisional: where exactly is decided then.</td><td><span class="chip">Later</span></td></tr>
           </tbody>
         </table>
@@ -202,53 +204,46 @@ flowchart LR
     </div>
 
     <div class="stack">
-      <h3>What you need to decide, and what I would choose</h3>
+      <h3>What you need to do, and what I would choose</h3>
       <ol class="steps">
-        <li><b>The core set of projects.</b><span class="rec"><strong>Approve it as written</strong> in <a href="#projects">Projects</a>: Splashery, grooph, the capstone, English OpenList and resmon on every site, a shelf of four to draw from, two left out. It follows your CV's own order and keeps the pages about the work.</span></li>
-        <li><b>The six new concepts.</b><span class="rec"><strong>Build the six proposed</strong> in <a href="#concepts">Concepts</a>. Each stands on a part of Splashery that already exists, and together they cover perception, simulation, sound, volumes, scale and retrieval, which the first six do not. Four alternates are listed if you want to swap one.</span></li>
-        <li><b>Three small pull requests: homepage, blog, v1.</b><span class="rec"><strong>Merge them now.</strong> They are link and wording fixes you already asked for, each checked. The app does not let me merge without your review, so this one is yours: the commands are in <a href="#record">Record</a>.</span></li>
-        <li><b>The five concept pull requests.</b><span class="rec"><strong>Leave them open until after your walkthrough.</strong> Staging already shows them together, and an open pull request is the cleanest place for a lane to keep refining.</span></li>
-        <li><b>Overprint's spelling.</b><span class="rec"><strong>Let me fix it once that session is idle</strong>, or paste the one-line prompt from the launch pack into it yourself. Either works; the first costs you nothing.</span></li>
-        <li><b>Blog posts on portfolio pages.</b><span class="rec"><strong>Keep the Amordle post and an "All posts" link; drop the other two rows.</strong> v1 lists three posts, and two of them are about AI tooling. This is your writing, so it is your call more than mine.</span></li>
-        <li><b>Bringing the first six up to the core set.</b><span class="rec"><strong>Yes, bundled with your walkthrough notes</strong>, so each lane runs once instead of twice. One Splat already has all five; the others each miss one or two.</span></li>
-        <li><b>American English outside this repo.</b><span class="rec"><strong>Add one line to your global instructions.</strong> Two of your own skills (the handoff brief and the writing guide) and Splashery's README are written in British spelling, which is likely where sessions keep picking it up. I have changed nothing outside this repo and its two sibling sites; say the word and I will list each spelling for you to approve.</span></li>
-        <li><b>GitHub Pages for this repo.</b><span class="rec"><strong>Skip it.</strong> Staging covers review, and the finished sites are going to your personal site.</span></li>
+        <li><b>Launch the six.</b><span class="rec"><strong>Paste each prompt from the launch pack into a new session with a worktree, Opus at Xhigh.</strong> Only you can start sessions; nothing else is blocking them.</span></li>
+        <li><b>British spellings in your skills.</b><span class="rec"><strong>Let me fix the three you wrote:</strong> handoff-brief (6 words), writing-for-agents (11) and account-handover (2). <strong>Leave impeccable (19) and the synced folder (18) alone:</strong> they look like installed or synced copies that an update would overwrite, and I could not confirm who maintains them. If they are yours, say so and I will include them.</span></li>
+        <li><b>British spellings in Splashery.</b><span class="rec"><strong>Do it in a Splashery session, app and README together.</strong> The README has 24 (colour and colours 16 times, maths, synthesised, haemoglobin, recolour), and at least one is a quotation of what the app itself displays, so fixing the README alone would misquote the app. A prompt for that session is in the launch pack.</span></li><!-- us-spelling: keep -->
+        <li><b>Overprint's capstone section.</b><span class="rec"><strong>Decide it in your walkthrough.</strong> Its latest commit gives the capstone a full interactive section, a decision model you pull on. It is well made, and it is the one place a built concept features the capstone. Under your new rule it would shrink to a last, short entry. This one is yours to call.</span></li>
+        <li><b>The project pass for the other five.</b><span class="rec"><strong>Nothing now.</strong> After your walkthrough, per concept, with your notes. The prompt maker's "Refine from my notes" has a box for it.</span></li>
+        <li><b>The English OpenList expansion.</b><span class="rec"><strong>Tell me when it lands.</strong> One prompt, "Change a fact or link everywhere", updates the facts and every page.</span></li>
       </ol>
     </div>
 
     <div class="prompt">
       <header><span>The prompt to send next, to this operator session</span><button type="button" data-copy="next">Copy</button></header>
-      <pre id="next">Approved as recommended.
+      <pre id="next">The six concept sessions are launched: molecule, ripple, resonance, slice, atlas, query.
 
-1. Core set: Splashery, grooph, the capstone, English OpenList, resmon. The shelf is optional. Leave out the S26 AIRP and reword-nerd.
-2. Build the six proposed concepts: threshold, ripple, resonance, slice, atlas, query. I am launching their prompts from the operator manual now, each in its own worktree at Xhigh.
-3. I have merged the homepage, blog and v1 pull requests.
-4. Keep the five concept pull requests open until my walkthrough.
-5. Fix Overprint's spelling yourself once its session is idle.
-6. On portfolio pages, keep the Amordle post and an "All posts" link only.
-7. After my walkthrough, bundle the core-set pass with my notes: one prompt per concept.
-8. Add the American English rule to my global CLAUDE.md, and list the British spellings in my skills and in Splashery's README for me to approve.
-9. Leave GitHub Pages off.
+While they run:
+1. Fix the British spellings in the three skills I wrote: handoff-brief, writing-for-agents and account-handover. Leave impeccable and the synced folder alone.
+2. Leave Splashery to its own session; I will paste that prompt there myself.
+3. Leave Overprint's capstone section and the other concepts' project lists for my walkthrough.
 
-While the six run: add each to the registry and to staging as its pull request opens, and tell me when all twelve are ready to walk through at http://localhost:4180/concepts/.</pre>
+As each of the six opens its pull request: check it against the rules (spelling clean, all ten projects with Splashery first, grooph second and the capstone last, nothing built on the capstone), add it to the registry and to staging, and tell me when all twelve are ready to walk through at http://localhost:4180/concepts/.</pre>
     </div>
-    <p class="runwith"><b>Mode:</b> execution. The work is specified; nothing here needs a plan first. <b>Effort:</b> High for this operator session (coordination and small, careful edits across branches). Keep the six concept sessions at Xhigh, as before: they are design work.</p>
+    <p class="runwith"><b>Mode:</b> execution. The work is specified. <b>Effort:</b> High for this operator session (small, careful edits and checking other sessions' work). The six concept sessions at Xhigh, as before: they are design work.</p>
   </section>
 
   <section id="launch">
     <h2>Launch pack</h2>
-    <p class="lede">The six proposed concepts, ready to paste. Start a new session on this project with a worktree for each, Opus at Xhigh.</p>
+    <p class="lede">The six approved concepts, ready to paste. Start a new session on this project with a worktree for each, Opus at Xhigh.</p>
     <div class="pack" id="pack"></div>
     <div class="prompt">
-      <header><span>For the Overprint session, when it is idle</span><button type="button" data-copy="overprint-fix">Copy</button></header>
-      <pre id="overprint-fix">Two rules were added to this repo's main branch while you worked. (1) American English: US spelling and US dates everywhere. (2) Project-first: say what a project does; how it was made stays off the page.
+      <header><span>For a Splashery session: American English in the app and its README</span><button type="button" data-copy="splashery-fix">Copy</button></header>
+      <pre id="splashery-fix">Switch Splashery to American English spelling, in the app and its documentation together.
 
-When your current work is committed:
-1. Get the checker from main without changing your branch: `git fetch origin`, then save `git show origin/main:tools/us-spelling.mjs` to a scratch file.
-2. Run it with `--fix concepts/overprint`, then read the diff. It renames identifiers too, the same way in every file.
-3. Load the page and confirm the console is empty.
-4. Remove any sentence about how Splashery was built.
-5. Commit and push to concept/overprint, and say what changed.</pre>
+Why: I am American and write American English. The README and the app's own text currently use British spellings (colour, colours, maths, synthesised, recolour, haemoglobin and others), and the README quotes strings the app displays, so the two must change together.<!-- us-spelling: keep -->
+
+Scope: every string a person can read (the panel, status lines, toy names and notes, the manual, the README, docs, comments) and the identifiers behind them where a rename is safe. Leave alone: anything in vendor/, third-party names and credits as their authors wrote them, and saved-scene keys or URL parameters that existing links depend on. Where a key in a shared link or the scene schema is spelled the British way, keep reading the old key and say so in your report instead of renaming it.
+
+A checker exists in my portfolio repo: `gh api repos/ryanjosephkamp/portfolio/contents/tools/us-spelling.mjs -H "Accept: application/vnd.github.raw"`. Save it to a scratch file and run it with a path to list hits, or with `--fix` to apply them. It renames identifiers too, the same way in every file it is given, so read the diff and run the full test suite afterward.
+
+Done when: the checker prints nothing for the app's own files, the tests pass, a shared link made before the change still opens, and a pull request is open. Reply with the count fixed, anything you deliberately kept, and why.</pre>
     </div>
   </section>
 
@@ -265,43 +260,48 @@ When your current work is committed:
 
   <section id="concepts">
     <h2>Concepts</h2>
-    <p class="lede">Every concept claims a research direction and a look that no other has. The same table lives in the repo at <code>docs/CONCEPTS.md</code>, which is the copy sessions read.</p>
+    <p class="lede">Every concept claims a research direction and a look that no other has, and none is built on the capstone. The same table lives in the repo at <code>docs/CONCEPTS.md</code>, which is the copy sessions read.</p>
     <div class="scroll">
       <table>
         <thead><tr><th>Concept</th><th>Direction</th><th>The thing you play with</th><th>Where</th></tr></thead>
         <tbody id="built"></tbody>
       </table>
     </div>
-    <h3>Proposed</h3>
+    <h3>Approved, not built yet</h3>
     <div class="scroll">
       <table>
         <thead><tr><th>Concept</th><th>Direction</th><th>Starting point in Splashery or your work</th><th>Look</th></tr></thead>
         <tbody id="proposed"></tbody>
       </table>
     </div>
-    <p><b>Alternates:</b> Molecule (molecular visualization: the molecule viewer, crystals, orbitals), Plot (data visualization: data in 3D and the climate records), Arcade (games: the arcade shelf and Amordle), Lesson (explorable explanations: the Tinkerer's Manual). Each is a preset in the prompt maker.</p>
+    <p><b>Alternates, if one is replaced:</b> Plot (data visualization: data in 3D and the climate records), Arcade (games: the arcade shelf and Amordle), Lesson (explorable explanations: the Tinkerer's Manual). Each is a preset in the prompt maker. Threshold, which stood on the capstone, was rejected and is gone.</p>
   </section>
 
   <section id="projects">
     <h2>Projects</h2>
-    <p class="lede">What every site shows, so the twelve differ in voice and not in substance. The wording sessions use is in <code>docs/FACTS.md</code>.</p>
+    <p class="lede">The ten that every site presents, so the twelve differ in voice and not in substance. Splashery is first and largest, grooph is second, the capstone is last and brief; the rest may go in any order. The wording sessions use is in <code>docs/FACTS.md</code>.</p>
     <div class="scroll">
       <table>
-        <thead><tr><th>On every site</th><th>What it does</th></tr></thead>
+        <thead><tr><th>Group</th><th>Project</th><th>What it does</th></tr></thead>
         <tbody>
-          <tr><td><b>Splashery</b><br>first and largest</td><td>An interactive Gaussian splat playground in the browser: pick a toy, spin it, poke it, paint it, drop it, make your own, share it.</td></tr>
-          <tr><td><b>grooph</b></td><td>Visual loop graphs for coding-agent workflows: draw who builds, who checks, where a person decides and when the work stops.</td></tr>
-          <tr><td><b>The capstone</b></td><td>The speed-accuracy trade-off in perceptual decision-making: evidence accumulation as a diffusion process, decision boundaries by dynamic programming.</td></tr>
-          <tr><td><b>English OpenList</b></td><td>A free, open list of about 345,000 valid English words, with the provenance of every one, and a browser explorer.</td></tr>
-          <tr><td><b>resmon</b></td><td>A local-first literature-monitoring desktop application: scheduled searches, deduplication, reading reports.</td></tr>
+          <tr><td>Visualization and graphics</td><td><b>Splashery</b></td><td>An interactive Gaussian splat playground in the browser: pick a toy, spin it, poke it, paint it, drop it, make your own, share it.</td></tr>
+          <tr><td rowspan="2">Software engineering</td><td><b>grooph</b></td><td>Visual loop graphs for coding-agent workflows: draw who builds, who checks, where a person decides and when the work stops.</td></tr>
+          <tr><td><b>reword_nerd</b></td><td>A local-first browser workbench that turns a document or a set of images into a portable, reviewable workbook of rewriting prompts.</td></tr>
+          <tr><td rowspan="2">Information retrieval</td><td><b>resmon</b></td><td>A local-first literature-monitoring desktop application: scheduled searches, deduplication, reading reports.</td></tr>
+          <tr><td><b>Link Meteor</b></td><td>A Chrome extension that collects links with their anchor text and URL in separate fields.</td></tr>
+          <tr><td rowspan="4">Words</td><td><b>English OpenList</b></td><td>A free, open list of about 345,000 valid English words, with the provenance of every one. About to be expanded.</td></tr>
+          <tr><td><b>Ars Magna</b></td><td>An anagram finder: every way a text's exact letters re-partition into real English words.</td></tr>
+          <tr><td><b>aqrobat</b></td><td>A local QR lab: QR artwork built from letters, symbols or emoji.</td></tr>
+          <tr><td><b>Amordle</b></td><td>A word game: any word length from 2 to 35 letters, a daily puzzle, ranked multiplayer.</td></tr>
+          <tr><td>Last</td><td><b>The capstone</b></td><td>The speed-accuracy trade-off in perceptual decision-making. Listed, never featured: one short entry at the end.</td></tr>
         </tbody>
       </table>
     </div>
     <ul class="bullets">
-      <li><b>The shelf</b>, two or three per site, chosen to suit it: Ars Magna (anagram finder), Amordle (word game), aqrobat (QR artwork from characters), Link Meteor (link collector).</li>
-      <li><b>Left out unless you ask:</b> the Spring 2026 AI Research Prototype Portfolio and reword-nerd.</li>
+      <li><b>Left out everywhere:</b> the Spring 2026 AI Research Prototype Portfolio, and anything private.</li>
       <li><b>Also on every site:</b> your degrees and advisors, the five research interests with the concept's own one first, and the same eight links (CV, GitHub, blog, homepage, LinkedIn, X, YouTube, Hugging Face).</li>
       <li><b>Never on a site:</b> email, phone, references, grades, employment history, family details, private repositories.</li>
+      <li><b>Where each built concept stands against the ten:</b> v1 has all ten. The other five were built before the list existed and each lacks several; that pass is yours to call per concept after the walkthrough.</li>
     </ul>
   </section>
 
@@ -309,7 +309,7 @@ When your current work is committed:
     <h2>Rules</h2>
     <p class="lede">Three, and each has a way to check it. They sit at the top of <code>CLAUDE.md</code>, which every session on this repo loads by itself.</p>
     <ol class="steps">
-      <li><b>American English.</b>US spelling and US dates in pages, code, comments, commit messages and pull requests. Checked by <code>node tools/us-spelling.mjs &lt;path&gt;</code>, which must print nothing before a session ships.</li>
+      <li><b>American English.</b>US spelling and US dates in pages, code, comments, commit messages and pull requests. Checked by <code>node tools/us-spelling.mjs &lt;path&gt;</code>, which must print nothing before a session ships. Also a standing instruction for every project on this machine.</li>
       <li><b>Project-first.</b>A page says what a project does and what a visitor can do with it. How it was made, AI assistance included, stays off the page. Workshop is the one exception.</li>
       <li><b>Claim-safe.</b>Every factual sentence traces to <code>docs/FACTS.md</code>, a public README, or a live page. Interests are written as interests. Each session lists the lines that are invented voice.</li>
     </ol>
@@ -321,32 +321,27 @@ When your current work is committed:
     <div class="stack">
       <h3>What was run</h3>
       <ul class="bullets">
-        <li>Spelling checker, after fixing: 0 hits on main, v1 update, One Splat, Specimen, Workshop and Toy Box. Overprint: 22 hits, left in place.</li>
-        <li>One Splat tests: 169,544 splits conserve mass, mean and covariance; 339,344 nodes match a brute-force recomputation.</li>
-        <li>Specimen tests: 12,299 checks, largest drift 9.99e-16. Workshop tests: all pass. Toy Box tests: all pass, including 1,187,541 covariance readings.</li>
-        <li>All six concepts and v1 loaded from staging in a browser: console empty on each.</li>
-        <li><b>Not run:</b> no interaction was re-driven after the spelling fix beyond loading each page; Safari and Firefox; anything at tablet width for Specimen, Workshop, Toy Box and Overprint, which their own sessions also list as unchecked.</li>
+        <li>Spelling checker: 0 hits across main and a fresh staging merge of v1 and all six concepts.</li>
+        <li>v1 after its update, in a browser at desktop width: four featured projects in order (Splashery, grooph, Ars Magna, Amordle), six listed (ending with the capstone), two posts, console empty.</li>
+        <li>Overprint after its fix: scripts parse, page loads from staging with an empty console, no horizontal scroll at the pane's width. It has no test suite of its own.</li>
+        <li>Merged, in order: portfolio #5, homepage #34, blog #20. The blog's contract check had passed.</li>
+        <li>Live after merging: the homepage serves the new CV link twice, the new interests and the new LinkedIn address, and none of the old ones; the blog serves the new CV link twice and none of the old.</li>
+        <li><b>Not run:</b> v1 at phone width after this change (the list it extends was checked at phone width earlier); any interaction on Overprint beyond loading and scrolling; Safari and Firefox.</li>
       </ul>
     </div>
     <div class="stack">
       <h3>Risks and open items</h3>
       <ul class="bullets">
-        <li>The four idle concept sessions will find their files changed on disk by one commit each. Their branches are in sync with GitHub; a session should re-read a file before editing it.</li>
-        <li>The v1 update branch was rebuilt on the new main and force-pushed. Its pull request shows the same change as before, minus one sentence.</li>
-        <li>Staging is a local merge that is not pushed. It needs rebuilding when a branch changes; the operator session does that.</li>
-        <li>The spelling checker knows a long list of words, not every word. It reads identifiers too, so a fix can rename a variable; that is why tests are run after it.</li>
-        <li>The registry lists Overprint's preview port as 4178, which is my assignment, not what its session used.</li>
+        <li>Five concept pages still describe fewer than ten projects, and One Splat lists the capstone second among its other work instead of last. Left for the walkthrough, as you asked.</li>
+        <li>Overprint features the capstone in a full section, against the new rule. See decision 4.</li>
+        <li>Each idle concept session will find its files changed on disk by one commit. Branches are in sync with GitHub; a session should re-read a file before editing it.</li>
+        <li>Staging is a local merge that is not pushed. The operator session rebuilds it when a branch changes.</li>
+        <li>The spelling checker knows a long list of words, not every word, and renames identifiers when it fixes. Tests are run after it for that reason.</li>
       </ul>
     </div>
     <div class="stack">
-      <h3>Merging the three small pull requests</h3>
-      <div class="prompt"><header><span>Homepage</span><button type="button" data-copy="m1">Copy</button></header><pre id="m1">gh pr merge 34 --repo ryanjosephkamp/ryanjosephkamp.github.io --squash --delete-branch</pre></div>
-      <div class="prompt"><header><span>Blog</span><button type="button" data-copy="m2">Copy</button></header><pre id="m2">gh pr merge 20 --repo ryanjosephkamp/blog --squash --delete-branch</pre></div>
-      <div class="prompt"><header><span>v1</span><button type="button" data-copy="m3">Copy</button></header><pre id="m3">gh pr merge 5 --repo ryanjosephkamp/portfolio --squash --delete-branch</pre></div>
-    </div>
-    <div class="stack">
       <h3>How to undo</h3>
-      <p>Each spelling fix is one commit on its branch: One Splat <code>f604279</code>, Specimen <code>b4ec19e</code>, Toy Box <code>c024e60</code>, Workshop <code>6380d28</code>. <code>git revert</code> on any of them restores the earlier text and names. The rules are two commits on main, <code>650a4dd</code> and <code>bd28d12</code>. The first version of v1 is kept at the tag <code>v1-anagram-tiles</code>.</p>
+      <p>Each merge is one squashed commit, so <code>git revert</code> undoes it: v1 <code>935a3e7</code> on the portfolio repo (the first version is also kept at the tag <code>v1-anagram-tiles</code>), the homepage <code>0a2e47c</code>, the blog <code>6ac945a</code>. Overprint's fix is <code>3ef973d</code> on its branch. The rules are commits on portfolio main from <code>650a4dd</code> onward. The standing instruction is the whole of <code>~/.claude/CLAUDE.md</code>; delete the file to remove it.</p>
     </div>
   </section>
 </main>
@@ -354,7 +349,7 @@ When your current work is committed:
 <script>
   // The registry. docs/CONCEPTS.md in the repo is the copy sessions read; keep the two in step.
   const BUILT = [
-    { slug: 'v1', name: 'Anagram Tiles', dir: 'Words and tools', sig: 'Your name as letter tiles that rearrange into its real anagrams.', where: 'main · update in <a href="https://github.com/ryanjosephkamp/portfolio/pull/5">#5</a>', sw: ['#2b45d4', '#ffffff', '#d6f24a'] },
+    { slug: 'v1', name: 'Anagram Tiles', dir: 'Words and tools', sig: 'Your name as letter tiles that rearrange into its real anagrams.', where: 'main (merged)', sw: ['#2b45d4', '#ffffff', '#d6f24a'] },
     { slug: 'one-splat', name: 'One Splat', dir: 'Computer graphics', sig: 'Your name drawn with Gaussian splats, on a dial from 1 to 16,384.', where: '<a href="https://github.com/ryanjosephkamp/portfolio/pull/4">#4</a>', sw: ['#0a0a0b', '#ff6a3a', '#8fe6f0'] },
     { slug: 'specimen', name: 'Specimen', dir: 'Scientific visualization', sig: 'A neuron of 4,096 splats that you focus and fire.', where: '<a href="https://github.com/ryanjosephkamp/portfolio/pull/1">#1</a>', sw: ['#f7f8f6', '#3d1f6b', '#d8345f'] },
     { slug: 'toybox', name: 'Toy Box', dir: 'Digital media', sig: 'Your name as a splat toy to spin, poke, paint and drop.', where: '<a href="https://github.com/ryanjosephkamp/portfolio/pull/3">#3</a>', sw: ['#ffd23f', '#3fb8c4', '#ff4f9a'] },
@@ -363,10 +358,10 @@ When your current work is committed:
   ];
 
   const PROPOSED = [
-    { slug: 'threshold', name: 'Threshold', dir: 'visual perception and decision-making', port: 4181,
-      look: 'a psychophysics booth: calibrated mid-gray, a fixation cross, nothing decorative',
-      from: 'The capstone, met in person',
-      angle: 'How few splats does it take to recognize a picture? My undergraduate capstone modeled the speed-accuracy trade-off in perceptual decision-making as a diffusion process. Let a visitor meet that trade-off in person: pictures that resolve out of a handful of splats, a response, and their own speed and accuracy drawn as they go.' },
+    { slug: 'molecule', name: 'Molecule', dir: 'molecular visualization', port: 4181,
+      look: 'a chemistry lecture hall: a slate blackboard, chalk, and CPK colors for the atoms',
+      from: 'The molecule viewer, crystals, orbitals',
+      angle: 'Molecules you can hold. Splashery has a molecule viewer that opens PDB, mmCIF, SDF, MOL and XYZ files or fetches an entry from the Protein Data Bank and draws it as balls and sticks, space-filling atoms, a cartoon or a surface, with distance and angle measurement. It also has crystal unit cells built from published lattice constants, and hydrogen orbitals sampled from |psi| squared. The interest is molecular visualization.' },
     { slug: 'ripple', name: 'Ripple', dir: 'physical simulation, waves and optics', port: 4182,
       look: 'the wet one: bright, shallow water over white tile, lit from above',
       from: 'The ripple tank and the light bench',
@@ -390,7 +385,6 @@ When your current work is committed:
   ];
 
   const ALTERNATES = [
-    { slug: 'molecule', name: 'Molecule', dir: 'molecular visualization', port: 4187, look: 'a chemistry lecture hall: slate board, chalk colors', from: '', angle: 'Molecules you can hold. Splashery has a molecule viewer that opens PDB, mmCIF, SDF and XYZ files or fetches an entry from the Protein Data Bank, crystal unit cells from published lattice constants, and hydrogen orbitals sampled from |psi| squared.' },
     { slug: 'plot', name: 'Plot', dir: 'data visualization', port: 4188, look: 'graph paper and a pen plotter: fine grid, one ink per series', from: '', angle: 'Data you can turn over. Splashery turns a CSV into a 3D scatter, bars or a surface, and draws climate records: Mauna Loa CO2 as a spiral, GISTEMP temperature anomalies as stripes.' },
     { slug: 'arcade', name: 'Arcade', dir: 'games and interaction design', port: 4189, look: 'a vector arcade monitor: bright lines on black glass', from: '', angle: 'Play with rules. Splashery has an arcade shelf of games made of splats, and Amordle is a word game with ranked multiplayer. Make the portfolio itself a small game that is worth a second try.' },
     { slug: 'lesson', name: 'Lesson', dir: 'explorable explanations', port: 4190, look: 'a science classroom: a green chalkboard and a hand-drawn diagram', from: '', angle: 'Learning by handling. Splashery\'s Tinkerer\'s Manual teaches what one splat is, how a recipe is built, and a splat equation language. Teach a visitor one true thing about splats in a minute, by letting them do it.' },
@@ -428,11 +422,11 @@ START: work in this concept's own worktree on ${slug === 'v1' ? 'a new branch up
       run: '<b>Run it with:</b> Opus at Xhigh, a new session with its own worktree, about 45 minutes.',
       fields: [
         { id: 'preset', label: 'Start from', type: 'select', options: () => [['', 'A blank brief'], ...[...PROPOSED, ...ALTERNATES].map((c) => [c.slug, c.name])] },
-        { id: 'name', label: 'Name', ph: 'Threshold' },
-        { id: 'slug', label: 'Slug', hint: 'lowercase, the folder name', ph: 'threshold' },
-        { id: 'dir', label: 'Research direction', ph: 'visual perception and decision-making' },
+        { id: 'name', label: 'Name', ph: 'Plot' },
+        { id: 'slug', label: 'Slug', hint: 'lowercase, the folder name', ph: 'plot' },
+        { id: 'dir', label: 'Research direction', ph: 'data visualization' },
         { id: 'port', label: 'Preview port', ph: '4191' },
-        { id: 'look', label: 'Territory', hint: 'a place or object, unlike every other concept', ph: 'a psychophysics booth: calibrated mid-gray', wide: true },
+        { id: 'look', label: 'Territory', hint: 'a place or object, unlike every other concept', ph: 'graph paper and a pen plotter', wide: true },
         { id: 'angle', label: 'Angle', hint: 'what is true about you and this direction, and which part of Splashery it stands on', type: 'area', wide: true },
       ],
       make: (v) => [['New concept: ' + (v.name || 'untitled'), newConcept({ name: v.name || 'UNTITLED', slug: v.slug || 'untitled', dir: v.dir || 'the direction', port: v.port || '4191', look: v.look || 'the territory', angle: v.angle || 'the angle' })]],
@@ -443,7 +437,7 @@ START: work in this concept's own worktree on ${slug === 'v1' ? 'a new branch up
       fields: [
         { id: 'targets', label: 'Which concepts', type: 'checks' },
         { id: 'notes', label: 'Your notes', hint: 'one per line; the same notes go to every concept you ticked', type: 'area', wide: true },
-        { id: 'core', label: 'Also bring it up to the core set', type: 'toggle' },
+        { id: 'core', label: 'Also bring it up to the ten projects', type: 'toggle' },
       ],
       make: (v) => v.targets.map((slug) => ['Refine ' + nameOf(slug), `Refine one of my concept portfolio sites from my notes.
 
@@ -452,7 +446,7 @@ ${lane(slug, 'refine')}
 MY NOTES:
 ${v.notes || '(none yet)'}
 ${v.core ? `
-ALSO: bring the page up to the core set in docs/FACTS.md. All five projects are present, Splashery first and largest; add any that are missing in this concept's own idiom, each with a small live piece of art made from the concept's material. Every project leads with what it does.
+ALSO: bring the page up to the project list in docs/FACTS.md. All ten are present: Splashery first and largest, grooph second, the capstone last and brief. Add any that are missing in this concept's own idiom; the playbook says which ones earn a small live piece of art. Every project leads with what it does, and nothing is built on the capstone.
 ` : ''}
 Keep the signature and the territory unless a note says to change them. See each fix working in a real browser at desktop and phone widths, and keep \`node tools/us-spelling.mjs ${slug === 'v1' ? '.' : 'concepts/' + slug}\` printing nothing.
 
@@ -463,7 +457,6 @@ DONE WHEN: every note is either fixed and seen working, or answered with the rea
       run: '<b>Run it with:</b> Opus at High. A project needs a small piece of live art in each concept\'s material, which is design work. One session per concept, in parallel.',
       fields: [
         { id: 'pname', label: 'Project name', ph: 'Night Sky Atlas' },
-        { id: 'place', label: 'Where it goes', type: 'select', options: () => [['shelf', 'The shelf (optional per site)'], ['core', 'The core set (every site)']] },
         { id: 'does', label: 'What it does', hint: 'two sentences a visitor could check for themselves', type: 'area', wide: true },
         { id: 'links', label: 'Links', hint: 'demo, code, write-up', ph: 'https://…  ·  https://github.com/ryanjosephkamp/…', wide: true },
         { id: 'part', label: 'Your part', hint: 'optional; one clause, about the project and not the process', ph: '', wide: true },
@@ -472,13 +465,12 @@ DONE WHEN: every note is either fixed and seen working, or answered with the rea
       make: (v) => {
         const facts = `PROJECT: ${v.pname || 'the project'}
 WHAT IT DOES: ${v.does || '(two sentences)'}
-LINKS: ${v.links || '(links)'}${v.part ? `\nMY PART, only where a page needs it: ${v.part}` : ''}
-PLACE: ${v.place === 'core' ? 'the core set, on every site' : 'the shelf'}`;
+LINKS: ${v.links || '(links)'}${v.part ? `\nMY PART, only where a page needs it: ${v.part}` : ''}`;
         const first = ['First, once, in this operator session or any session on main', `Add a project to the facts for my portfolio sites in ryanjosephkamp/portfolio.
 
 ${facts}
 
-On main: add it to docs/FACTS.md under "${v.place === 'core' ? 'The core set' : 'The shelf'}", in the same form as its neighbors, leading with what it does. If a README or live page exists, check each sentence against it first. Run \`node tools/us-spelling.mjs docs\`. Commit and push to main.
+On main: add it to the project list in docs/FACTS.md, in the group it belongs to, after grooph and before the capstone, in the same form as its neighbors and leading with what it does. Update the count ("all ten") wherever the facts, the playbook and CLAUDE.md state it. If a README or live page exists, check each sentence against it first. Run \`node tools/us-spelling.mjs docs\`. Commit and push to main.
 
 DONE WHEN: docs/FACTS.md on origin/main has the entry. Reply with the entry as written.`];
         return [first, ...v.targets.map((slug) => ['Then: ' + nameOf(slug), `Add a project to one of my concept portfolio sites.
@@ -487,7 +479,7 @@ ${lane(slug, 'add-project')}
 
 ${facts}
 
-Its facts are in docs/FACTS.md on main (pull main first). Add it to this page in the concept's own idiom: the same structure the page's other projects use, sized like a ${v.place === 'core' ? 'core' : 'shelf'} project, with a small live piece of art made from the concept's material in place of a screenshot. Lead with what it does.
+Its facts are in docs/FACTS.md on main (pull main first). Add it to this page in the concept's own idiom: the same structure the page's other projects use, after grooph and before the capstone, with a small live piece of art made from the concept's material if its neighbors have one. Lead with what it does.
 
 DONE WHEN: the project shows at desktop and phone widths with an empty console, \`node tools/us-spelling.mjs ${slug === 'v1' ? '.' : 'concepts/' + slug}\` prints nothing, and the branch is pushed. Reply with a screenshot of the new piece and one line on what the art is.`])];
       },
@@ -515,12 +507,12 @@ DONE WHEN: \`git grep\` for the old value finds nothing on any portfolio branch,
     },
     'conform': {
       label: 'Bring up to the rules',
-      run: '<b>Run it with:</b> Sonnet at Medium for spelling alone; Opus at High when the core set needs new pieces built.',
+      run: '<b>Run it with:</b> Sonnet at Medium for spelling alone; Opus at High when projects need adding.',
       fields: [
         { id: 'targets', label: 'Which concepts', type: 'checks' },
         { id: 'spelling', label: 'American English', type: 'toggle', on: true },
         { id: 'first', label: 'Project-first', type: 'toggle', on: true },
-        { id: 'core', label: 'Core set', type: 'toggle' },
+        { id: 'core', label: 'All ten projects', type: 'toggle' },
       ],
       make: (v) => v.targets.map((slug) => ['Bring up to the rules: ' + nameOf(slug), `Bring one of my concept portfolio sites up to the current rules.
 
@@ -528,7 +520,7 @@ ${lane(slug, 'rules')}
 ${v.spelling ? `
 AMERICAN ENGLISH: run \`node tools/us-spelling.mjs --fix ${slug === 'v1' ? '.' : 'concepts/' + slug}\`, read the diff (it renames identifiers too, the same way in every file), run the concept's tests and load the page.` : ''}${v.first ? `
 PROJECT-FIRST: every project leads with what it does and what a visitor can do with it. How it was made, AI assistance included, comes off the page${slug === 'workshop' ? ' (Workshop is the exception: its subject is the process, so keep it)' : ''}.` : ''}${v.core ? `
-CORE SET: the five projects in docs/FACTS.md are all present, Splashery first and largest. Add any that are missing in this concept's own idiom, each with a small live piece of art.` : ''}
+PROJECTS: all ten in docs/FACTS.md are present: Splashery first and largest, grooph second, the capstone last and brief. Add any that are missing in this concept's own idiom, and move the capstone to the end if it is anywhere else.` : ''}
 
 DONE WHEN: the spelling check prints nothing, the page loads at desktop and phone widths with an empty console, and the branch is pushed. Reply with one line per rule: what changed.`]),
     },
