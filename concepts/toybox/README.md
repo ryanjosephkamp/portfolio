@@ -1,7 +1,7 @@
 # Toy Box
 
 A concept portfolio for Ryan Kamp as a digital media researcher, with
-[Splashery](https://ryanjosephkamp.github.io/splashery/) as the centrepiece. One page, static files,
+[Splashery](https://ryanjosephkamp.github.io/splashery/) as the centerpiece. One page, static files,
 no build step, no dependencies.
 
 **The signature:** Ryan's name is a toy made of Gaussian splats. Spin it, poke it, paint it, drop it

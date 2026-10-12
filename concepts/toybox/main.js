@@ -117,7 +117,7 @@ const C = {
   violet: [0.42, 0.17, 1], ink: [0.11, 0.06, 0.21], sky: [0.59, 0.94, 1], dough: [0.95, 0.66, 0.32],
 };
 const LETTERS = 'RYANKAMP';
-const LETTER_COLOURS = [C.yellow, C.pink, C.white, C.orange, C.white, C.orange, C.pink, C.yellow];
+const LETTER_COLORS = [C.yellow, C.pink, C.white, C.orange, C.white, C.orange, C.pink, C.yellow];
 const LETTER_CSS = ['#ffd60a', '#ff3d8b', '#fffdf5', '#ff6a1f', '#fffdf5', '#ff6a1f', '#ff3d8b', '#ffd60a'];
 
 const TOY_INFO = {
@@ -129,7 +129,7 @@ const TOY_INFO = {
 };
 
 // Each builder fills toy space (roughly -1.5..1.5 wide) with n flat splats:
-// a middle, a normal, a colour and a size. Everything is seeded.
+// a middle, a normal, a color and a size. Everything is seeded.
 function makeToy(n) {
   return {
     n, home: new Float32Array(n * 3), nrm: new Float32Array(n * 3), base: new Float32Array(n * 3),
@@ -188,7 +188,7 @@ function buildName(n) {
     const pxl = p % W, pyl = (p / W) | 0;
     const letter = Math.max(0, Math.min(7, Math.round(data[p * 4] / 28) - 1));
     const x = (pxl + rand() - mx) / S, y = -(pyl + rand() - my) / S;
-    const col = LETTER_COLOURS[letter], size = s0 * (0.8 + 0.5 * rand()), j = 0.9 + 0.14 * rand();
+    const col = LETTER_COLORS[letter], size = s0 * (0.8 + 0.5 * rand()), j = 0.9 + 0.14 * rand();
     T.census[letter]++;
     if (side) {
       let gx = alpha(pxl + 1, pyl) - alpha(pxl - 1, pyl), gy = alpha(pxl, pyl + 1) - alpha(pxl, pyl - 1);
@@ -378,7 +378,7 @@ void main() {
   const HINTS = {
     spin: 'Drag to spin it. Tap a spot to poke it.',
     poke: 'Tap or drag across it: every touch rings out and settles.',
-    paint: 'Pick a colour and drag across the toy.',
+    paint: 'Pick a color and drag across the toy.',
     blow: 'Press and hold next to it to blow.',
   };
 

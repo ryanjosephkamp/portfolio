@@ -34,7 +34,7 @@ for (let toy = 0; toy < TOYS.length; toy++) {
   }
 }
 
-// 3. Every value a dab's coordinate, colour, yaw or pitch byte can take survives
+// 3. Every value a dab's coordinate, color, yaw or pitch byte can take survives
 //    being turned into a number and back.
 for (let b = 0; b < 256; b++) {
   assert.equal(q8(d8(b)), b);

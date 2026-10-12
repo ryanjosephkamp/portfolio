@@ -3,7 +3,7 @@
 
 export const TOYS = ['name', 'donut', 'knot', 'planet', 'photo'];
 
-// Paint colours, 3 bits in a link.
+// Paint colors, 3 bits in a link.
 export const PAINTS = [
   [255, 61, 139], [255, 214, 10], [255, 253, 245], [255, 106, 31],
   [106, 44, 255], [27, 16, 54], [150, 240, 255], [232, 28, 46],
@@ -67,7 +67,7 @@ export function fromBase64Url(text) {
 }
 
 // A scene is: which toy, whether it has been dropped, how it is turned, and the
-// paint. Four header bytes, then four bytes for each dab (x, y, z, colour).
+// paint. Four header bytes, then four bytes for each dab (x, y, z, color).
 export function encodeScene({ toy, drop, yawByte, pitchByte, strokes }) {
   const kept = strokes.slice(-STROKE_MAX);
   const bytes = new Uint8Array(4 + kept.length * 4);
