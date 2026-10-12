@@ -129,8 +129,10 @@ uniform vec3 view; // scale, then offset
 uniform vec2 size;
 uniform float dilate;
 uniform float gain;
+uniform vec3 color;
+uniform float tint; // 0: every splat the same light. 1: coloured by the angle of its long axis.
 out vec2 q;
-out float peak;
+out vec3 light0;
 void main() {
   vec2 mu = mix(p0.xy, c0.xy, blend) * view.x + view.yz;
   float s2 = view.x * view.x;
@@ -149,17 +151,20 @@ void main() {
   vec2 at = mu + 3.0 * (sqrt(l1) * v1 * corner.x + sqrt(l2) * v2 * corner.y);
   gl_Position = vec4(at.x / size.x * 2.0 - 1.0, 1.0 - at.y / size.y * 2.0, 0.0, 1.0);
   q = corner * 3.0;
-  peak = gain * mass / (6.2831853 * sqrt(l1 * l2));
+  float peak = gain * mass / (6.2831853 * sqrt(l1 * l2));
+  // An axis has no direction, so the hue goes round once per half turn.
+  vec3 wheel = 0.5 + 0.5 * cos(2.0 * atan(v1.y, v1.x) + vec3(0.0, 2.0944, 4.1888));
+  float stretch = smoothstep(0.04, 0.45, (l1 - l2) / (l1 + l2));
+  light0 = mix(color, 0.72 * mix(vec3(0.8), wheel, stretch), tint) * peak;
 }`;
 
 const FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 q;
-in float peak;
-uniform vec3 color;
+in vec3 light0;
 out vec4 light;
 void main() {
-  light = vec4(color * peak * exp(-0.5 * dot(q, q)), 1.0);
+  light = vec4(light0 * exp(-0.5 * dot(q, q)), 1.0);
 }`;
 
 function createBeam(canvas) {
@@ -184,7 +189,7 @@ function createBeam(canvas) {
     return null;
   }
   const uniform = (name) => gl.getUniformLocation(program, name);
-  const u = { blend: uniform('blend'), view: uniform('view'), size: uniform('size'), dilate: uniform('dilate'), gain: uniform('gain'), color: uniform('color') };
+  const u = { blend: uniform('blend'), view: uniform('view'), size: uniform('size'), dilate: uniform('dilate'), gain: uniform('gain'), color: uniform('color'), tint: uniform('tint') };
 
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
@@ -229,7 +234,7 @@ function createBeam(canvas) {
       gl.bindBuffer(gl.ARRAY_BUFFER, instances);
       gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     },
-    draw(fit, level, blend, view) {
+    draw(fit, level, blend, view, tint) {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(10 / 255, 10 / 255, 11 / 255, 1); // the page's own black
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -247,6 +252,7 @@ function createBeam(canvas) {
       gl.uniform1f(u.dilate, DILATE);
       gl.uniform1f(u.gain, GAIN);
       gl.uniform3fv(u.color, BEAM);
+      gl.uniform1f(u.tint, tint ? 1 : 0);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 2 ** level);
@@ -388,6 +394,7 @@ function hero() {
   let stop = () => {};
   let queued = false;
   let touched = false;
+  let tinted = false;
 
   const top = () => (fit ? (beam ? fit.tree.levels : Math.min(fit.tree.levels, 11)) : 0);
 
@@ -458,7 +465,7 @@ function hero() {
   function draw() {
     if (!fit || !view) return;
     const { level, blend } = phase(t);
-    if (beam) beam.draw(fit, level, blend, view);
+    if (beam) beam.draw(fit, level, blend, view, tinted);
     else drawLevel2D(flat, fit, level, blend, view);
 
     // The probe follows its splat's line of descent when the level changes.
@@ -551,6 +558,14 @@ function hero() {
     if (level === undefined) return;
     touched = true;
     glide(Number(level), 500);
+  });
+
+  const tint = $('tint');
+  if (!beam) tint.hidden = true;
+  tint.addEventListener('click', () => {
+    tinted = !tinted;
+    tint.setAttribute('aria-pressed', tinted);
+    request();
   });
 
   const aim = (e) => {

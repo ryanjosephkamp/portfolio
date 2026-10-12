@@ -129,6 +129,10 @@ input[type="range"]::-moz-range-track { height: 1px; background: var(--rule); }
 .lede #count { color: var(--beam); font-weight: 600; font-variant-numeric: tabular-nums; }
 .how { color: var(--dim); }
 #fit-text { width: 13.5em; max-width: 100%; margin-left: 0.3em; padding: 0.25em 0.55em; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); color: var(--beam-hot); font: 700 0.95em var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.switch { margin-left: 0.5em; padding: 0.3em 0.7em; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); color: var(--ink); font: 400 0.8em var(--mono); letter-spacing: 0.04em; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.switch:hover { border-color: var(--dim); }
+.switch[aria-pressed="true"] { border-color: var(--probe); color: var(--probe); }
+.switch[hidden] { display: none; }
 #fit-text:focus-visible { border-color: var(--probe); outline-offset: 1px; }
 
 .readout { display: grid; gap: 0.3rem; padding: 0.9rem 1rem 1rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
