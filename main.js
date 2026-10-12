@@ -16,6 +16,34 @@ function breaksOf(phrase) {
   return set;
 }
 
+const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));
+
+// How many distinct orderings a bag of letters has, and where one ordering
+// falls among them alphabetically (1-based).
+function orderings(counts, n) {
+  return Object.values(counts).reduce((total, k) => total / factorial(k), factorial(n));
+}
+function rankOf(chars) {
+  const counts = {};
+  chars.forEach((c) => { counts[c] = (counts[c] || 0) + 1; });
+  const alphabet = Object.keys(counts).sort();
+  let rank = 1;
+  let n = chars.length;
+  for (const c of chars) {
+    for (const k of alphabet) {
+      if (k >= c) break;
+      if (counts[k] > 0) {
+        counts[k] -= 1;
+        rank += orderings(counts, n - 1);
+        counts[k] += 1;
+      }
+    }
+    counts[c] -= 1;
+    n -= 1;
+  }
+  return rank;
+}
+
 /**
  * A row of letter tiles that can be rearranged, by code or by hand,
  * into any of the phrases it knows. Every phrase must use the same letters.
@@ -276,14 +304,41 @@ function hero() {
   const pips = [...document.querySelectorAll('#pips i')];
   const button = document.getElementById('rearrange');
   const phrases = Object.keys(ENTRIES);
+  const rankEl = document.getElementById('rank');
   const found = new Set([NAME]);
+  try {
+    JSON.parse(localStorage.getItem('portfolio:found') || '[]').forEach((p) => { if (p in ENTRIES) found.add(p); });
+  } catch { /* storage unavailable: start fresh */ }
   let touched = false;
+
+  // Count the rank readout up or down to its new value.
+  let shown = 0;
+  let ticking = 0;
+  const showRank = (to) => {
+    cancelAnimationFrame(ticking);
+    const from = shown;
+    const t0 = performance.now();
+    const step = (now) => {
+      const k = reduceMotion.matches ? 1 : Math.min((now - t0) / 650, 1);
+      shown = Math.round(from + (to - from) * (1 - (1 - k) ** 4));
+      rankEl.textContent = shown.toLocaleString('en-US');
+      if (k < 1) ticking = requestAnimationFrame(step);
+    };
+    ticking = requestAnimationFrame(step);
+  };
+  const paintFound = () => {
+    pips.forEach((pip, i) => pip.classList.toggle('is-on', i < found.size));
+    count.innerHTML = found.size === phrases.length
+      ? 'All five. <a href="https://ars-magna.pages.dev/">Ars Magna</a> finds the rest.'
+      : `${found.size} of ${phrases.length} found`;
+  };
 
   const row = new TileRow(root, phrases, {
     maxUnit: 148,
     onChange({ phrase, text, byHand, typing, placed }) {
       root.dataset.state = phrase === NAME ? 'name' : phrase ? 'anagram' : 'scramble';
       word.textContent = text;
+      showRank(rankOf(letters(text)));
       if (typing) {
         pos.textContent = 'typing';
         def.textContent = `${placed} of ${row.order.length} tiles placed. Backspace takes one back.`;
@@ -298,13 +353,13 @@ function hero() {
         pos.textContent = 'no entry';
         def.textContent = 'Not English, as far as I know. Keep dragging.';
       }
-      pips.forEach((pip, i) => pip.classList.toggle('is-on', i < found.size));
-      count.innerHTML = found.size === phrases.length
-        ? 'All five. <a href="https://ars-magna.pages.dev/">Ars Magna</a> finds the rest.'
-        : `${found.size} of ${phrases.length} found`;
+      paintFound();
+      try { localStorage.setItem('portfolio:found', JSON.stringify([...found])); } catch { /* fine */ }
     },
   });
   root.dataset.state = 'name';
+  paintFound();
+  showRank(rankOf(letters(NAME)));
   row.dropIn();
 
   const next = () => {
@@ -344,7 +399,7 @@ function arsMagna() {
   const label = document.getElementById('ars-label');
   const phrases = ['ARS MAGNA', 'ANAGRAMS'];
   const row = new TileRow(root, phrases, {
-    maxUnit: 74,
+    maxUnit: 92,
     onChange({ phrase, text }) {
       root.dataset.state = phrase === phrases[1] ? 'anagram' : phrase ? 'name' : 'scramble';
       label.textContent = text;
@@ -501,6 +556,25 @@ function swapWords() {
   }, 1900);
 }
 
+// The dock slides in once the hero has gone, and marks the section in view.
+function dock() {
+  const el = document.getElementById('dock');
+  if (!el) return;
+  new IntersectionObserver(([entry]) => {
+    el.classList.toggle('is-on', !entry.isIntersecting);
+    el.inert = entry.isIntersecting;
+  }, { threshold: 0.12 }).observe(document.querySelector('.hero'));
+  const links = new Map([...el.querySelectorAll('a[href^="#"]')].map((a) => [a.hash.slice(1), a]));
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      links.forEach((a, id) => a.toggleAttribute('aria-current', false));
+      links.get(entry.target.id)?.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  ['work', 'research', 'writing', 'contact'].forEach((id) => spy.observe(document.getElementById(id)));
+}
+
 // Marks art panels as in view, which starts their (already visible) content moving.
 function watch() {
   const io = new IntersectionObserver((entries) => {
@@ -521,4 +595,5 @@ hero();
 arsMagna();
 splats();
 swapWords();
+dock();
 watch();

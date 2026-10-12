@@ -170,6 +170,7 @@ img, svg, canvas { display: block; max-width: 100%; }
     font-variation-settings 0.6s var(--ease-out),
     background-color 0.5s var(--ease-out),
     scale 0.25s var(--ease-out),
+    translate 0.25s var(--ease-out),
     box-shadow 0.25s var(--ease-out);
 }
 /* each tile carries its letter's place in the alphabet */
@@ -183,6 +184,9 @@ img, svg, canvas { display: block; max-width: 100%; }
   color: var(--ink-2);
   --casl: 0;
   --slnt: 0;
+}
+@media (hover: hover) {
+  .tile:not(.is-held):hover .tile__face { translate: 0 -5%; }
 }
 .tile.is-held .tile__face {
   scale: 1.08;
@@ -312,6 +316,38 @@ img, svg, canvas { display: block; max-width: 100%; }
   color: oklch(0.93 0.04 264);
 }
 .hero__inventory b { --mono: 1; font-weight: 800; color: var(--white); letter-spacing: 0.04em; }
+.hero__inventory .rank { color: var(--lime); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+
+/* ---------- Dock: section links that follow you past the hero ---------- */
+
+.dock {
+  position: fixed;
+  top: 0.8rem;
+  left: 50%;
+  z-index: var(--z-nav);
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  border-radius: 0.95rem;
+  background: var(--white);
+  box-shadow: 0 0.22rem 0 var(--tile-edge), 0 0.9rem 2rem oklch(0.2 0.1 264 / 0.2);
+  translate: -50% -220%;
+  transition: translate 0.55s var(--ease-out);
+}
+.dock.is-on { translate: -50% 0; }
+.dock a {
+  padding: 0.42rem 0.8rem 0.48rem;
+  border-radius: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.25s var(--ease-out);
+}
+.dock a:hover, .dock a[aria-current="true"] { background: var(--lime); }
+.dock a.dock__mark { --mono: 1; font-weight: 900; background: var(--blue); color: var(--white); }
+.dock :focus-visible { outline-color: var(--blue); }
 
 /* ---------- Sections ---------- */
 
@@ -468,7 +504,7 @@ img, svg, canvas { display: block; max-width: 100%; }
 }
 .index li {
   display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 7fr) minmax(0, 11fr) minmax(0, 8fr);
   gap: 0.5rem clamp(1rem, 3vw, 3rem);
   align-items: baseline;
   padding-block: clamp(1.1rem, 2.2vw, 1.6rem);
@@ -634,6 +670,7 @@ img, svg, canvas { display: block; max-width: 100%; }
 }
 
 @media (max-width: 30rem) {
+  .dock a { padding: 0.4rem 0.5rem 0.45rem; font-size: 0.85rem; }
   .nav ul { gap: 0.85rem; font-size: 0.95rem; }
   .interests li small { display: none; }
 }
