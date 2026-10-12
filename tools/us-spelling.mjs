@@ -11,7 +11,7 @@
 // name, so a fix renames identifiers too, the same way in every file it is
 // given. Run the page and its tests afterward.
 //
-// Left alone: web addresses, and any line that carries the marker
+// Left alone: web and data addresses, and any line that carries the marker
 //   us-spelling: keep
 // which is for a name someone else chose (a toy id, a quoted title).
 
@@ -145,7 +145,7 @@ function fixLine(line) {
   };
   // Lift web addresses out so nothing inside them is read as a word.
   const links = [];
-  let text = line.replace(/\b(?:https?:\/\/|www\.)[^\s"'<>)\]]+/g, (url) => {
+  let text = line.replace(/\b(?:https?:\/\/|www\.|data:)[^\s"'<>)\]]+/g, (url) => {
     links.push(url);
     return `\u0000${links.length - 1}\u0000`;
   });
