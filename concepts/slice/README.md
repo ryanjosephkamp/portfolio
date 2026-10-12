@@ -43,9 +43,24 @@ from the repository root, then open http://localhost:4184/concepts/slice/.
 Under the histogram the page says what the current window does to the walnut: what share of its
 492,072 voxels print black, gray and white. `verify.mjs` checks that readout for every window the
 sliders can make (32,640 of them) against a count made by looking at every voxel, one at a time.
-It also checks every pixel of every cut in all three directions, every ray of the straight-on
-maximum-intensity picture, and, given the path to Splashery's file, that all 1,845,290 voxels on
-the contact sheet equal the source.
+
+It also checks:
+
+- every pixel of every cut in all three directions;
+- the maximum-intensity picture, straight on against the largest voxel along each ray, and at
+  every whole degree of a full turn against a slow pass through the whole volume, with no pinholes;
+- the back-projection toy: from 180 views the rebuilt slice correlates with the true slice at 0.98
+  or better;
+- given the path to Splashery's file, that all 1,845,290 voxels on the contact sheet equal the
+  source.
+
+## Touch, scripts off, and the real toy
+
+- On a touch screen a tap cuts, a sideways drag follows the finger, and an up-and-down swipe
+  scrolls the page (`touch-action: pan-y` on every picture).
+- Without scripts the hero shows the contact sheet, and the parts that need the scan are hidden.
+- "The real thing" loads Splashery's own `walnut-ct` toy in its embed player, from Splashery's
+  site, only when the visitor asks. <!-- us-spelling: keep -->
 
 ## Credit
 

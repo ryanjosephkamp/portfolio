@@ -1,7 +1,7 @@
 // The light box: reads the walnut off its contact sheet and hangs the live pictures.
 // The math is in volume.js; this file is the DOM.
 
-import { SCAN, CUTS, PRESETS, AIR, SHELL, MIP_W, BINS, sheetToVolume, cut, mip, histogram, runningCount, windowCounts, lookup, rebuild } from './volume.js'; // prettier-ignore
+import { SCAN, CUTS, PRESETS, AIR, SHELL, BINS, sheetToVolume, cut, mip, solids, histogram, runningCount, windowCounts, lookup, shadowSet, viewAngle, rebuild } from './volume.js'; // prettier-ignore
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (s, root = document) => root.querySelector(s);
@@ -49,6 +49,7 @@ async function readVolume() {
 function start(vol) {
   const viewer = $('#viewer');
   const upTo = runningCount(histogram(vol));
+  const solid = solids(vol);
   const hist = histogram(vol);
   let lut = new Uint32Array(256);
   let dirty = { cuts: true, mip: true, window: true, ct: true };
@@ -88,7 +89,7 @@ function start(vol) {
     }
     for (const p of panes) {
       if (p.name === 'mip') {
-        if (dirty.mip) mip(vol, state.theta, p.raw);
+        if (dirty.mip) mip(solid, state.theta, p.raw);
         if (dirty.mip || dirty.window) print(p);
         const deg = Math.round((((state.theta * 180) / Math.PI) % 360 + 360) % 360);
         p.readout.textContent = `turned ${deg}°`;
@@ -159,18 +160,27 @@ function start(vol) {
       });
       continue;
     }
-    let down = false;
+    // A mouse cuts wherever it hovers. A finger cuts where it taps, or follows a sideways
+    // drag; an up-and-down swipe is left to scroll the page.
+    let down = null;
     p.view.addEventListener('pointerdown', (e) => {
-      down = true;
-      p.view.setPointerCapture(e.pointerId);
-      moveTo(p, e);
+      down = { x: e.clientX, y: e.clientY, moved: e.pointerType === 'mouse' };
+      if (down.moved) {
+        p.view.setPointerCapture(e.pointerId);
+        moveTo(p, e);
+      }
     });
     p.view.addEventListener('pointermove', (e) => {
-      if (down || e.pointerType === 'mouse') moveTo(p, e);
+      if (e.pointerType === 'mouse') return moveTo(p, e);
+      if (!down) return;
+      if (!down.moved && Math.abs(e.clientX - down.x) > Math.abs(e.clientY - down.y) + 3) down.moved = true;
+      if (down.moved) moveTo(p, e);
     });
-    const end = () => (down = false);
-    p.view.addEventListener('pointerup', end);
-    p.view.addEventListener('pointercancel', end);
+    p.view.addEventListener('pointerup', (e) => {
+      if (down && !down.moved) moveTo(p, e); // a tap
+      down = null;
+    });
+    p.view.addEventListener('pointercancel', () => (down = null));
     p.view.addEventListener('keydown', (e) => {
       const c = p.cut;
       const step = {
@@ -294,26 +304,31 @@ function start(vol) {
   const pg = pictureCanvas.getContext('2d');
   const top = new Uint8Array(SCAN.nx * SCAN.ny);
   let played = false;
+  let set = null; // the shadows of the slice below, kept until the slice changes
+  let setZ = -1;
+  let setMax = 1;
   function drawCT() {
     dirty.ct = false;
     const n = Number(views.value);
     $('#views-out').textContent = n;
-    cut(vol, 'top', state.pos[2], top);
-    const { picture, shadows } = rebuild(top, SCAN.nx, SCAN.ny, n);
+    if (setZ !== state.pos[2]) {
+      setZ = state.pos[2];
+      set = shadowSet(cut(vol, 'top', setZ, top), SCAN.nx, SCAN.ny);
+      setMax = 1;
+      for (const v of set.raw) if (v > setMax) setMax = v;
+    }
+    const picture = rebuild(set, SCAN.nx, SCAN.ny, n);
     const img = pg.createImageData(SCAN.nx, SCAN.ny);
     const out = new Uint32Array(img.data.buffer);
     for (let i = 0; i < picture.length; i++) out[i] = lut[clamp(Math.round(picture[i]), 0, 255)];
     pg.putImageData(img, 0, 0);
-    let max = 1;
-    for (const v of shadows) if (v > max) max = v;
     const H = shadowCanvas.height;
     const simg = sg.createImageData(BINS, H);
     const sout = new Uint32Array(simg.data.buffer);
     for (let y = 0; y < H; y++) {
-      const row = Math.floor((y * n) / H) * BINS;
+      const row = viewAngle(Math.floor((y * n) / H), n) * BINS;
       for (let b = 0; b < BINS; b++) {
-        const t = shadows[row + b] / max;
-        const [r, g, bl] = gray(t);
+        const [r, g, bl] = gray(set.raw[row + b] / setMax);
         sout[y * BINS + b] = 0xff000000 | (bl << 16) | (g << 8) | r;
       }
     }
@@ -369,8 +384,6 @@ function start(vol) {
     requestAnimationFrame(idle);
   }
 
-  $('.panes', viewer).hidden = false;
-  $('.window', viewer).hidden = false;
   viewer.classList.add('live');
   ask();
 }
@@ -389,4 +402,17 @@ layers.forEach((li, i) => {
   });
 });
 
-readVolume().then(start, (err) => console.warn('The walnut did not load; the contact sheet stays up.', err));
+// The real toy, from Splashery's own site, only when asked for.
+$('#real-load')?.addEventListener('click', () => {
+  const frame = document.createElement('iframe');
+  frame.src = 'https://ryanjosephkamp.github.io/splashery/embed/?toy=walnut-ct&labs=1&theme=dark&zoom=0.6';
+  frame.title = "Splashery: a walnut's CT scan as volume splats";
+  frame.allow = 'fullscreen';
+  $('#real').replaceChildren(frame);
+});
+
+// Without the scan the page falls back to what it is without scripts: the contact sheet.
+readVolume().then(start, (err) => {
+  document.documentElement.classList.remove('js');
+  console.warn('The walnut did not load; the contact sheet stays up.', err);
+});

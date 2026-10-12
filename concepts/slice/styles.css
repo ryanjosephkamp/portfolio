@@ -37,6 +37,7 @@
   box-sizing: border-box;
 }
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
@@ -132,7 +133,7 @@ ul {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 9px var(--gutter);
+  padding: 0 var(--gutter);
   background: var(--metal);
   border-bottom: 1px solid #77848c;
   box-shadow: 0 6px 14px -8px rgb(20 40 60 / 0.5);
@@ -160,10 +161,10 @@ ul {
 .rail a {
   color: var(--ink);
   text-decoration: none;
-  padding-block: 6px;
+  padding-block: 15px;
 }
 .rail a:hover {
-  box-shadow: 0 2px 0 var(--wax-deep);
+  box-shadow: inset 0 -3px 0 var(--wax-deep);
 }
 
 /* ---- Burnt-in annotation ---- */
@@ -321,12 +322,31 @@ h1 {
 }
 .film-fallback {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: auto;
+  max-height: 76vh;
+  margin-inline: auto;
   border-radius: 4px;
 }
-.live .film-fallback {
+/* With scripts the pictures hold their places from the first paint; without, the sheet stands in. */
+.js .film-fallback,
+html:not(.js) .panes,
+html:not(.js) .window,
+html:not(.js) .how,
+html:not(.js) .real-frame {
   display: none;
+}
+.for-touch {
+  display: none;
+}
+@media (hover: none) {
+  .for-touch {
+    display: inline;
+  }
+  .for-mouse {
+    display: none;
+  }
 }
 .panes {
   display: grid;
@@ -349,7 +369,7 @@ h1 {
   overflow: hidden;
   border-radius: 3px;
   cursor: crosshair;
-  touch-action: none;
+  touch-action: pan-y; /* a sideways drag cuts or turns; an up-and-down swipe scrolls the page */
   background: #070e16;
 }
 .pane[data-cut='mip'] .view {
@@ -406,7 +426,7 @@ h1 {
 }
 .wedge {
   position: relative;
-  touch-action: none;
+  touch-action: pan-y;
 }
 .wedge canvas {
   display: block;
@@ -426,7 +446,7 @@ h1 {
   background: rgb(255 62 165 / 0.07);
   border-inline: 2px solid var(--wax);
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y;
 }
 .grip {
   position: absolute;
@@ -536,7 +556,7 @@ h2 {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   text-decoration: none;
-  padding: 9px 13px;
+  padding: 12px 15px;
   border-radius: 999px;
   border: 1.5px solid currentColor;
   color: var(--ink);
@@ -928,8 +948,13 @@ html:not(.js) .film-atlas .small {
   }
 }
 @media (max-width: 560px) {
-  .rail nav a:nth-child(n + 3) {
+  .rail-text {
     display: none;
+  }
+  .rail nav {
+    flex: 1;
+    justify-content: space-between;
+    gap: 6px;
   }
   .sliders {
     grid-template-columns: 1fr;
@@ -942,6 +967,79 @@ html:not(.js) .film-atlas .small {
     font-size: 0.68rem;
     letter-spacing: 0.04em;
   }
+}
+
+/* A long film swings less. */
+@media (max-width: 980px) {
+  .film-exam {
+    animation-name: hang-small;
+  }
+}
+@keyframes hang-small {
+  0% { transform: rotate(-0.5deg); }
+  50% { transform: rotate(0.25deg); }
+  100% { transform: rotate(0); }
+}
+@media (pointer: coarse) {
+  .band {
+    top: -8px;
+    bottom: -8px;
+  }
+  .grip {
+    width: 36px;
+  }
+  .grip-lo {
+    left: -19px;
+  }
+  .grip-hi {
+    right: -19px;
+  }
+  .presets button {
+    min-height: 44px;
+  }
+}
+
+/* The real toy */
+.film-real {
+  margin-top: clamp(18px, 2.4vw, 32px);
+  rotate: -0.2deg;
+}
+.real-frame {
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+  border-radius: 8px;
+  border: 1px dashed var(--film-line);
+  background: #070e16;
+  overflow: hidden;
+}
+.real-frame:has(iframe) {
+  padding: 0;
+  border-style: solid;
+  place-content: stretch;
+}
+.real-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.real-frame button {
+  font: 700 0.86rem/1 var(--mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 16px 22px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--wax);
+  color: #23000f;
+}
+.real-frame button:hover {
+  background: #ff6bb9;
 }
 
 @media (prefers-reduced-motion: reduce) {

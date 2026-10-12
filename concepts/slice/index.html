@@ -23,7 +23,7 @@
     <a class="skip" href="#findings">Skip to the projects</a>
 
     <header class="rail">
-      <p class="rail-name"><span class="lamp" aria-hidden="true"></span>Light box 1</p>
+      <p class="rail-name"><span class="lamp" aria-hidden="true"></span><span class="rail-text">Light box 1</span></p>
       <nav aria-label="Sections">
         <a href="#splashery">Splashery</a>
         <a href="#findings">Findings</a>
@@ -49,8 +49,9 @@
               <a href="#splashery">Splashery</a>, his Gaussian splat playground.
             </p>
             <p class="how">
-              <strong>Move across any picture to cut the walnut there.</strong> Drag the last one to
-              turn it. The strip underneath sets the window.
+              <strong><span class="for-mouse">Move across</span><span class="for-touch">Tap, or drag sideways on,</span>
+              any picture to cut the walnut there.</strong> Drag the last one to turn it. The strip
+              underneath sets the window.
             </p>
           </div>
         </div>
@@ -72,7 +73,7 @@
             alt="A contact sheet of all 142 slices of a CT scan of a walnut, top to bottom: the shell as a bright ring, the kernel folded inside it."
           />
 
-          <div class="panes" hidden>
+          <div class="panes">
             <div class="pane" data-cut="top">
               <div class="view" tabindex="0" role="group" aria-label="Top down cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
                 <canvas width="113" height="115"></canvas>
@@ -103,7 +104,7 @@
             </div>
           </div>
 
-          <div class="window" hidden>
+          <div class="window">
             <div class="wedge" aria-hidden="true">
               <canvas id="hist" width="512" height="56"></canvas>
               <div class="band" id="band"><i class="grip grip-lo"></i><i class="grip grip-hi"></i></div>
@@ -175,7 +176,7 @@
             </div>
             <figcaption>
               <span class="burn">THE WHOLE EXAM · 142 SLICES · 12 TO A ROW</span>
-              The ring marks the slice in the top-down picture. Click any slice to hang it there.
+              The ring marks the slice in the top-down picture. Choose any slice to hang it there.
             </figcaption>
           </figure>
 
@@ -227,6 +228,26 @@
             <p class="small">Four films stacked on the box. Click the top one to peel it.</p>
           </article>
         </div>
+      
+        <article class="film film-wide film-real">
+          <div>
+            <p class="burn">D · THE REAL THING</p>
+            <h3>The same walnut, in Splashery</h3>
+            <p>
+              Everything above is this page's own drawing of the scan. This one is Splashery's: its
+              walnut toy in the embed player, the same CT scan drawn as volume splats. It turns when
+              idle and you can orbit it. In the playground you can cut it, or show only its dense
+              shell.
+            </p>
+            <p class="links">
+              <a href="https://ryanjosephkamp.github.io/splashery/?labs=1">Open Splashery with labs on</a>
+            </p>
+          </div>
+          <div class="real-frame" id="real">
+            <button type="button" id="real-load">Load the toy here</button>
+            <p class="small">It comes from Splashery's own site, and only when you ask.</p>
+          </div>
+        </article>
       </section>
 
       <!-- ================= Findings ================= -->

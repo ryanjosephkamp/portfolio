@@ -64,36 +64,53 @@ export function cut(vol, name, k, out) {
   return out;
 }
 
+// The walnut's own voxels (density 1 or more), listed once, slice by slice: where each one is
+// and how dense. The pictures that look through the whole walnut walk this list, not the air.
+export function solids(vol) {
+  const { nx, ny, nz } = SCAN;
+  let n = 0;
+  for (let i = 0; i < vol.length; i++) if (vol[i]) n++;
+  const x = new Uint8Array(n);
+  const y = new Uint8Array(n);
+  const v = new Uint8Array(n);
+  const start = new Uint32Array(nz + 1);
+  let k = 0;
+  for (let z = 0, i = 0; z < nz; z++) {
+    start[z] = k;
+    for (let yy = 0; yy < ny; yy++)
+      for (let xx = 0; xx < nx; xx++, i++)
+        if (vol[i]) {
+          x[k] = xx;
+          y[k] = yy;
+          v[k] = vol[i];
+          k++;
+        }
+  }
+  start[nz] = k;
+  return { x, y, v, start };
+}
+
 // The maximum-intensity picture: the densest voxel along every ray, with the walnut turned
-// by theta about its long axis. MIP_W x nz pixels.
+// by theta about its long axis. MIP_W x nz pixels. Each voxel lands on the one ray that
+// passes within half a voxel of its center.
 export const MIP_W = 132;
-export function mip(vol, theta, out) {
+export function mip(solid, theta, out) {
   const { nx, ny, nz } = SCAN;
   out = out || new Uint8Array(MIP_W * nz);
+  out.fill(0);
   const c = Math.cos(theta);
   const s = Math.sin(theta);
-  const cx = (nx - 1) / 2;
-  const cy = (ny - 1) / 2;
-  const half = MIP_W / 2;
-  const depth = 164;
-  for (let u = 0; u < MIP_W; u++) {
-    const du = u + 0.5 - half;
-    // Walk the ray once and remember which columns of voxels it crosses.
-    const cols = [];
-    for (let t = 0; t < depth; t++) {
-      const dt = t + 0.5 - depth / 2;
-      const x = Math.round(cx + du * c - dt * s);
-      const y = Math.round(cy + du * s + dt * c);
-      if (x >= 0 && x < nx && y >= 0 && y < ny) cols.push(x + nx * y);
-    }
-    for (let z = 0; z < nz; z++) {
-      const plane = z * nx * ny;
-      let m = 0;
-      for (let i = 0; i < cols.length; i++) {
-        const v = vol[plane + cols[i]];
-        if (v > m) m = v;
-      }
-      out[z * MIP_W + u] = m;
+  const ux = new Float32Array(nx);
+  const uy = new Float32Array(ny);
+  for (let i = 0; i < nx; i++) ux[i] = (i - (nx - 1) / 2) * c + MIP_W / 2;
+  for (let j = 0; j < ny; j++) uy[j] = (j - (ny - 1) / 2) * s;
+  const { x, y, v, start } = solid;
+  for (let z = 0; z < nz; z++) {
+    const row = z * MIP_W;
+    for (let k = start[z], end = start[z + 1]; k < end; k++) {
+      const u = Math.floor(ux[x[k]] + uy[y[k]]);
+      if (u < 0 || u >= MIP_W) continue;
+      if (v[k] > out[row + u]) out[row + u] = v[k];
     }
   }
   return out;
@@ -190,31 +207,42 @@ export function smear(acc, w, h, theta, q) {
   const cy = (h - 1) / 2;
   const mid = (BINS - 1) / 2;
   for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const r = (x - cx) * c + (y - cy) * s + mid;
+    let r = -cx * c + (y - cy) * s + mid;
+    const o = y * w;
+    for (let x = 0; x < w; x++, r += c) {
       const i = Math.floor(r);
       if (i < 0 || i >= BINS - 1) continue;
       const f = r - i;
-      acc[y * w + x] += q[i] * (1 - f) + q[i + 1] * f;
+      acc[o + x] += q[i] + (q[i + 1] - q[i]) * f;
     }
   }
 }
 
-// The picture rebuilt from `views` evenly spaced shadows over half a turn. Returns the
-// rebuilt densities (about 0..255) and the shadows themselves, one row per view.
-export function rebuild(pic, w, h, views) {
+// Every shadow of a picture, one for each whole degree of half a turn, raw and filtered.
+// Computed once for a slice; rebuild() then only has to smear.
+export const TURN = 180;
+export function shadowSet(pic, w, h) {
+  const raw = new Float32Array(TURN * BINS);
+  const filtered = new Float32Array(TURN * BINS);
+  for (let a = 0; a < TURN; a++) {
+    const p = raw.subarray(a * BINS, (a + 1) * BINS);
+    shadow(pic, w, h, (a * Math.PI) / TURN, p);
+    rampFilter(p, filtered.subarray(a * BINS, (a + 1) * BINS));
+  }
+  return { raw, filtered };
+}
+
+// Which of the 180 shadows a rebuild from `views` evenly spaced views uses.
+export const viewAngle = (i, views) => Math.floor((i * TURN) / views);
+
+// The picture rebuilt from `views` evenly spaced shadows: densities of about 0..255.
+export function rebuild(set, w, h, views) {
   const acc = new Float32Array(w * h);
-  const rows = new Float32Array(views * BINS);
-  const p = new Float32Array(BINS);
-  const q = new Float32Array(BINS);
-  for (let v = 0; v < views; v++) {
-    const theta = (v * Math.PI) / views;
-    shadow(pic, w, h, theta, p);
-    rows.set(p, v * BINS);
-    rampFilter(p, q);
-    smear(acc, w, h, theta, q);
+  for (let i = 0; i < views; i++) {
+    const a = viewAngle(i, views);
+    smear(acc, w, h, (a * Math.PI) / TURN, set.filtered.subarray(a * BINS, (a + 1) * BINS));
   }
   const scale = Math.PI / views;
   for (let i = 0; i < acc.length; i++) acc[i] *= scale;
-  return { picture: acc, shadows: rows };
+  return acc;
 }
