@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ryan Kamp — Specimen: splats that explain</title>
+  <meta name="description" content="Ryan Kamp is a graduate student in computer science at the University of Cincinnati, interested in scientific visualization. On this slide: a neuron made of 4,096 Gaussian splats that you can focus and fire.">
+  <meta name="theme-color" content="#f3f5f1">
+  <meta property="og:title" content="Ryan Kamp — Specimen">
+  <meta property="og:description" content="A neuron made of 4,096 Gaussian splats. Turn the focus and they merge into one. Tap it and it fires.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='18' width='56' height='28' rx='4' fill='%23fff' stroke='%23382a55' stroke-width='3'/%3E%3Ccircle cx='40' cy='32' r='8' fill='%235a2f8f'/%3E%3Crect x='9' y='23' width='14' height='18' fill='%23e9e4f2'/%3E%3C/svg%3E">
+  <link rel="preload" href="assets/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/newsreader-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#collection">Skip to the collection</a>
+
+  <nav class="nav wrap" aria-label="Primary">
+    <a class="nav__mark" href="#top" aria-label="Ryan Kamp, top of page">RK <span>Specimen</span></a>
+    <ul>
+      <li><a href="#collection">Collection</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#cabinet">Cabinet</a></li>
+      <li><a href="#provenance">Provenance</a></li>
+    </ul>
+  </nav>
+
+  <header class="hero wrap" id="top">
+    <div class="slide">
+      <div class="slide__label">
+        <p class="slide__no">Slide No. 001</p>
+        <h1>Ryan Kamp</h1>
+        <p class="slide__kind"><i>Homo sapiens</i>, graduate student</p>
+        <dl>
+          <div><dt>Loc.</dt><dd>University of Cincinnati, Ohio</dd></div>
+          <div><dt>Prep.</dt><dd>One neuron, grown from a seed in code: 4,096 Gaussian splats</dd></div>
+          <div><dt>Stain</dt><dd>After cresyl violet and Luxol fast blue</dd></div>
+        </dl>
+      </div>
+      <div class="slide__stage">
+        <canvas id="scope" role="img" aria-label="A neuron drawn from Gaussian splats: branching dendrites, a cell body, and a long axon wrapped in five segments of myelin, ending in a spray of terminals. The focus control below merges the splats down to one; the Fire button sends a spike along the axon."></canvas>
+        <p class="slide__fallback">The live specimen needs WebGL2. It is a neuron drawn from 4,096 Gaussian splats that merge, pair by pair, down to one.</p>
+        <p class="slide__hint" aria-hidden="true">Tap the cell to fire it. Drag to turn it.</p>
+      </div>
+    </div>
+
+    <div class="bench">
+      <div class="knob">
+        <label for="focus">Focus <output id="count" for="focus">4,096 splats</output></label>
+        <input id="focus" type="range" min="0" max="12" step="0.01" value="12" aria-describedby="keeps">
+        <ol class="knob__ticks" aria-hidden="true"><li>1</li><li>4</li><li>16</li><li>64</li><li>256</li><li>1,024</li><li>4,096</li></ol>
+      </div>
+      <button class="fire" id="fire" type="button">
+        <svg viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 11h7l2.5-9 3 13 2-5.5 1.5 1.5h10"/></svg>
+        Fire
+      </button>
+      <figure class="strip">
+        <svg viewBox="0 0 600 132" role="img" aria-label="Chart of the membrane potential at the cell body after Fire is pressed: a flat resting line, a sharp spike, an undershoot, and a slow return to rest.">
+          <g class="strip__grid"><path d="M44 10V118M179 10V118M314 10V118M449 10V118M584 10V118M44 118H584"/><path class="strip__rest" d="M44 100H584"/></g>
+          <text x="38" y="20" text-anchor="end" id="v-peak">+40 mV</text>
+          <text x="38" y="104" text-anchor="end" id="v-rest">−65 mV</text>
+          <path id="pen" d="M44 100H584"/>
+          <circle id="pen-dot" cx="44" cy="100" r="3.5"/>
+        </svg>
+        <figcaption>Membrane potential at the cell body, slowed about 140 times.</figcaption>
+      </figure>
+    </div>
+
+    <p class="keeps" id="keeps">At level <b id="lvl">12</b> of 12, as at every other: mass <b id="mass">1.000000000</b> · centre <b id="centre">(0.000000, 0.000000, 0.000000)</b> · spread σ <b id="spread">(0.551374, 0.155302, 0.094986)</b>. Turn the focus and watch these not move.</p>
+
+    <div class="hero__intro">
+      <p class="lede">I&rsquo;m a master&rsquo;s student in computer science at the <a href="https://www.uc.edu/">University of Cincinnati</a>, with degrees in mathematics and neuroscience from the same place. What I want to make is <em>splats that explain</em>: pictures of science you can take apart until the thing makes sense.</p>
+      <p>The cell on the slide is the smallest example I could build. Turn the focus down and its 4,096 Gaussians merge, pair by pair, until the whole neuron is one soft blob with the same mass, centre and spread it started with. Turn it back up and tap: the spike you see is the Hodgkin&ndash;Huxley equations, solved while you watch.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="collection">
+      <div class="wrap">
+        <header class="head">
+          <p class="head__no">Case I <span>the collection</span></p>
+          <h2>Splashery</h2>
+          <p>A toy box of 3D Gaussian splats that runs entirely in the browser. Among the donuts and rubber ducks it keeps science shelves, where the toys do what the real thing does: neurons fire, DNA unzips, a brain opens under the Slice effect.</p>
+        </header>
+
+        <div class="case">
+          <div class="vitrine">
+            <div class="vitrine__bench" id="bench">
+              <p class="vitrine__empty">Nothing on the bench yet.<br><span>Pull a specimen from the drawer. Each one loads the real Splashery player, which is a heavy download, so it waits until you ask.</span></p>
+            </div>
+            <p class="vitrine__note" id="bench-note">Live embeds of the real thing, served from <a href="https://ryanjosephkamp.github.io/splashery/">ryanjosephkamp.github.io/splashery</a>.</p>
+          </div>
+
+          <ul class="drawer" aria-label="Specimens from Splashery's science shelves">
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=neuron" data-toy="neuron" data-note="In Splashery you can fire a signal down it."><small>Tiny world</small><b>Neuron</b><span>fires a signal</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=dna" data-toy="dna" data-note="In Splashery it unzips."><small>Tiny world</small><b>DNA</b><span>unzips</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=brain" data-toy="brain" data-note="In Splashery, the Slice effect sweeps a plane through it and shows the insides."><small>Body</small><b>Brain</b><span>slices open</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=orbital" data-toy="orbital" data-note="Splashery holds the orbitals from 1s to 4f."><small>Atoms</small><b>Electron orbitals</b><span>1s to 4f</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=molecule" data-toy="molecule" data-note="Splashery builds molecules from water to caffeine and C60, or your own from a name, a formula or a file."><small>Atoms</small><b>Molecules</b><span>water to C60</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=protein" data-toy="protein" data-note="Splashery has ubiquitin, insulin, GFP and haemoglobin, or your own PDB or mmCIF file."><small>Atoms</small><b>Proteins</b><span>or your own PDB</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=saturn" data-toy="saturn" data-note="One of the eight planets on Splashery's space shelf."><small>Space</small><b>Saturn</b><span>and its rings</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=black-hole" data-toy="black-hole" data-note="A black hole with its disc."><small>Space</small><b>Black hole</b><span>with its disc</span></a></li>
+            <li><a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=lorenz" data-toy="lorenz" data-note="From the maths shelf, beside the Klein bottle and the gyroid."><small>Maths</small><b>Lorenz attractor</b><span>from the maths shelf</span></a></li>
+          </ul>
+        </div>
+
+        <div class="ledger">
+          <div class="ledger__role">
+            <h3>What I did</h3>
+            <p>I defined the project vision and toy categories, directed multi-agent development, refined interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
+            <p class="links">
+              <a class="link" href="https://ryanjosephkamp.github.io/splashery/">Open Splashery</a>
+              <a class="link" href="https://ryanjosephkamp.github.io/splashery/manual/">The Tinkerer&rsquo;s Manual</a>
+              <a class="link" href="https://github.com/ryanjosephkamp/splashery">Source</a>
+            </p>
+          </div>
+          <dl class="ledger__facts">
+            <div><dt>Toys</dt><dd>Captured ones, from real scans, and generated ones, built from seeded recipes.</dd></div>
+            <div><dt>Effects</dt><dd>Poke, wind, dissolve, drop, magnet, twist, slice and paint, run on the GPU for every splat, every frame.</dd></div>
+            <div><dt>Manual</dt><dd>What one splat is (the Gaussian and its covariance), how a recipe is built, and a splat equation language.</dd></div>
+            <div><dt>Made of</dt><dd>Static files and ES modules on the PlayCanvas engine. No build step, no framework, no server.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="method">
+      <div class="wrap">
+        <header class="head">
+          <p class="head__no">Case II <span>the method</span></p>
+          <h2>How to read the slide</h2>
+          <p>Four things are going on in the specimen at the top of this page. None of them is decoration.</p>
+        </header>
+        <ol class="notes">
+          <li>
+            <h3>One splat</h3>
+            <p>A Gaussian: a centre, a spread in three directions (its covariance <i>Σ</i>), a weight and a stain. Turn it by a rotation <i>R</i> and its shadow on the screen is a Gaussian again, with spread <i>RΣR</i><sup>T</sup>. That is how every blob here is drawn, from every side.</p>
+          </li>
+          <li>
+            <h3>Focus</h3>
+            <p>Lowering the focus pairs splats up. Each pair becomes the one Gaussian with the same mass, centre and covariance, so level 0 is the whole cell as a single splat and no level in between has gained or lost anything. <a href="verify.mjs">A script</a> checks all 4,095 merges against the splats beneath them, and all 13 levels against the finest. The largest disagreement is about 10<sup>&minus;15</sup>.</p>
+          </li>
+          <li>
+            <h3>Light</h3>
+            <p>These splats don&rsquo;t glow. They absorb, the way a stained section does on a bright stage: each takes a little light out, the losses add, and what is left is <i>e</i> to the minus sum. Their order never matters, so nothing on this page is sorted.</p>
+          </li>
+          <li>
+            <h3>Spike</h3>
+            <p>Fire integrates the Hodgkin&ndash;Huxley equations, with the 1952 squid-axon constants, from rest after one millisecond of current. The chart is that solution. The colour that runs down the axon is the same solution, delayed by distance, pausing at each gap in the myelin.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="cabinet">
+      <div class="wrap">
+        <header class="head">
+          <p class="head__no">Case III <span>the cabinet</span></p>
+          <h2>Other things I&rsquo;ve built</h2>
+          <p>Each label is 1,024 splats, focused when you reach it. Hover or tap one to send a pulse through.</p>
+        </header>
+        <ul class="cards">
+          <li class="card">
+            <div class="card__slide"><canvas data-emblem="grooph" role="img" aria-label="Three boxes in a row joined by arrows, with a loop arching back from the second box to the first, drawn in splats."></canvas></div>
+            <h3>grooph</h3>
+            <p>Visual loop graphs for coding-agent workflows. Draw who builds, who checks, where a person decides and when the work stops; grooph validates the graph and compiles a prompt package for a separate coding-agent harness.</p>
+            <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/grooph/">Open the app</a><a class="link" href="https://github.com/ryanjosephkamp/grooph">Source</a></p>
+          </li>
+          <li class="card">
+            <div class="card__slide"><canvas data-emblem="openlist" role="img" aria-label="The letters Aa beside a short column of lines, drawn in splats."></canvas></div>
+            <h3>English OpenList</h3>
+            <p>An English word dataset and lexical explorer: a free, open, continuously maintained list of valid English words, with the provenance of every one.</p>
+            <p class="links"><a class="link" href="https://english-openlist.pages.dev/">Explore</a><a class="link" href="https://huggingface.co/datasets/ryanjosephkamp/english-openlist">Dataset</a><a class="link" href="https://github.com/ryanjosephkamp/english-openlist">Source</a></p>
+          </li>
+          <li class="card">
+            <div class="card__slide"><canvas data-emblem="resmon" role="img" aria-label="Concentric rings with a sweep line and four dots, like a radar screen, drawn in splats."></canvas></div>
+            <h3>resmon</h3>
+            <p>A local-first literature-monitoring desktop application, with scheduled searches, deduplication and optional LLM summarization.</p>
+            <p class="links"><a class="link" href="https://github.com/ryanjosephkamp/resmon">Source</a></p>
+          </li>
+          <li class="card">
+            <div class="card__slide"><canvas data-emblem="ars" role="img" aria-label="The words ARS MAGNA above the word anagrams, drawn in splats."></canvas></div>
+            <h3>Ars Magna</h3>
+            <p>An anagram finder. Give it any text and it returns every way those exact letters can be re-partitioned into real English words.</p>
+            <p class="links"><a class="link" href="https://ars-magna.pages.dev/">Try it</a><a class="link" href="https://github.com/ryanjosephkamp/ars-magna">Source</a></p>
+          </li>
+          <li class="card">
+            <div class="card__slide"><canvas data-emblem="amordle" role="img" aria-label="Seven letter tiles spelling AMORDLE, drawn in splats."></canvas></div>
+            <h3>Amordle</h3>
+            <p>A free word game with any word length from 2 to 35 letters, a daily puzzle, and ranked multiplayer. No ads.</p>
+            <p class="links"><a class="link" href="https://amordle.vercel.app">Play</a><a class="link" href="https://github.com/ryanjosephkamp/amordle">Source</a></p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="provenance">
+      <div class="wrap">
+        <header class="head">
+          <p class="head__no">Case IV <span>provenance</span></p>
+          <h2>Where the specimen came from</h2>
+        </header>
+        <div class="sheet">
+          <dl class="sheet__data">
+            <div><dt>Now</dt><dd><b>MS, Computer Science</b>, concentration in Artificial Intelligence. University of Cincinnati, expected May 2027. Thesis advisor: <a href="https://researchdirectory.uc.edu/p/chengy">Dr. Yizong Cheng</a>.</dd></div>
+            <div><dt>Before</dt><dd><b>BA, Mathematics</b> and <b>BS, Neuroscience</b>. University of Cincinnati, 2025.</dd></div>
+            <div><dt>Capstone</dt><dd><b>The Speed-Accuracy Trade-Off in Perceptual Decision-Making.</b> Modeled evidence accumulation as a diffusion process and used dynamic programming and value iteration to study decision boundaries in a simulated autonomous-vehicle obstacle-avoidance scenario. <a href="https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone">Code</a> · <a href="https://youtu.be/LRAP1YHy3g0">video</a></dd></div>
+            <div><dt>Interests</dt><dd>Scientific visualization, computer graphics, digital media, software engineering, and information retrieval.</dd></div>
+          </dl>
+          <div class="sheet__aside">
+            <p>This page argues for the first interest on that list. A neuroscience degree taught me what the pictures are of; a mathematics degree taught me what a Gaussian is. I would like to spend the next few years putting the two together.</p>
+            <p class="links"><a class="link" href="https://drive.google.com/file/d/1x3CYZOWMckdRBlrFfejLhzqY4ftGoO9h/view?usp=drive_link">Read the CV</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot" id="contact">
+    <div class="wrap">
+      <h2>Filed under</h2>
+      <ul class="tags">
+        <li><a href="https://github.com/ryanjosephkamp">GitHub</a></li>
+        <li><a href="https://ryanjosephkamp.github.io/blog/">Blog</a></li>
+        <li><a href="https://ryanjosephkamp.github.io/">Homepage</a></li>
+        <li><a href="https://www.linkedin.com/in/ryanjosephkamp">LinkedIn</a></li>
+        <li><a href="https://x.com/ryanjosephkamp">X</a></li>
+        <li><a href="https://m.youtube.com/@RyanJosephKamp">YouTube</a></li>
+        <li><a href="https://huggingface.co/ryanjosephkamp">Hugging Face</a></li>
+        <li><a href="https://drive.google.com/file/d/1x3CYZOWMckdRBlrFfejLhzqY4ftGoO9h/view?usp=drive_link">CV</a></li>
+      </ul>
+      <div class="colophon">
+        <p>&copy; 2026 Ryan Kamp. The neuron is a recipe, not a recording: no tissue was involved.</p>
+        <p>Set in Newsreader, whose optical-size axis is wired to the focus control: watch the name on the slide. No frameworks, no trackers.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
