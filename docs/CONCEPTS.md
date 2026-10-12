@@ -13,6 +13,7 @@ takes a direction and a territory that no row here has, and adds its own row whe
 | `toybox` | Digital media | A loud, saturated toy shop | His name as a splat toy to spin, poke, paint and drop | `concept/toybox` | 4176 |
 | `workshop` | Software engineering | A paper drafting table, graphite and one red pencil | A drafting sheet where the build loop stops for the visitor | `concept/workshop` | 4177 |
 | `overprint` | Media arts | A two-ink print on paper, slightly off register | One cloud of splats that re-forms for every section | `concept/overprint` | 4178 |
+| `slice` | Volume and medical imaging | A radiology light box: blue-black film on a backlit white wall, one fuchsia wax pencil | A real CT scan of a walnut to cut on three planes, window and turn | `concept/slice` | 4184 |
 
 ## Approved, not built yet
 
@@ -23,7 +24,6 @@ Each is grounded in a part of Splashery that FACTS.md describes.
 | `molecule` | Molecular visualization | A chemistry lecture hall: slate blackboard, chalk, CPK colors for the atoms | The molecule viewer, crystal unit cells and hydrogen orbitals | 4181 |
 | `ripple` | Physical simulation: waves and optics | Bright shallow water over white tile | The ripple tank and the light bench | 4182 |
 | `resonance` | Sound and audio-visual media | A brass plate, black sand, a violin bow | The Chladni plate, the sound lab and the song landscape | 4183 |
-| `slice` | Volume and medical imaging | A radiology light box: film on a backlit wall | The volume viewer, the imaging toys and the anatomy atlas | 4184 |
 | `atlas` | Scale, astronomy and Earth | An engraved star atlas | Powers of ten, the night sky, real landscapes | 4185 |
 | `query` | Information retrieval | A split-flap departure board | Search and ranking made visible across his own work | 4186 |
 
