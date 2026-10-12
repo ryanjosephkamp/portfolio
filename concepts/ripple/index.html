@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ryan Kamp — waves and light you can touch</title>
+  <meta name="description" content="Ryan Kamp is a graduate student in computer science at the University of Cincinnati. His name lies in tile under a ripple tank that solves the 2D wave equation; touch the water. Projects include Splashery, a Gaussian splat playground with a ripple tank and a light bench.">
+  <meta name="theme-color" content="#8fe0e4">
+  <meta property="og:title" content="Ryan Kamp — waves and light you can touch">
+  <meta property="og:description" content="A ripple tank over white tile, solved from the wave equation, with his name on the floor. Touch the water.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23e9f9f9'/%3E%3Cg fill='none' stroke='%230b2a36' stroke-width='4'%3E%3Ccircle cx='32' cy='32' r='22' opacity='.35'/%3E%3Ccircle cx='32' cy='32' r='13' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='5' fill='%23ff3b4a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#work">Skip to the work</a>
+
+  <header class="hero" id="top">
+    <nav class="nav" aria-label="Primary">
+      <a class="chip nav__mark" href="#top">Ryan Kamp</a>
+      <ul>
+        <li><a class="chip" href="#work">Work</a></li>
+        <li><a class="chip" href="#interests">Interests</a></li>
+        <li><a class="chip" href="#links">Links</a></li>
+      </ul>
+    </nav>
+
+    <div class="tank" id="tank">
+      <h1 class="tank__name">Ryan Kamp</h1>
+      <canvas class="tank__water" id="water" tabindex="0" role="img" aria-label="A ripple tank seen from above: shallow water over white tile, with the name Ryan Kamp set in dark tile on the floor. Arrow keys move a finger across the water; Enter or Space drops a pebble."></canvas>
+      <p class="tank__hint chip" id="hint">Touch the water</p>
+    </div>
+
+    <div class="deck">
+      <div class="deck__lede">
+        <p class="label">Physical simulation · waves and optics</p>
+        <p class="lede">Ryan Kamp is a graduate student in computer science at the University of Cincinnati. This page follows one of his interests: physically based simulation as a way of seeing.</p>
+        <p>The water above is the 2D wave equation, solved on a grid with the scheme the ripple tank in <a href="#splashery">Splashery</a> uses. His name is set in tile three centimeters down, and every pixel reaches it by Snell's law through the surface. Each tap is a pebble.</p>
+      </div>
+
+      <form class="deck__controls" id="controls" aria-label="Ripple tank controls">
+        <fieldset class="seg" id="setups">
+          <legend class="label">Setup</legend>
+          <label><input type="radio" name="setup" value="still" checked><span>Still water</span></label>
+          <label><input type="radio" name="setup" value="one"><span>One dipper</span></label>
+          <label><input type="radio" name="setup" value="two"><span>Two dippers</span></label>
+          <label><input type="radio" name="setup" value="plane"><span>Plane wave</span></label>
+          <label><input type="radio" name="setup" value="single"><span>Single slit</span></label>
+          <label><input type="radio" name="setup" value="double"><span>Double slit</span></label>
+        </fieldset>
+        <div class="sliders">
+          <label class="slider"><span>Frequency <output id="out-freq">8.0 Hz</output></span><input type="range" id="freq" min="4" max="10" step="0.1" value="8"></label>
+          <label class="slider"><span>Wave speed <output id="out-speed">20 cm/s</output></span><input type="range" id="speed" min="15" max="30" step="0.5" value="20"></label>
+          <label class="slider"><span><span id="gap-name">Spacing d</span> <output id="out-gap">6.0 cm</output></span><input type="range" id="gap" min="2" max="14" step="0.5" value="6"></label>
+        </div>
+        <div class="buttons">
+          <button type="button" class="btn btn--loud" id="pebble">Drop a pebble</button>
+          <button type="button" class="btn" id="pause" aria-pressed="false">Pause</button>
+          <label class="check"><input type="checkbox" id="guides"><span>Show where d·sin θ = m·λ puts the bright lines</span></label>
+        </div>
+      </form>
+
+      <div class="deck__numbers">
+        <h2 class="label">The numbers</h2>
+        <dl class="numbers">
+          <div><dt>Wavelength, c ÷ f</dt><dd id="n-lambda">2.50 cm</dd></div>
+          <div><dt>Bright lines, d·sin θ = m·λ</dt><dd id="n-lines">with two dippers or two slits</dd></div>
+          <div><dt>λ measured from the fringes</dt><dd id="n-young">with two dippers or two slits</dd></div>
+          <div><dt>Grid</dt><dd id="n-grid">6 cells per cm, Courant number 0.5</dd></div>
+        </dl>
+        <p class="fine">Shown 4 times slower than life, with the heights drawn taller than they are.</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="work">
+      <header class="section__head">
+        <p class="label">Ten projects, ten lanes</p>
+        <h2>Work</h2>
+      </header>
+
+      <article class="lane lane--deep" id="splashery">
+        <div class="lane__text">
+          <p class="lane__no">Lane 1 <span>2026 to present</span></p>
+          <h3>Splashery</h3>
+          <p class="lane__lead">An interactive Gaussian splat playground that runs entirely in the browser. Pick a toy (a real captured object, or one generated from a seed), spin it, poke it, blow on it, splash paint on it, drop it, watch it fall apart and come back, make your own, and share it as a link, an embed, a GIF or a video.</p>
+          <p>Two of its science toys are instruments. The <b>ripple tank</b> solves the 2D wave equation on a grid and draws the water as a surface of splats: one or two dippers, a plane wave, one or two slits, with the frequency and the speed live, and a tap drops a pebble. The <b>light bench</b> traces rays with Snell's law through parts you drag: lenses, mirrors, a BK7 prism, a glass block and a fiber, with the numbers beside them. Its lens faces are real circles, so a lens keeps its real aberrations.</p>
+          <p>The water at the top of this page is a small tank on the same equation. Beside this text is a small bench with one BK7 prism, the glass's index taken from its Sellmeier fit. Turn it and the colors fan out or fold back inside the glass.</p>
+          <ul class="facts">
+            <li><b>Light lab.</b> Line spectra of sixteen elements from NIST data, a prism and a grating (d sin θ = m λ).</li>
+            <li><b>Sound.</b> A Chladni plate whose sand moves live with the sound.</li>
+            <li><b>Every splat, every frame.</b> Effects run on the GPU: poke, wind, dissolve, drop, magnet, twist, slice, paint.</li>
+            <li><b>No build step.</b> Static files and ES modules, on the PlayCanvas engine, WebGPU with a WebGL2 fallback.</li>
+          </ul>
+          <p class="fine">Ryan defined the project's vision and its toy categories, refined the interaction design through hands-on testing, and contributed mathematical recipes.</p>
+          <p class="links">
+            <a href="https://ryanjosephkamp.github.io/splashery/">Play</a>
+            <a href="https://ryanjosephkamp.github.io/splashery/?labs=1">Play with the labs shelf on</a>
+            <a href="https://github.com/ryanjosephkamp/splashery">Code</a>
+            <a href="https://ryanjosephkamp.github.io/splashery/manual/">Tinkerer's Manual</a>
+          </p>
+        </div>
+        <figure class="bench">
+          <canvas id="bench" class="bench__canvas" width="640" height="440" role="img" aria-label="A beam of light entering a glass prism from the left and leaving as a fan of colors."></canvas>
+          <figcaption>
+            <div class="seg seg--dark" role="radiogroup" aria-label="Light">
+              <label><input type="radio" name="light" value="white" checked><span>White light</span></label>
+              <label><input type="radio" name="light" value="red"><span>Red laser, 650 nm</span></label>
+              <label><input type="radio" name="light" value="green"><span>Green laser, 532 nm</span></label>
+              <label><input type="radio" name="light" value="blue"><span>Blue laser, 450 nm</span></label>
+            </div>
+            <label class="slider slider--dark"><span>Turn the prism <output id="out-turn">0°</output></span><input type="range" id="turn" min="-30" max="30" step="0.5" value="0"></label>
+            <dl class="numbers numbers--dark">
+              <div><dt>Index of N-BK7 at 587.6 nm</dt><dd id="b-index">1.5168</dd></div>
+              <div><dt>The beam is turned by</dt><dd id="b-dev">drag the prism to see</dd></div>
+              <div><dt>Spread, 410 to 665 nm</dt><dd id="b-spread">drag the prism to see</dd></div>
+            </dl>
+          </figcaption>
+        </figure>
+      </article>
+
+      <article class="lane" id="grooph">
+        <div class="lane__text">
+          <p class="lane__no">Lane 2 <span>2026 to present</span></p>
+          <h3>grooph</h3>
+          <p class="lane__lead">Visual loop graphs for coding-agent workflows. You draw who builds, who checks, where a person decides and when the work stops.</p>
+          <p>grooph checks that every loop names a stop, then compiles the graph into a prompt package for a separate coding-agent harness. It runs no agent and calls no model, and graphs stay on your device.</p>
+          <p class="links">
+            <a href="https://ryanjosephkamp.github.io/grooph/">Open</a>
+            <a href="https://ryanjosephkamp.github.io/grooph/docs/">Docs</a>
+            <a href="https://github.com/ryanjosephkamp/grooph">Code</a>
+          </p>
+        </div>
+        <figure class="art art--loop" aria-hidden="true">
+          <svg viewBox="0 0 520 190" role="presentation">
+            <path class="loop__edge" id="loop-path" d="M70 120 L210 120 C210 30 70 30 70 120 L210 120 L350 120 L460 120" />
+            <g class="loop__node"><circle cx="70" cy="120" r="26" /><text x="70" y="125">build</text></g>
+            <g class="loop__node"><circle cx="210" cy="120" r="26" /><text x="210" y="125">check</text></g>
+            <g class="loop__node loop__node--person"><rect x="318" y="94" width="64" height="52" /><text x="350" y="125">person</text></g>
+            <g class="loop__node loop__node--stop"><circle cx="460" cy="120" r="22" /><text x="460" y="125">stop</text></g>
+            <text class="loop__note" x="140" y="42">again</text>
+            <g class="loop__drop">
+              <circle r="7" />
+              <circle class="loop__ring" r="7" />
+              <animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0.2;0.52;0.72;0.9;1;1" keyTimes="0;0.15;0.45;0.6;0.75;0.85;1" calcMode="linear"><mpath href="#loop-path" /></animateMotion>
+            </g>
+          </svg>
+        </figure>
+      </article>
+
+      <div class="pair">
+        <article class="lane lane--small" id="resmon">
+          <figure class="art art--pulse" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </figure>
+          <p class="lane__no">Lane 3 <span>April 2026 to present</span></p>
+          <h3>resmon</h3>
+          <p>A local-first literature-monitoring desktop application. It runs scheduled searches across open-access scholarly sources, removes duplicates, and compiles reading reports, with optional summaries.</p>
+          <p class="links"><a href="https://github.com/ryanjosephkamp/resmon">Code</a></p>
+        </article>
+
+        <article class="lane lane--small" id="aqrobat">
+          <figure class="art art--qr" aria-hidden="true">
+            <pre>RIPPLES
+R·····S
+R·WAV·S
+R·WAV·S
+R·WAV·S
+R·····S
+RIPPLES</pre>
+          </figure>
+          <p class="lane__no">Lane 4</p>
+          <h3>aqrobat</h3>
+          <p>A local text and emoji QR lab: QR artwork built from letters, symbols or emoji.</p>
+          <p class="links">
+            <a href="https://ryanjosephkamp.github.io/aqrobat/">Make one</a>
+            <a href="https://github.com/ryanjosephkamp/aqrobat">Code</a>
+          </p>
+        </article>
+      </div>
+
+      <ol class="lanes" start="5">
+        <li>
+          <p class="lane__no">Lane 5</p>
+          <h3>reword_nerd</h3>
+          <p>A local-first browser workbench that turns a reviewed document, or a set of images, into a portable workbook of rewriting prompts. Everything stays reviewable in the browser, the download is a separate, explicit step, and the application contacts no model provider itself.</p>
+          <p class="links">
+            <a href="https://ryanjosephkamp.github.io/reword-nerd/">Open</a>
+            <a href="https://ryanjosephkamp.github.io/blog/articles/reword-nerd/">Write-up</a>
+            <a href="https://github.com/ryanjosephkamp/reword-nerd">Code</a>
+          </p>
+        </li>
+        <li>
+          <p class="lane__no">Lane 6</p>
+          <h3>Link Meteor</h3>
+          <p>A Chrome extension that collects links with their anchor text and URL in separate fields, for reviewing sources and exporting a research collection. No account, ads, telemetry or backend.</p>
+          <p class="links">
+            <a href="https://ryanjosephkamp.github.io/link-meteor/">Website</a>
+            <a href="https://github.com/ryanjosephkamp/link-meteor">Code</a>
+          </p>
+        </li>
+        <li>
+          <p class="lane__no">Lane 7 <span>December 2025 to present</span></p>
+          <h3>English OpenList</h3>
+          <p>A free, open, continuously maintained list of valid English words, about 345,000 of them, with the provenance of every word (which sources attested it, and when), auditable correction records, and a browser explorer.</p>
+          <p class="links">
+            <a href="https://english-openlist.pages.dev/">Explore</a>
+            <a href="https://github.com/ryanjosephkamp/english-openlist">Code</a>
+            <a href="https://huggingface.co/datasets/ryanjosephkamp/english-openlist">Dataset</a>
+          </p>
+        </li>
+        <li>
+          <p class="lane__no">Lane 8</p>
+          <h3>Ars Magna</h3>
+          <p>An anagram finder. Give it any text and it returns every way those exact letters can be re-partitioned into real English words, by a deterministic search.</p>
+          <p class="links">
+            <a href="https://ars-magna.pages.dev/">Try</a>
+            <a href="https://github.com/ryanjosephkamp/ars-magna">Code</a>
+          </p>
+        </li>
+        <li>
+          <p class="lane__no">Lane 9</p>
+          <h3>Amordle</h3>
+          <p>A free word game: any word length from 2 to 35 letters, three difficulties, a daily puzzle, and ranked multiplayer with an Elo rating.</p>
+          <p class="links">
+            <a href="https://amordle.vercel.app">Play</a>
+            <a href="https://ryanjosephkamp.github.io/blog/articles/amordle/">Write-up</a>
+            <a href="https://github.com/ryanjosephkamp/amordle">Code</a>
+          </p>
+        </li>
+        <li class="lanes__last">
+          <p class="lane__no">Lane 10 <span>April 2025</span></p>
+          <h3>The Speed-Accuracy Trade-Off in Perceptual Decision-Making</h3>
+          <p>Ryan's undergraduate research capstone. It models evidence accumulation as a diffusion process and uses dynamic programming and value iteration to study decision boundaries in a simulated autonomous-vehicle obstacle-avoidance scenario.</p>
+          <p class="links">
+            <a href="https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone">Code</a>
+            <a href="https://youtu.be/LRAP1YHy3g0">Video</a>
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="section section--wash" id="interests">
+      <header class="section__head">
+        <p class="label">What the water is for</p>
+        <h2>Interests</h2>
+      </header>
+      <div class="cols">
+        <div>
+          <p class="lede">Scientific visualization, computer graphics, digital media, software engineering, and information retrieval.</p>
+          <p>The direction on this page is one he wants to follow further: physically based simulation as a way of seeing. A tank that solves the wave equation, or a bench that obeys Snell's law, turns a line of mathematics into something you can watch, measure and put a finger in.</p>
+        </div>
+        <dl class="school">
+          <div>
+            <dt>August 2025 to May 2027, expected</dt>
+            <dd>MS in Computer Science, concentration in Artificial Intelligence, University of Cincinnati. Thesis advisor: <a href="https://researchdirectory.uc.edu/p/chengy">Dr. Yizong Cheng</a>.</dd>
+          </div>
+          <div>
+            <dt>January 2020 to May 2025</dt>
+            <dd>BA in Mathematics and BS in Neuroscience, University of Cincinnati. Capstone advisor: <a href="https://sites.google.com/view/hkimmathbio/home">Dr. Hyunjoong Kim</a>.</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot" id="links">
+    <p class="label">Towel off</p>
+    <h2>Links</h2>
+    <ul class="foot__links">
+      <li><a href="https://drive.google.com/file/d/1x3CYZOWMckdRBlrFfejLhzqY4ftGoO9h/view?usp=drive_link">CV</a></li>
+      <li><a href="https://ryanjosephkamp.github.io/">Homepage</a></li>
+      <li><a href="https://ryanjosephkamp.github.io/repositories/">Repositories</a></li>
+      <li><a href="https://ryanjosephkamp.github.io/blog/">Blog</a></li>
+      <li><a href="https://github.com/ryanjosephkamp">GitHub</a></li>
+      <li><a href="https://www.linkedin.com/in/ryanjosephkamp">LinkedIn</a></li>
+      <li><a href="https://x.com/ryanjosephkamp">X</a></li>
+      <li><a href="https://m.youtube.com/@RyanJosephKamp">YouTube</a></li>
+      <li><a href="https://huggingface.co/ryanjosephkamp">Hugging Face</a></li>
+    </ul>
+    <p class="fine">Ryan Kamp, Cincinnati, Ohio. Set in Atkinson Hyperlegible Next, a typeface made for legibility, which a name read through moving water needs.</p>
+  </footer>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
