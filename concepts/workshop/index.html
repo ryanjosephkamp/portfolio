@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ryan Kamp — the workshop</title>
+  <meta name="description" content="Ryan Kamp is a graduate student in computer science at the University of Cincinnati. This is the drafting table: how Splashery, his Gaussian splat playground, gets built by a builder, a critic and a person who decides.">
+  <meta name="theme-color" content="#f4f0e6">
+  <meta property="og:title" content="Ryan Kamp — the workshop">
+  <meta property="og:description" content="A donut drawn in pencil from Gaussian splats, and a loop that stops for you: send it back, or stamp it approved.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f4f0e6'/%3E%3Cellipse cx='32' cy='32' rx='24' ry='15' fill='none' stroke='%232a2927' stroke-width='3'/%3E%3Cellipse cx='32' cy='30' rx='9' ry='4.5' fill='none' stroke='%232a2927' stroke-width='3'/%3E%3Ccircle cx='46' cy='22' r='8' fill='none' stroke='%23c5281c' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#splashery">Skip to the work</a>
+
+  <header class="sheet sheet--hero" id="top">
+    <nav class="rail" aria-label="Sheets">
+      <a class="rail__mark" href="#top">RK <span>workshop</span></a>
+      <ol>
+        <li><a href="#top">The loop</a></li>
+        <li><a href="#splashery">Splashery</a></li>
+        <li><a href="#grooph">grooph</a></li>
+        <li><a href="#drawer">The drawer</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </nav>
+
+    <div class="hero">
+      <h1 class="lettering hero__head">Ryan Kamp</h1>
+      <p class="lede">I build graphics software by setting the vision, directing coding agents and testing by hand. This sheet is that loop at desk size: a builder drafts a donut out of Gaussian splats, a critic measures it, and then it stops for a person. Today that person is you.</p>
+
+      <figure class="board" id="board">
+        <canvas id="sheet-canvas" tabindex="0" role="img" aria-label="A donut drawn in pencil as several hundred overlapping ellipses, each one a Gaussian splat. Drag or use the arrow keys to turn it. Tap it, or press Enter, to leave a red-pencil note for the builder.">A donut drawn in pencil from Gaussian splats.</canvas>
+        <div class="stamp" id="stamp" aria-hidden="true"><b>Approved</b><span id="stamp-line">REV A</span></div>
+        <p class="board__dim" aria-hidden="true"><span>R 1.00</span><span>r 0.42</span><span id="dim-splats">640 splats</span></p>
+        <figcaption class="board__hint">Drag to turn it. Tap it to leave a red-pencil note: <i>more here</i>.</figcaption>
+      </figure>
+
+      <div class="gate" id="gate">
+        <p class="gate__status" id="status" role="status">The builder is drafting revision A.</p>
+        <div class="gate__buttons">
+          <button class="btn btn--red" id="send-back" type="button" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16.6 4a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8 4 20z"/><path d="M14.5 6.2l3.3 3.3"/></svg>
+            <span id="send-label">Send it back</span>
+          </button>
+          <button class="btn btn--ink" id="approve" type="button" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 8h3l2 5H5l2-5h3L9 3z"/><path d="M4 20h16"/></svg>
+            Approve
+          </button>
+        </div>
+      </div>
+
+      <figure class="loop">
+        <svg id="loop-graph" viewBox="0 0 400 214" role="img" aria-label="A loop graph. The builder hands work to the critic. If the bar is not met, the work goes back to the builder, for at most four rounds. When the bar is met the loop stops at a person, who either sends it back with notes or approves it.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 9 5 0 9z" fill="#2a2927"/></marker>
+            <marker id="ah-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 9 5 0 9z" fill="#c5281c"/></marker>
+          </defs>
+          <path class="edge" id="e-cb" d="M184 78 C 184 22, 64 22, 64 76" marker-end="url(#ah)"/>
+          <path class="edge" id="e-bc" d="M112 100 H 134" marker-end="url(#ah)"/>
+          <path class="edge" id="e-cy" d="M232 100 H 258" marker-end="url(#ah)"/>
+          <path class="edge edge--red" id="e-yb" d="M306 122 C 306 190, 64 190, 64 124" marker-end="url(#ah-red)"/>
+          <path class="edge" id="e-ys" d="M354 100 H 372" marker-end="url(#ah)"/>
+          <text class="elabel" x="124" y="28" text-anchor="middle">bar not met: go again</text>
+          <text class="elabel elabel--red" x="185" y="186" text-anchor="middle">sent back, with notes</text>
+          <g class="node" id="n-builder"><rect x="16" y="78" width="96" height="44" rx="4"/><text x="64" y="104">Builder</text></g>
+          <g class="node" id="n-critic"><rect x="136" y="78" width="96" height="44" rx="4"/><text x="184" y="104">Critic</text></g>
+          <g class="node node--you" id="n-you"><path d="M306 72 354 100 306 128 258 100z"/><text x="306" y="104">You</text></g>
+          <g class="node node--stop" id="n-stop"><circle cx="384" cy="100" r="10"/><circle cx="384" cy="100" r="5.5"/></g>
+          <text class="elabel" x="384" y="128" text-anchor="middle">stop</text>
+          <text class="elabel" x="16" y="208">Stops: bar met · 4 rounds · a person</text>
+          <circle class="token" id="token" r="6" cx="64" cy="100"/>
+        </svg>
+        <figcaption>The graph that is running, drawn the way <a href="#grooph">grooph</a> draws them.</figcaption>
+      </figure>
+
+      <section class="log" aria-labelledby="log-title">
+        <h2 class="label" id="log-title">Build log</h2>
+        <ol id="log" role="log" aria-label="Build log">
+          <li><b>A·1</b><i>builder</i><span>640 splats on a torus, placed uniformly in angle.</span></li>
+        </ol>
+      </section>
+
+      <table class="bom" aria-label="Parts list">
+        <thead><tr><th scope="col">Part</th><th scope="col">Area</th><th scope="col">Splats</th></tr></thead>
+        <tbody id="bom"><tr><td>body</td><td>16.58</td><td>640</td></tr></tbody>
+        <tfoot><tr><td colspan="3">The budget is shared by surface area, in whole splats. For every budget from 1 to 300,000 the parts sum to it exactly, and none is a splat off its share. <a href="https://github.com/ryanjosephkamp/portfolio/blob/main/concepts/workshop/tools/verify.mjs">The check</a>.</td></tr></tfoot>
+      </table>
+
+      <dl class="titleblock" aria-label="Title block">
+        <div class="tb--wide"><dt>Title</dt><dd>Donut, from splats</dd></div>
+        <div><dt>Rev</dt><dd id="tb-rev">A</dd></div>
+        <div><dt>Drawn</dt><dd>builder (a script)</dd></div>
+        <div><dt>Checked</dt><dd id="tb-checked">in progress</dd></div>
+        <div><dt>Approved</dt><dd id="tb-approved" class="is-blank">not yet</dd></div>
+        <div><dt>Scale</dt><dd>none; drag it</dd></div>
+        <div><dt>Sheet</dt><dd>1 of 5, <span id="dim-w">this wide</span></dd></div>
+      </dl>
+
+      <p class="fine">On this sheet the builder and the critic are a few hundred lines of script, and their first drafts of revisions A and B are wrong on purpose so you can watch the critic send them back. In <a href="#splashery">Splashery</a> the builders and critics are coding agents, and the person at the gate is me.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="sheet" id="splashery">
+      <header class="sheet__head">
+        <p class="sheet__no">Sheet 2 of 5</p>
+        <h2 class="lettering">Splashery</h2>
+        <p class="sheet__tag">Splats you can play with.</p>
+      </header>
+
+      <div class="cols">
+        <div class="prose">
+          <p>A toy box of 3D Gaussian splats that runs entirely in the browser. Pick a toy, a real captured object or one generated from a seed, then spin it, poke it, blow on it, splash paint on it, drop it, and watch it fall apart and come back.</p>
+          <p><b class="mine">My part.</b> I defined the project vision and toy categories, directed multi-agent development, refined interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
+          <p>The building is done by coding agents. Splashery&rsquo;s repository keeps its own loop graph: a worker builds a lane, the full test run and a clip review send it back until the work is right, and anything the public already sees waits behind a human gate. That gate is where I sit.</p>
+          <p class="links">
+            <a class="link" href="https://ryanjosephkamp.github.io/splashery/">Play with it</a>
+            <a class="link" href="https://github.com/ryanjosephkamp/splashery">Source</a>
+            <a class="link" href="https://ryanjosephkamp.github.io/splashery/manual/">The Tinkerer&rsquo;s Manual</a>
+          </p>
+        </div>
+
+        <figure class="embed" id="embed">
+          <div class="embed__frame" id="embed-frame">
+            <svg class="embed__ghost" viewBox="0 0 240 180" aria-hidden="true">
+              <ellipse cx="120" cy="92" rx="78" ry="44"/><ellipse cx="120" cy="84" rx="30" ry="13"/>
+              <path d="M30 92h180M120 30v124" class="cl"/>
+            </svg>
+            <button class="btn btn--ink" id="load-embed" type="button">Put the real one on the table</button>
+            <p class="embed__note">Loads Splashery&rsquo;s own embed player from its site: the engine, a few megabytes. Nothing loads until you ask.</p>
+          </div>
+          <figcaption>Not a screenshot: the live player, the same one its README documents for any page. Or <a href="https://ryanjosephkamp.github.io/splashery/">open the whole toy box</a>.</figcaption>
+        </figure>
+      </div>
+
+      <div class="plates">
+        <article class="plate">
+          <h3 class="label">No build step</h3>
+          <svg class="plate__art" viewBox="0 0 320 124" role="img" aria-label="A dimension line between the source files and the browser, measuring the build step. It reads: none.">
+            <g class="pencil">
+              <rect x="10" y="30" width="96" height="46" rx="3"/><rect x="214" y="30" width="96" height="46" rx="3"/>
+              <path d="M106 53H212" marker-end="url(#ah)"/>
+            </g>
+            <text class="ptext" x="58" y="58" text-anchor="middle">files</text>
+            <text class="ptext" x="262" y="58" text-anchor="middle">browser</text>
+            <g class="dimline"><path d="M106 84v22M214 84v22M110 100H210"/><path d="M106 100l8-3v6zM214 100l-8-3v6z" class="fillb"/></g>
+            <text class="dtext" x="160" y="117" text-anchor="middle">build step: none</text>
+          </svg>
+          <p>Static files and ES modules only. No bundler, no framework, no server, no API keys. Rendering is the PlayCanvas engine, vendored, on WebGPU when the browser has it and WebGL2 otherwise.</p>
+        </article>
+
+        <article class="plate">
+          <h3 class="label">Every splat, every frame</h3>
+          <svg class="plate__art" id="fx-art" viewBox="0 0 320 120" role="img" aria-label="A row of pencil ellipses with a ripple running through them.">
+            <g class="pencil" id="fx-row"></g>
+          </svg>
+          <p>Poke, wind, dissolve, drop, magnet, twist, slice and paint all run on the GPU for every splat, every frame. The CPU only sets a few uniforms. Effects stack.</p>
+        </article>
+
+        <article class="plate">
+          <h3 class="label">The record is public</h3>
+          <ul class="drawer-labels">
+            <li><a href="https://github.com/ryanjosephkamp/splashery/blob/main/SPEC.md"><b>SPEC.md</b><span>the v2 specification</span></a></li>
+            <li><a href="https://github.com/ryanjosephkamp/splashery/blob/main/docs/ROADMAP.md"><b>ROADMAP.md</b><span>what comes next</span></a></li>
+            <li><a href="https://github.com/ryanjosephkamp/splashery/blob/main/docs/BACKLOG.md"><b>BACKLOG.md</b><span>what is parked, and why</span></a></li>
+            <li><a href="https://github.com/ryanjosephkamp/splashery/tree/main/tests"><b>tests/</b><span>the Playwright suite; needs no GPU</span></a></li>
+            <li><a href="https://github.com/ryanjosephkamp/splashery/blob/main/docs/SPEC-v1-planet-painter.md"><b>SPEC-v1</b><span>the first version, a planet you could paint, kept</span></a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="sheet" id="grooph">
+      <header class="sheet__head">
+        <p class="sheet__no">Sheet 3 of 5</p>
+        <h2 class="lettering">grooph</h2>
+        <p class="sheet__tag">Loop graphs for coding agents.</p>
+      </header>
+
+      <div class="cols cols--flip">
+        <figure class="lane">
+          <svg id="lane-graph" viewBox="0 0 560 250" role="img" aria-label="Part of Splashery's lane loop. The Operator briefs a worker; the worker builds; the full test run and the Operator's review each send failing work back to the worker; public changes wait for the owner's marks, which can also send it back; then it reaches the public site.">
+            <path class="edge" d="M92 150H112" marker-end="url(#ah)"/>
+            <path class="edge" d="M200 150H220" marker-end="url(#ah)"/>
+            <path class="edge" d="M308 150H328" marker-end="url(#ah)"/>
+            <path class="edge" d="M416 150H436" marker-end="url(#ah)"/>
+            <path class="edge" d="M512 150H530" marker-end="url(#ah)"/>
+            <path class="edge back" d="M264 128C264 92,170 92,160 126" marker-end="url(#ah)"/>
+            <path class="edge back" d="M372 128C372 60,160 60,152 126" marker-end="url(#ah)"/>
+            <path class="edge back" d="M474 122C474 26,150 26,144 126" marker-end="url(#ah)"/>
+            <g class="node"><rect x="8" y="128" width="84" height="44" rx="4"/><text x="50" y="146">Operator</text><text x="50" y="161" class="sub">briefs</text></g>
+            <g class="node"><rect x="114" y="128" width="86" height="44" rx="4"/><text x="157" y="146">Worker</text><text x="157" y="161" class="sub">builds</text></g>
+            <g class="node"><rect x="222" y="128" width="86" height="44" rx="4"/><text x="265" y="146">Test run</text><text x="265" y="161" class="sub">check</text></g>
+            <g class="node"><rect x="330" y="128" width="86" height="44" rx="4"/><text x="373" y="146">Operator</text><text x="373" y="161" class="sub">reviews</text></g>
+            <g class="node node--you"><path d="M474 122 512 150 474 178 436 150z"/><text x="474" y="154">Owner</text></g>
+            <g class="node node--stop"><circle cx="542" cy="150" r="10"/><circle cx="542" cy="150" r="5.5"/></g>
+            <text class="elabel" x="542" y="178" text-anchor="middle">public</text>
+            <text class="elabel" x="300" y="20" text-anchor="middle">fail: back to the worker</text>
+            <g id="stops">
+              <text class="elabel" x="8" y="212">Stops: bar passed · 4 rounds · 24 dispatches · a person</text>
+              <path class="strike" d="M6 208H330"/>
+              <text class="elabel elabel--red" id="stop-note" x="8" y="234">This loop names no stop. grooph&rsquo;s check fails it.</text>
+            </g>
+          </svg>
+          <figcaption>
+            Part of the lane loop Splashery keeps in its repository, <a href="https://github.com/ryanjosephkamp/splashery/blob/main/docs/lane-loop.grooph.json">docs/lane-loop.grooph.json</a>. The branch for work that stays in labs is left off this drawing.
+            <button class="btn btn--small btn--red" id="erase-stop" type="button" aria-pressed="false">Erase the stops</button>
+          </figcaption>
+        </figure>
+
+        <div class="prose">
+          <p>You, or an agent working with you, draw who builds, who checks, where a person decides and when the work stops. grooph checks that every loop names a stop and every bar names what a critic can inspect, then compiles the graph into a prompt package for Claude Code. It never runs an agent and never calls a model.</p>
+          <p><b class="mine">My part.</b> I implemented a multi-agent pipeline and refined a visual tool for expressing builder/checker roles, human decision points and stopping conditions in coding-agent workflows.</p>
+          <blockquote class="limits">
+            <p class="label">Limits, from its own README</p>
+            <p>&ldquo;No round cap or budget is on record as firing, so it is not shown that one holds a run that would otherwise go on. In a paired comparison on four small tasks the package showed no quality advantage over a prompt derived from it.&rdquo;</p>
+          </blockquote>
+          <p class="links">
+            <a class="link" href="https://ryanjosephkamp.github.io/grooph/">Open the app</a>
+            <a class="link" href="https://github.com/ryanjosephkamp/grooph">Source</a>
+            <a class="link" href="https://github.com/ryanjosephkamp/grooph/blob/main/docs/claims.md">Every claim and its evidence</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet" id="drawer">
+      <header class="sheet__head">
+        <p class="sheet__no">Sheet 4 of 5</p>
+        <h2 class="lettering">The drawer</h2>
+        <p class="sheet__tag">Other things I have built, filed flat.</p>
+      </header>
+      <ul class="cards">
+        <li>
+          <svg viewBox="0 0 64 40" aria-hidden="true" class="pencil"><path d="M6 10h52M6 20h40M6 30h46"/><path d="M50 20h8" class="red"/></svg>
+          <h3>English OpenList</h3>
+          <p>An English word dataset and lexical explorer: a free, open list of valid English words that keeps the provenance of every one.</p>
+          <p class="links"><a class="link" href="https://english-openlist.pages.dev/">Explore</a><a class="link" href="https://github.com/ryanjosephkamp/english-openlist">Source</a></p>
+        </li>
+        <li>
+          <svg viewBox="0 0 64 40" aria-hidden="true" class="pencil"><circle cx="24" cy="20" r="12"/><path d="M33 29l14 8"/><path d="M18 20h12M24 14v12" class="red"/></svg>
+          <h3>resmon</h3>
+          <p>A local-first literature-monitoring desktop application with scheduled searches, deduplication, and optional LLM summarization.</p>
+          <p class="links"><a class="link" href="https://github.com/ryanjosephkamp/resmon">Source</a></p>
+        </li>
+        <li>
+          <svg viewBox="0 0 64 40" aria-hidden="true" class="pencil"><rect x="4" y="12" width="16" height="16" rx="2"/><rect x="24" y="12" width="16" height="16" rx="2"/><rect x="44" y="12" width="16" height="16" rx="2"/><path d="M12 8c8-8 32-8 40 0" class="red"/></svg>
+          <h3>Ars Magna</h3>
+          <p>An anagram finder. Give it any text and it returns every way those exact letters can be re-partitioned into real English words.</p>
+          <p class="links"><a class="link" href="https://ars-magna.pages.dev/">Try it</a><a class="link" href="https://github.com/ryanjosephkamp/ars-magna">Source</a></p>
+        </li>
+        <li>
+          <svg viewBox="0 0 64 40" aria-hidden="true" class="pencil"><rect x="4" y="26" width="10" height="10"/><rect x="16" y="26" width="10" height="10"/><rect x="4" y="14" width="10" height="10"/><rect x="16" y="14" width="10" height="10"/><rect x="28" y="14" width="10" height="10"/><rect x="4" y="2" width="10" height="10" class="red"/><rect x="16" y="2" width="10" height="10"/><rect x="28" y="2" width="10" height="10"/><rect x="40" y="2" width="10" height="10"/></svg>
+          <h3>Amordle</h3>
+          <p>A free word game with any word length from 2 to 35 letters, a daily puzzle, and ranked multiplayer.</p>
+          <p class="links"><a class="link" href="https://amordle.vercel.app">Play</a><a class="link" href="https://github.com/ryanjosephkamp/amordle">Source</a></p>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="sheet sheet--last" id="contact">
+    <header class="sheet__head">
+      <p class="sheet__no">Sheet 5 of 5</p>
+      <h2 class="lettering">Who drew this</h2>
+      <p class="sheet__tag">And where to find him.</p>
+    </header>
+    <div class="cols">
+      <div class="prose">
+        <p>I&rsquo;m an MS student in computer science at the University of Cincinnati, in the artificial intelligence concentration, expecting to finish in May 2027. My thesis advisor is <a href="https://researchdirectory.uc.edu/p/chengy">Dr. Yizong Cheng</a>. Before that, a BA in mathematics and a BS in neuroscience, both at UC, 2025.</p>
+        <p>My research interests are scientific visualization, computer graphics, digital media, software engineering, and information retrieval. Those are interests. The results so far are the tools on these sheets and the records they keep.</p>
+        <p class="links"><a class="link" href="https://drive.google.com/file/d/1x3CYZOWMckdRBlrFfejLhzqY4ftGoO9h/view?usp=drive_link">Read the CV</a></p>
+      </div>
+      <dl class="titleblock titleblock--links" aria-label="Links">
+        <div><dt>GitHub</dt><dd><a href="https://github.com/ryanjosephkamp">ryanjosephkamp</a></dd></div>
+        <div><dt>Blog</dt><dd><a href="https://ryanjosephkamp.github.io/blog/">posts</a></dd></div>
+        <div><dt>Homepage</dt><dd><a href="https://ryanjosephkamp.github.io/">ryanjosephkamp.github.io</a></dd></div>
+        <div><dt>LinkedIn</dt><dd><a href="https://www.linkedin.com/in/ryanjosephkamp">ryanjosephkamp</a></dd></div>
+        <div><dt>X</dt><dd><a href="https://x.com/ryanjosephkamp">@ryanjosephkamp</a></dd></div>
+        <div><dt>YouTube</dt><dd><a href="https://m.youtube.com/@RyanJosephKamp">@RyanJosephKamp</a></dd></div>
+        <div><dt>Hugging Face</dt><dd><a href="https://huggingface.co/ryanjosephkamp">ryanjosephkamp</a></dd></div>
+        <div><dt>CV</dt><dd><a href="https://drive.google.com/file/d/1x3CYZOWMckdRBlrFfejLhzqY4ftGoO9h/view?usp=drive_link">PDF</a></dd></div>
+      </dl>
+    </div>
+    <p class="colophon">&copy; 2026 Ryan Kamp. Lettered in National Park. Pencil by canvas, one ellipse per splat. No frameworks, no trackers, no build step.</p>
+  </footer>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
