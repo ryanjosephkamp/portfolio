@@ -16,7 +16,7 @@
 // which is for a name someone else chose (a toy id, a quoted title).
 
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
-import { join, extname, relative, resolve } from 'node:path';
+import { join, extname, relative, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEXT = new Set(['.html', '.htm', '.css', '.js', '.mjs', '.cjs', '.ts', '.json', '.md', '.txt', '.svg', '.yml', '.yaml']);
@@ -162,7 +162,7 @@ function fixLine(line) {
 function* walk(path) {
   const stat = statSync(path);
   if (stat.isFile()) {
-    if (TEXT.has(extname(path)) && resolve(path) !== SELF) yield path;
+    if (TEXT.has(extname(path)) && basename(path) !== basename(SELF)) yield path;
     return;
   }
   for (const name of readdirSync(path)) {
