@@ -49,11 +49,11 @@
     <div class="hero__foot wrap">
       <div class="hero__say">
         <p class="lede needs-js">This is <span id="subject">my name</span>, drawn with <span id="count">1</span> <span id="count-noun">Gaussian splat</span>.</p>
-        <p>I&rsquo;m Ryan Kamp, a master&rsquo;s student in computer science at the University of Cincinnati. My interests are computer graphics and scientific visualization, and the centrepiece of my work is <a href="#splashery">Splashery</a>, a playground of Gaussian splats.</p>
+        <p>I&rsquo;m Ryan Kamp, a master&rsquo;s student in computer science at the University of Cincinnati. My interests are computer graphics and scientific visualization, and the centerpiece of my work is <a href="#splashery">Splashery</a>, a playground of Gaussian splats.</p>
         <p class="how needs-js">Turn the dial: each notch splits every splat in two. Point at one to measure it. Or fit your own words:
           <label class="sr-only" for="fit-text">Text to fit with splats</label>
           <input id="fit-text" type="text" value="RYAN KAMP" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false">
-          <button class="switch" id="tint" type="button" aria-pressed="false">Colour by angle</button>
+          <button class="switch" id="tint" type="button" aria-pressed="false">Color by angle</button>
         </p>
       </div>
 
@@ -80,7 +80,7 @@
             <figcaption class="needs-js">Drag a handle. Solid line: one standard deviation. Dashed: two.</figcaption>
           </figure>
           <div class="anatomy__math">
-            <p class="statement">A splat is a Gaussian: a centre <i>μ</i> and a covariance <i>Σ</i>. It is a soft ellipse with no edge, brightest in the middle and fading as <span class="nowrap">exp(−½ <i>d</i><sup>2</sup>)</span>, where <i>d</i> counts standard deviations from the centre.</p>
+            <p class="statement">A splat is a Gaussian: a center <i>μ</i> and a covariance <i>Σ</i>. It is a soft ellipse with no edge, brightest in the middle and fading as <span class="nowrap">exp(−½ <i>d</i><sup>2</sup>)</span>, where <i>d</i> counts standard deviations from the center.</p>
 
             <p class="eq needs-js" aria-live="off">
               <span><i>Σ</i> = <i>R S S</i><sup>T</sup><i>R</i><sup>T</sup> =</span>
@@ -106,7 +106,7 @@
               <output id="a-o3" for="a-theta">25°</output>
             </div>
 
-            <p>Renderers store <i>Σ</i> as a rotation <i>R</i> and a scale <i>S</i> because any pair of them gives a valid covariance, so an optimiser can move them freely. In three dimensions a splat gains a third axis, an opacity and a colour; the renderer projects each one onto the screen, sorts them by depth and blends (<a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/">Kerbl et al., 2023</a>).</p>
+            <p>Renderers store <i>Σ</i> as a rotation <i>R</i> and a scale <i>S</i> because any pair of them gives a valid covariance, so an optimizer can move them freely. In three dimensions a splat gains a third axis, an opacity and a color; the renderer projects each one onto the screen, sorts them by depth and blends (<a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/">Kerbl et al., 2023</a>).</p>
             <p>Splashery&rsquo;s <a href="https://ryanjosephkamp.github.io/splashery/manual/">Tinkerer&rsquo;s Manual</a> teaches this level by level: what one splat is, how a recipe is built, and a splat equation language.</p>
           </div>
         </div>
@@ -132,7 +132,7 @@
           <div class="example__text">
             <p class="statement">Splats you can play with.</p>
             <p>A playground of 3D Gaussian splats that runs entirely in the browser: captured objects of up to 450,000 splats, and generated ones built from seeded recipes. Every effect (poke, wind, dissolve, drop, magnet, twist, slice, paint) runs on the GPU for every splat, every frame; the CPU only sets a few uniforms.</p>
-            <p>My part: I defined the project vision and toy categories, directed multi-agent development, refined the interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
+            <p>My part: I defined the project vision and toy categories, refined the interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
             <p class="meta">PlayCanvas engine · WebGPU, with WebGL2 fallback · static files, no build step</p>
             <p class="links">
               <a class="link" href="https://ryanjosephkamp.github.io/splashery/">Play</a>
@@ -157,7 +157,7 @@
           <li data-splat="grooph">
             <canvas aria-hidden="true"></canvas>
             <h3>grooph</h3>
-            <p>Visual loop graphs for coding-agent workflows. I implemented a multi-agent pipeline and refined a visual tool for expressing builder and checker roles, human decision points and stopping conditions. It validates graph documents and compiles prompt packages for a separate coding-agent harness.</p>
+            <p>Visual loop graphs for coding-agent workflows. You draw who builds, who checks, where a person decides and when the work stops. grooph checks that every loop names a stop, then compiles the graph into a prompt package for a separate coding-agent harness.</p>
             <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/grooph/">Demo</a><a class="link" href="https://github.com/ryanjosephkamp/grooph">Code</a></p>
           </li>
           <li data-splat="Speed and accuracy">

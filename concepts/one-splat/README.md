@@ -8,7 +8,7 @@ your own text.
 |---|---|
 | `index.html` | All of the content. |
 | `fit.js` | The fit: a picture as a tree of Gaussians, each the exact mean and covariance of the pixels beneath it. Pure code, no DOM. |
-| `main.js` | Rasterising text, the WebGL2 renderer (and a 2D-canvas one), the dial, the probe, the reshapeable splat, the titles. |
+| `main.js` | Rasterizing text, the WebGL2 renderer (and a 2D-canvas one), the dial, the probe, the reshapeable splat, the titles. |
 | `verify.mjs` | Exhaustive checks for `fit.js`. Run `node verify.mjs`. |
 | `styles.css` | Tokens at the top, then one block per section. |
 

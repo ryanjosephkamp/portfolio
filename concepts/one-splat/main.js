@@ -32,7 +32,7 @@ function mulberry32(seed) {
 
 /* ---------- From text to points to a tree ---------- */
 
-// Rasterise lines of text and return the centres of (a sample of) the inked
+// Rasterize lines of text and return the centers of (a sample of) the inked
 // pixels, shifted so the ink's bounding box starts at the origin.
 function inkPoints(lines, maxPoints, font = FACE) {
   const size = parseFloat(font.match(/(\d+)px/)[1]);
@@ -130,7 +130,7 @@ uniform vec2 size;
 uniform float dilate;
 uniform float gain;
 uniform vec3 color;
-uniform float tint; // 0: every splat the same light. 1: coloured by the angle of its long axis.
+uniform float tint; // 0: every splat the same light. 1: colored by the angle of its long axis.
 out vec2 q;
 out vec3 light0;
 void main() {
@@ -607,7 +607,7 @@ function hero() {
   document.documentElement.classList.add('is-lit');
 
   // Rest the probe on the splat in the middle of the picture.
-  const centre = () => {
+  const center = () => {
     if (pointer || touched) return;
     pointer = { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 };
     draw();
@@ -618,11 +618,11 @@ function hero() {
   const rest = Math.min(REST, top());
   if (reduceMotion.matches) {
     setLevel(rest);
-    requestAnimationFrame(centre);
+    requestAnimationFrame(center);
   } else {
     setLevel(0);
     setTimeout(() => {
-      if (!touched) stop = tween(0, rest, 4600, (v) => !touched && setLevel(v), centre);
+      if (!touched) stop = tween(0, rest, 4600, (v) => !touched && setLevel(v), center);
     }, 900);
   }
 }
