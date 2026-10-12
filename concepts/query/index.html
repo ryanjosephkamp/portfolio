@@ -12,8 +12,6 @@
   <meta property="og:url" content="https://ryanjosephkamp.github.io/portfolio/concepts/query/">
   <meta name="twitter:card" content="summary">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230a0a0b'/%3E%3Crect x='10' y='8' width='44' height='48' rx='4' fill='%231b1b1e'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-family='ui-monospace,Menlo,monospace' font-weight='900' font-size='36' fill='%23ffd21a'%3EQ%3C/text%3E%3Crect x='10' y='31' width='44' height='2' fill='%230a0a0b'/%3E%3C/svg%3E">
-  <link rel="preload" href="assets/fonts/overpass-mono-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/overpass-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add("js");</script>
 </head>
@@ -98,26 +96,33 @@
             </div>
             <figure class="art art-splat">
               <div class="art-label"><span class="lab">Shelf</span><span class="cells" id="splat-label" aria-hidden="true"></span></div>
-              <canvas id="splat" width="640" height="640" aria-label="A turning cloud of soft white and yellow splats that takes a shape for the shelf your query matches"></canvas>
-              <figcaption>A cloud of splats drawn for this page from a seed, so each shelf rebuilds the same cloud. The real toys are in Splashery.</figcaption>
+              <div class="stage" id="stage">
+                <canvas id="splat" width="640" height="640" aria-label="A turning cloud of soft white and yellow splats that takes a shape for the shelf your query matches"></canvas>
+              </div>
+              <p class="real">
+                <button type="button" id="real-btn">Load the real <b>planet</b></button>
+                <button type="button" id="real-back" hidden>Back to the cloud</button>
+                <a id="real-link" href="https://ryanjosephkamp.github.io/splashery/embed/?theme=dark&amp;toy=planet">Open it in its own tab</a>
+              </p>
+              <figcaption>The cloud is drawn for this page from a seed, so each shelf rebuilds the same cloud. The button brings the real toy from Splashery into this frame, in its own player, only when you ask. Search for a toy by name and the button follows.</figcaption>
             </figure>
           </div>
           <div class="shelfwrap">
             <p class="lab shelf-h">Shelves and labs <span id="shelf-count"></span></p>
             <ol id="shelves" class="shelves">
-              <li data-f="body" data-shelf="space"><span class="gate cells" aria-hidden="true"></span><span><b>Space</b> the Sun, the eight planets, the Moon, a comet, a pulsar, a black hole with its disc, a supernova and a spiral galaxy.</span></li>
-              <li data-f="body" data-shelf="tiny"><span class="gate cells" aria-hidden="true"></span><span><b>Tiny world</b> a virus, a bacteriophage, a bacterium, red and white blood cells, a neuron, DNA that unzips, a tardigrade, snowflakes and an amoeba.</span></li>
-              <li data-f="body" data-shelf="atoms"><span class="gate cells" aria-hidden="true"></span><span><b>Atoms</b> electron orbitals, a Bohr atom, molecules, crystal lattices and proteins.</span></li>
-              <li data-f="body" data-shelf="body"><span class="gate cells" aria-hidden="true"></span><span><b>Body</b> a heart that beats, a brain, an eye, lungs that breathe, a tooth and a kidney.</span></li>
-              <li data-f="body" data-shelf="nature"><span class="gate cells" aria-hidden="true"></span><span><b>Nature</b> oak, pine, bonsai, sunflower, rose, dandelion, fern, coral reef, bamboo and kelp.</span></li>
-              <li data-f="body" data-shelf="weather"><span class="gate cells" aria-hidden="true"></span><span><b>Weather and fire</b> a campfire, a storm cloud with rain and thunder, a snow globe, a volcano, a tornado, a rainbow, a waterfall and a geyser.</span></li>
-              <li data-f="body" data-shelf="food"><span class="gate cells" aria-hidden="true"></span><span><b>Food</b> ice cream that melts, watermelon, birthday cake, popcorn that pops, pancakes, pizza, sushi, a taco, a donut and coffee.</span></li>
-              <li data-f="body" data-shelf="playthings"><span class="gate cells" aria-hidden="true"></span><span><b>Playthings</b> building bricks, a rubber duck, a spinning top, dice, a yo-yo, a puzzle cube, a kite, a paper plane and a wind-up robot.</span></li>
-              <li data-f="body" data-shelf="games"><span class="gate cells" aria-hidden="true"></span><span><b>Games</b> a chess set that plays Morphy's Opera Game (Paris, 1858) move by move, or any game you open.</span></li>
-              <li data-f="body" data-shelf="landmarks"><span class="gate cells" aria-hidden="true"></span><span><b>Landmarks</b> the Eiffel Tower, the Pyramids of Giza, a lighthouse, the Colosseum, the Parthenon, Stonehenge, the Taj Mahal, a castle and a windmill.</span></li>
-              <li data-f="body" data-shelf="vehicles"><span class="gate cells" aria-hidden="true"></span><span><b>Vehicles</b> a rocket on its pad, a helicopter, a hot-air balloon, a steam train, a school bus, a sailboat, a submarine, a bicycle and a flying saucer.</span></li>
-              <li data-f="body" data-shelf="animals"><span class="gate cells" aria-hidden="true"></span><span><b>Animals</b> jellyfish, butterfly, pufferfish, nautilus, ladybug, snail, octopus, starfish, frog, penguin and owl.</span></li>
-              <li data-f="body" data-shelf="math"><span class="gate cells" aria-hidden="true"></span><span><b>Math</b> a Lorenz attractor, a Möbius strip, a Klein bottle, a Menger sponge, a hypercube, a torus knot, a gyroid and a seashell spiral.</span></li>
+              <li data-f="body" data-shelf="space" data-toys="galaxy:spiral-galaxy sun planets:solar-system moon comet pulsar black:black-hole hole:black-hole supernova spiral:spiral-galaxy"><span class="gate cells" aria-hidden="true"></span><span><b>Space</b> the Sun, the eight planets, the Moon, a comet, a pulsar, a black hole with its disc, a supernova and a spiral galaxy.</span></li>
+              <li data-f="body" data-shelf="tiny" data-toys="dna virus bacteriophage bacterium blood:red-blood-cell cells:red-blood-cell neuron tardigrade snowflakes:snowflake amoeba"><span class="gate cells" aria-hidden="true"></span><span><b>Tiny world</b> a virus, a bacteriophage, a bacterium, red and white blood cells, a neuron, DNA that unzips, a tardigrade, snowflakes and an amoeba.</span></li>
+              <li data-f="body" data-shelf="atoms" data-toys="atom orbitals:orbital bohr:atom molecules:molecule crystal:crystal-lattice lattices:crystal-lattice proteins:protein"><span class="gate cells" aria-hidden="true"></span><span><b>Atoms</b> electron orbitals, a Bohr atom, molecules, crystal lattices and proteins.</span></li>
+              <li data-f="body" data-shelf="body" data-toys="heart brain eye lungs tooth kidney"><span class="gate cells" aria-hidden="true"></span><span><b>Body</b> a heart that beats, a brain, an eye, lungs that breathe, a tooth and a kidney.</span></li>
+              <li data-f="body" data-shelf="nature" data-toys="sunflower oak pine bonsai rose dandelion fern coral reef:coral bamboo kelp"><span class="gate cells" aria-hidden="true"></span><span><b>Nature</b> oak, pine, bonsai, sunflower, rose, dandelion, fern, coral reef, bamboo and kelp.</span></li>
+              <li data-f="body" data-shelf="weather" data-toys="tornado campfire storm:storm-cloud cloud:storm-cloud snow:snow-globe globe:snow-globe volcano rainbow waterfall geyser"><span class="gate cells" aria-hidden="true"></span><span><b>Weather and fire</b> a campfire, a storm cloud with rain and thunder, a snow globe, a volcano, a tornado, a rainbow, a waterfall and a geyser.</span></li>
+              <li data-f="body" data-shelf="food" data-toys="donut ice:ice-cream cream:ice-cream watermelon birthday:birthday-cake cake:birthday-cake popcorn pancakes pizza sushi taco coffee"><span class="gate cells" aria-hidden="true"></span><span><b>Food</b> ice cream that melts, watermelon, birthday cake, popcorn that pops, pancakes, pizza, sushi, a taco, a donut and coffee.</span></li>
+              <li data-f="body" data-shelf="playthings" data-toys="dice bricks rubber:rubber-duck duck:rubber-duck spinning:spinning-top top:spinning-top yo:yo-yo puzzle:puzzle-cube cube:puzzle-cube kite paper:paper-plane plane:paper-plane robot"><span class="gate cells" aria-hidden="true"></span><span><b>Playthings</b> building bricks, a rubber duck, a spinning top, dice, a yo-yo, a puzzle cube, a kite, a paper plane and a wind-up robot.</span></li>
+              <li data-f="body" data-shelf="games" data-toys="chess:chess-set"><span class="gate cells" aria-hidden="true"></span><span><b>Games</b> a chess set that plays Morphy's Opera Game (Paris, 1858) move by move, or any game you open.</span></li>
+              <li data-f="body" data-shelf="landmarks" data-toys="pyramids eiffel:eiffel-tower tower:eiffel-tower giza:pyramids lighthouse colosseum parthenon stonehenge taj:taj-mahal mahal:taj-mahal castle windmill"><span class="gate cells" aria-hidden="true"></span><span><b>Landmarks</b> the Eiffel Tower, the Pyramids of Giza, a lighthouse, the Colosseum, the Parthenon, Stonehenge, the Taj Mahal, a castle and a windmill.</span></li>
+              <li data-f="body" data-shelf="vehicles" data-toys="saucer:ufo rocket helicopter balloon:hot-air-balloon steam:steam-train train:steam-train school:bus bus sailboat submarine bicycle flying:ufo"><span class="gate cells" aria-hidden="true"></span><span><b>Vehicles</b> a rocket on its pad, a helicopter, a hot-air balloon, a steam train, a school bus, a sailboat, a submarine, a bicycle and a flying saucer.</span></li>
+              <li data-f="body" data-shelf="animals" data-toys="nautilus jellyfish butterfly pufferfish ladybug snail octopus starfish frog penguin owl"><span class="gate cells" aria-hidden="true"></span><span><b>Animals</b> jellyfish, butterfly, pufferfish, nautilus, ladybug, snail, octopus, starfish, frog, penguin and owl.</span></li>
+              <li data-f="body" data-shelf="math" data-toys="knot:torus-knot lorenz mobius klein:klein-bottle bottle:klein-bottle menger:menger-sponge sponge:menger-sponge hypercube torus:torus-knot gyroid seashell:seashell-spiral spiral:seashell-spiral"><span class="gate cells" aria-hidden="true"></span><span><b>Math</b> a Lorenz attractor, a Möbius strip, a Klein bottle, a Menger sponge, a hypercube, a torus knot, a gyroid and a seashell spiral.</span></li>
               <li data-f="body" data-shelf="waves"><span class="gate cells" aria-hidden="true"></span><span><b>Waves and optics</b> a ripple tank that solves the 2D wave equation, and a light bench that traces rays with Snell's law through lenses, mirrors, a prism, a glass block and a fiber.</span></li>
               <li data-f="body" data-shelf="light"><span class="gate cells" aria-hidden="true"></span><span><b>Light lab</b> line spectra of sixteen elements from NIST data, a prism and a grating.</span></li>
               <li data-f="body" data-shelf="sound"><span class="gate cells" aria-hidden="true"></span><span><b>Sound</b> a Chladni plate whose sand moves live with the sound, and a sound lab with a spectrogram, a spectrum and an oscilloscope.</span></li>

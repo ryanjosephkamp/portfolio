@@ -1,5 +1,6 @@
 // Exhaustive check of the codes on the Query board. Run: node concepts/query/check.mjs
-// (add --write to put the computed codes into index.html).
+// (add --write to put the computed codes into index.html, --live to check the toy ids
+// against the Splashery site).
 //
 // The page says each code is the shortest query that ranks its project first outright,
 // alphabetically earliest of that length. This script reads the entries out of index.html,
@@ -98,7 +99,30 @@ for (const q of all) {
   }
 }
 
+// The real toys the page can offer. Every trigger word must be a word of its own shelf, and
+// with --live every toy id must be in the catalog Splashery is serving, outside the labs switch.
+const offers = [];
+for (const m of html.matchAll(/<li data-f="body" data-shelf="[a-z]+" data-toys="([^"]+)">([\s\S]*?)<\/li>/g)) {
+  const shelf = new Set(words(m[2].replace(/<[^>]+>/g, "")));
+  for (const pair of m[1].split(" ")) {
+    const [word, id = word] = pair.split(":");
+    if (!shelf.has(word)) fail(`toy word "${word}" is not on its shelf`);
+    offers.push(id);
+  }
+}
+const toyIds = [...new Set(["planet", ...offers])];
+if (process.argv.includes("--live")) {
+  const catalog = await (await fetch("https://ryanjosephkamp.github.io/splashery/src/toys.js")).text();
+  for (const id of toyIds) {
+    const at = catalog.search(new RegExp(`id:\\s*"${id}"`));
+    if (at < 0) fail(`toy "${id}" is not in the live Splashery catalog`);
+    else if (/labs:\s*true/.test(catalog.slice(at, catalog.indexOf("\n  {", at)))) fail(`toy "${id}" is behind the labs switch`);
+  }
+  if (!process.exitCode) console.log(`ok: all ${toyIds.length} toy ids are in the live Splashery catalog, none behind the labs switch`);
+}
+
 if (!process.exitCode) {
+  console.log(`ok: ${offers.length} toy words, each a word of its own shelf`);
   console.log(`ok: ${tried.toLocaleString("en-US")} strings tried, ${scored.toLocaleString("en-US")} of them start a word on the page`);
   console.log(`ok: ${compared.toLocaleString("en-US")} scores from rank.js agree with the second scorer`);
   console.log(`entries: ${D.map((d) => `${d.id} ${len(d)}`).join(", ")}; average ${avg.toFixed(1)} words`);

@@ -1,4 +1,5 @@
 import { buildIndex, search, codes, fold, tokenize } from "./rank.js";
+import { SHAPES, mulberry } from "./shapes.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -171,7 +172,9 @@ const rows = docs.map(() => {
 
 const nameCells = makeCells($("#name"), 9);
 const clockCells = makeCells($("#clock"), 5);
-const qCells = makeCells($("#qcells"), 18);
+const QN = innerWidth < 560 ? 13 : 18;
+$("#qcells").style.setProperty("--n", QN);
+const qCells = makeCells($("#qcells"), QN);
 const input = $("#q");
 const status = $("#status");
 
@@ -236,6 +239,7 @@ const shelves = $$("li", shelfList).map((el, i) => ({
   label: $("b", el).textContent,
   words: tokenize(el.textContent),
   title: tokenize($("b", el).textContent),
+  toys: (el.dataset.toys || "").split(" ").filter(Boolean).map((w) => (w.includes(":") ? w.split(":") : [w, w])),
   gate: makeCells($(".gate", el), 2),
 }));
 const splatLabel = makeCells($("#splat-label"), 18);
@@ -257,7 +261,51 @@ function rankShelves(terms) {
   const top = hits ? scored[0].s : null;
   setText(splatLabel, top ? top.label : "any shelf");
   splat.shape(top ? top.key : "blob");
+  // The real toy on offer: the one the query names, or the shelf's first.
+  let toy = "planet";
+  if (top && top.toys.length) {
+    const named = top.toys.find(([word]) => terms.some((t) => word.startsWith(t)));
+    toy = (named || top.toys[0])[1];
+  }
+  offerToy(toy);
 }
+
+/* ---------- the real toy, loaded only when asked ---------- */
+
+const EMBED = "https://ryanjosephkamp.github.io/splashery/embed/?theme=dark&toy=";
+const stage = $("#stage");
+const realBtn = $("#real-btn");
+const realBack = $("#real-back");
+let offered = "planet";
+let player = null;
+
+function offerToy(id) {
+  offered = id;
+  realBtn.innerHTML = `${player ? "Swap in" : "Load"} the real <b>${id.replace(/-/g, " ")}</b>`;
+  realBtn.hidden = !!player && player.dataset.toy === id;
+  $("#real-link").href = EMBED + id;
+}
+realBtn.addEventListener("click", () => {
+  if (!player) {
+    player = document.createElement("iframe");
+    player.title = "A Splashery toy in the Splashery player";
+    player.allow = "fullscreen";
+    stage.append(player);
+    stage.classList.add("real-on");
+    realBack.hidden = false;
+  }
+  player.dataset.toy = offered;
+  player.src = EMBED + offered;
+  offerToy(offered);
+});
+realBack.addEventListener("click", () => {
+  player.remove();
+  player = null;
+  stage.classList.remove("real-on");
+  realBack.hidden = true;
+  offerToy(offered);
+  realBtn.focus();
+});
 
 /* ---------- one query, the whole page ---------- */
 
@@ -295,6 +343,7 @@ function render(q) {
     unmark(d.el);
     if (has) mark(d.el, terms);
     d.why.hidden = !has;
+    d.why.classList.toggle("none", has && !hit);
     if (has) d.why.innerHTML = explain(r, res, best, i);
   });
 
@@ -304,12 +353,12 @@ function render(q) {
 
   if (!has) status.textContent = "All ten on the board, in scheduled order.";
   else if (!res.matched) status.textContent = `No word on this page starts with “${terms.join("” or “")}”. Scheduled order holds.`;
-  else status.textContent = `${res.matched} of 10 match. First out: ${byId[res.rows[0].id].name}, ${fmt(res.rows[0].score)}. Ranked in ${ms < 1 ? ms.toFixed(2) : ms.toFixed(1)} ms.`;
+  else status.innerHTML = `${res.matched} of 10 match. First out: ${byId[res.rows[0].id].board}, ${fmt(res.rows[0].score)}.<span class="ms"> Ranked in ${ms < 1 ? ms.toFixed(2) : ms.toFixed(1)} ms.</span>`;
 }
 
 function explain(r, res, best, i) {
   if (!r.score) {
-    return `<p class="why-h">No match</p><p>None of this entry's ${r.len} words starts with ${res.terms.map((t) => `<b>${t.term}</b>`).join(" or ")}. It keeps its scheduled place under the matches.</p>`;
+    return `<p><b class="why-h">No match</b> None of this entry's ${r.len} words starts with ${res.terms.map((t) => `<b>${t.term}</b>`).join(" or ")}.</p>`;
   }
   const lines = r.parts
     .map((p) => {
@@ -322,16 +371,24 @@ function explain(r, res, best, i) {
   return `<p class="why-h">Why No ${String(i + 1).padStart(2, "0")} <span>score ${fmt(r.score)}</span></p><ul>${lines}</ul><p>${length}</p>`;
 }
 
+// An empty row asks for a word; a long query shows its tail.
 function paintQuery() {
-  setText(qCells, input.value, 0, 2);
-  qCells.forEach((c, i) => c.classList.toggle("caret", i === Math.min(input.value.length, qCells.length - 1)));
+  const v = input.value;
+  const shown = v.length >= QN ? v.slice(v.length - QN + 1) : v;
+  $(".qrow").classList.toggle("ghost", !v);
+  setText(qCells, v ? shown : "type a word", 0, 2);
+  qCells.forEach((c, i) => c.classList.toggle("caret", i === shown.length));
 }
 
 function setQuery(q) {
   input.value = q;
   paintQuery();
   render(q);
-  history.replaceState(null, "", q ? "#q=" + encodeURIComponent(q) : location.pathname + location.search);
+  const url = new URL(location.href);
+  if (q) url.searchParams.set("q", q);
+  else url.searchParams.delete("q");
+  if (url.hash.startsWith("#q=")) url.hash = "";
+  history.replaceState(null, "", url);
 }
 
 input.addEventListener("input", () => setQuery(input.value));
@@ -344,171 +401,11 @@ addEventListener("keydown", (e) => {
     e.preventDefault();
     input.focus();
   } else if (e.key === "Escape" && document.activeElement === input) setQuery("");
+  // Type anywhere: a letter typed at the page goes to the query.
+  else if (/^[a-z0-9]$/i.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement === document.body) input.focus({ preventScroll: true });
 });
 
 /* ---------- art: a cloud of splats ---------- */
-
-function mulberry(seed) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const TAU = Math.PI * 2;
-const onSphere = (r, R) => {
-  const u = r() * 2 - 1;
-  const a = r() * TAU;
-  const s = Math.sqrt(1 - u * u);
-  return [s * Math.cos(a) * R, u * R, s * Math.sin(a) * R];
-};
-// Each shape places one splat from its number t in [0, 1) and a seeded random source r.
-const SHAPES = {
-  blob: (t, r) => {
-    const p = onSphere(r, 1);
-    const k = 0.82 + 0.16 * Math.sin(5 * p[0]) * Math.cos(4 * p[1] + p[2] * 3);
-    return [p[0] * k, p[1] * k, p[2] * k];
-  },
-  space: (t, r) => {
-    if (t < 0.58) return onSphere(r, 0.62);
-    const a = r() * TAU;
-    const R = 0.92 + r() * 0.42;
-    return [Math.cos(a) * R, Math.cos(a) * R * 0.32, Math.sin(a) * R];
-  },
-  tiny: (t, r) => {
-    const y = (t - 0.5) * 2.3;
-    const a = t * 13;
-    const k = Math.floor(r() * 3);
-    if (k < 2) return [Math.cos(a + k * Math.PI) * 0.46, y, Math.sin(a + k * Math.PI) * 0.46];
-    const s = Math.round(t * 22) / 22;
-    const m = r() * 2 - 1;
-    return [Math.cos(s * 13) * 0.46 * m, (s - 0.5) * 2.3, Math.sin(s * 13) * 0.46 * m];
-  },
-  atoms: (t, r) => {
-    if (t < 0.2) return onSphere(r, 0.2 * Math.cbrt(r()));
-    const a = r() * TAU;
-    const tilt = (Math.floor(t * 90) % 3) * (Math.PI / 3);
-    const x = Math.cos(a) * 1.05;
-    const z = Math.sin(a) * 1.05;
-    return [x * Math.cos(tilt) + (r() - 0.5) * 0.04, x * Math.sin(tilt), z * 0.9];
-  },
-  body: (t, r) => {
-    const a = r() * TAU;
-    const k = Math.sqrt(r());
-    const x = (16 * Math.sin(a) ** 3) / 17;
-    const y = (13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)) / 17;
-    return [x * k, y * k + 0.1, (r() - 0.5) * 0.7 * (1 - k * k)];
-  },
-  nature: (t) => {
-    const R = Math.sqrt(t) * 1.1;
-    const a = t * 900 * 2.39996;
-    return [Math.cos(a) * R, Math.sin(a) * R, 0.35 * (1 - R * R)];
-  },
-  weather: (t, r) => {
-    const R = 0.1 + 0.85 * t ** 1.7;
-    const a = t * 26 + r() * 0.9;
-    return [Math.cos(a) * R, (t - 0.5) * 2.2, Math.sin(a) * R];
-  },
-  food: (t, r) => {
-    const a = r() * TAU;
-    const b = r() * TAU;
-    const R = 0.74 + 0.32 * Math.cos(b);
-    return [Math.cos(a) * R, 0.32 * Math.sin(b), Math.sin(a) * R];
-  },
-  playthings: (t, r) => {
-    const p = [r() * 2 - 1, r() * 2 - 1, r() * 2 - 1];
-    const f = Math.floor(r() * 3);
-    p[f] = r() < 0.5 ? -1 : 1;
-    return p.map((v) => v * 0.72);
-  },
-  games: (t, r) => {
-    let x, z;
-    do {
-      x = Math.floor(r() * 8);
-      z = Math.floor(r() * 8);
-    } while ((x + z) % 2 && r() < 0.8);
-    return [((x + r()) / 4 - 1) * 1.05, -0.2, ((z + r()) / 4 - 1) * 1.05];
-  },
-  landmarks: (t, r) => {
-    const h = 1 - Math.sqrt(r());
-    const w = (1 - h) * 0.95;
-    const s = r() * 2 - 1;
-    const f = Math.floor(r() * 4);
-    const x = f < 2 ? s * w : f === 2 ? w : -w;
-    const z = f < 2 ? (f ? w : -w) : s * w;
-    return [x, h * 1.5 - 0.7, z];
-  },
-  vehicles: (t, r) => {
-    if (t < 0.3) {
-      const p = onSphere(r, 0.42);
-      return [p[0], Math.abs(p[1]) + 0.1, p[2]];
-    }
-    const p = onSphere(r, 1);
-    return [p[0] * 1.15, p[1] * 0.16, p[2] * 1.15];
-  },
-  animals: (t, r) => {
-    const a = t * 15;
-    const R = 0.09 * Math.exp(0.16 * a);
-    const b = r() * TAU;
-    const tube = R * 0.42;
-    return [Math.cos(a) * (R + tube * Math.cos(b)) - 0.1, Math.sin(a) * (R + tube * Math.cos(b)), tube * Math.sin(b) * 1.4];
-  },
-  math: (t, r) => {
-    const a = t * TAU;
-    const R = 0.72 + 0.3 * Math.cos(3 * a);
-    return [Math.cos(2 * a) * R + (r() - 0.5) * 0.09, 0.34 * Math.sin(3 * a) + (r() - 0.5) * 0.09, Math.sin(2 * a) * R + (r() - 0.5) * 0.09];
-  },
-  waves: (t, r) => {
-    const x = r() * 2.3 - 1.15;
-    const z = r() * 2.3 - 1.15;
-    const d = Math.hypot(x, z);
-    return [x, (0.2 * Math.sin(11 * d)) / (1 + 1.6 * d), z];
-  },
-  light: (t, r) => {
-    if (t < 0.3) {
-      const e = Math.floor(r() * 3);
-      const s = r();
-      const A = [[-0.45, -0.4], [0.45, -0.4], [0, 0.42]];
-      const p = A[e];
-      const q = A[(e + 1) % 3];
-      return [p[0] + (q[0] - p[0]) * s, p[1] + (q[1] - p[1]) * s, (r() - 0.5) * 0.5];
-    }
-    if (t < 0.42) {
-      const s = r();
-      return [-1.2 + s * 0.98, -0.32 + s * 0.3, 0];
-    }
-    const ray = Math.floor(r() * 7);
-    const s = r();
-    return [0.25 + s * 0.95, 0.02 - s * (0.12 + ray * 0.07), (r() - 0.5) * 0.06];
-  },
-  sound: (t, r) => {
-    for (let k = 0; k < 60; k++) {
-      const x = r() * 2 - 1;
-      const z = r() * 2 - 1;
-      const f = Math.cos(3 * Math.PI * x * 0.5) * Math.cos(5 * Math.PI * z * 0.5) - Math.cos(5 * Math.PI * x * 0.5) * Math.cos(3 * Math.PI * z * 0.5);
-      if (Math.abs(f) < 0.07) return [x * 1.05, -0.1, z * 1.05];
-    }
-    return [0, -0.1, 0];
-  },
-  volumes: (t, r) => {
-    const y = (Math.floor(r() * 9) - 4) / 4.4;
-    const R = Math.sqrt(1 - y * y) * Math.sqrt(r()) * 0.98;
-    const a = r() * TAU;
-    return [Math.cos(a) * R, y, Math.sin(a) * R];
-  },
-  scale: (t, r) => {
-    const R = r() ** 0.7 * 1.25;
-    const a = R * 4.2 + Math.floor(r() * 2) * Math.PI + (r() - 0.5) * 0.7;
-    return [Math.cos(a) * R, ((r() - 0.5) * 0.3) / (1 + 4 * R), Math.sin(a) * R];
-  },
-  earth: (t, r) => {
-    const x = r() * 2.3 - 1.15;
-    const z = r() * 2.3 - 1.15;
-    return [x, 0.22 * (Math.sin(3 * x) + 0.7 * Math.cos(2.3 * z) + 0.4 * Math.sin(5 * x + 2 * z)) - 0.1, z];
-  },
-};
 
 const splat = (() => {
   const canvas = $("#splat");
@@ -520,8 +417,9 @@ const splat = (() => {
     s.width = s.height = 64;
     const g = s.getContext("2d");
     const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    grad.addColorStop(0, `rgba(${rgb},.9)`);
-    grad.addColorStop(0.4, `rgba(${rgb},.22)`);
+    grad.addColorStop(0, `rgba(${rgb},.75)`);
+    grad.addColorStop(0.25, `rgba(${rgb},.38)`);
+    grad.addColorStop(0.6, `rgba(${rgb},.08)`);
     grad.addColorStop(1, `rgba(${rgb},0)`);
     g.fillStyle = grad;
     g.fillRect(0, 0, 64, 64);
@@ -544,7 +442,7 @@ const splat = (() => {
     const r = mulberry(seed);
     const fn = SHAPES[key] || SHAPES.blob;
     pts.forEach((p, i) => {
-      [p.tx, p.ty, p.tz] = fn(i / N, r);
+      [p.tx, p.ty, p.tz] = fn(i / N, r, i);
       p.wait = still.matches ? 0 : (i / N) * 26;
     });
     settle = 140;
@@ -562,7 +460,7 @@ const splat = (() => {
     const ca = Math.cos(angle);
     const sa = Math.sin(angle);
     ctx.clearRect(0, 0, w, h);
-    ctx.globalCompositeOperation = "lighter";
+    ctx.globalCompositeOperation = "screen";
     for (const p of pts) {
       if (p.wait > 0) p.wait -= dt;
       else {
@@ -579,8 +477,8 @@ const splat = (() => {
       const f = 3.2 / (3.2 + z * 0.94 - p.y * 0.34);
       p.sx = w / 2 + x * sc * f + p.ox;
       p.sy = h / 2 - y * sc * f + p.oy;
-      const d = sc * 0.034 * p.size * f;
-      ctx.globalAlpha = Math.min(0.9, 0.2 + f * 0.42);
+      const d = sc * 0.058 * p.size * f;
+      ctx.globalAlpha = Math.min(0.8, 0.1 + f * 0.3);
       ctx.drawImage(p.hot ? yellow : white, p.sx - d, p.sy - d, d * 2, d * 2);
     }
     ctx.globalAlpha = 1;
@@ -678,7 +576,9 @@ setText(nameCells, "Ryan Kamp", 4);
 showClock();
 setInterval(showClock, 15000);
 input.addEventListener("focus", paintQuery);
-const start = decodeURIComponent((location.hash.match(/^#q=(.*)$/) || [])[1] || "").slice(0, 18);
+const start = (new URLSearchParams(location.search).get("q") || decodeURIComponent((location.hash.match(/^#q=(.*)$/) || [])[1] || "")).slice(0, 18);
 input.value = start;
 paintQuery();
 render(start);
+if (matchMedia("(hover: hover) and (pointer: fine)").matches && !location.hash.startsWith("#p-")) input.focus({ preventScroll: true });
+new ResizeObserver(([en]) => document.documentElement.style.setProperty("--bar", Math.ceil(en.target.offsetHeight) + "px")).observe($("#query"));
