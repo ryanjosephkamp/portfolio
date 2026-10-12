@@ -1,0 +1,826 @@
+// Atlas: the plate (one zoom across twenty-nine powers of ten), the sky over
+// Cincinnati, and Mount St. Helens in contour lines. The astronomy is
+// Splashery's own module (assets/astro.js); the measures are in scale.js.
+
+import { STARS, LINES, HELENS } from './assets/data.js';
+import * as A from './assets/astro.js';
+import { LY, AU, Z_MIN, Z_MAX, scaleBar, lightTime, fmtLen, ramp, band } from './scale.js';
+
+const INK = '#0d1040';
+const LINE = '#eef0ff';
+const GOLD = '#e8bd5a';
+const SERIF = '"IM Fell English", "Iowan Old Style", Georgia, serif';
+const TAU = Math.PI * 2;
+const D2R = Math.PI / 180;
+const still = matchMedia('(prefers-reduced-motion: reduce)');
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const white = (a) => `rgba(238,240,255,${a})`;
+const gold = (a) => `rgba(232,189,90,${a})`;
+
+function fit(canvas) {
+  const r = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(r.width * dpr));
+  const h = Math.max(1, Math.round(r.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, r.width, r.height);
+  return { g, w: r.width, h: r.height };
+}
+
+// Text with a halo of the ground color, so line work never runs through it.
+function label(g, text, x, y, { size = 12, color = LINE, align = 'left', italic = true } = {}) {
+  g.font = `${italic ? 'italic ' : ''}${size}px ${SERIF}`;
+  g.textAlign = align;
+  g.textBaseline = 'middle';
+  g.lineJoin = 'round';
+  g.lineWidth = 3.5;
+  g.strokeStyle = INK;
+  g.strokeText(text, x, y);
+  g.fillStyle = color;
+  g.fillText(text, x, y);
+}
+
+// ---- The frame every plate shares: the J2000 ecliptic, seen from its north -------------------
+
+const OBLIQUITY = 23.43928 * D2R;
+const toEcliptic = (v) => [
+  v[0],
+  Math.cos(OBLIQUITY) * v[1] + Math.sin(OBLIQUITY) * v[2],
+  -Math.sin(OBLIQUITY) * v[1] + Math.cos(OBLIQUITY) * v[2],
+];
+
+const NOW = Date.now();
+const JD = A.julianDay(NOW);
+
+// Stars with a cataloged distance, in light-years from the Sun.
+const starUnit = STARS.ra.map((ra, i) => A.fromRaDec(ra, STARS.dec[i]));
+const near = [];
+for (let i = 0; i < starUnit.length; i++) {
+  const ly = STARS.ly[i];
+  if (!ly) continue;
+  const e = toEcliptic(starUnit[i]);
+  near.push({ x: e[0] * ly, y: e[1] * ly, ly, mag: STARS.mag[i], name: STARS.name[i] });
+}
+
+// The Milky Way as a diagram: stipple on four spiral arms and a bulge, in the galaxy's own plane,
+// turned into this frame. The Sun is 26,700 light-years from the center.
+const GALAXY = (() => {
+  // Equatorial (J2000) to galactic; its transpose goes back.
+  const G = [
+    [-0.0548755604, -0.8734370902, -0.4838350155],
+    [0.4941094279, -0.44482963, 0.7469822445],
+    [-0.867666149, -0.1980763734, 0.4559837762],
+  ];
+  const back = (v) => [0, 1, 2].map((i) => G[0][i] * v[0] + G[1][i] * v[1] + G[2][i] * v[2]);
+  let seed = 1801;
+  const rnd = () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const gauss = () => (rnd() + rnd() + rnd() + rnd() - 2) / 1.15;
+  const R = 50000;
+  const SUN = 26700;
+  const place = (gx, gy) => {
+    const e = toEcliptic(back([SUN + gx, gy, 0]));
+    return [e[0], e[1]];
+  };
+  const pts = [];
+  for (let i = 0; i < 3400; i++) {
+    const t = rnd() ** 0.7;
+    const r = 0.07 + 0.93 * t;
+    const arm = Math.floor(rnd() * 4);
+    const a = arm * (TAU / 4) + Math.log(r / 0.07) / 0.222 + gauss() * (0.1 + 0.16 * (1 - t));
+    const rr = r * (1 + gauss() * 0.035) * R;
+    pts.push([...place(rr * Math.cos(a), rr * Math.sin(a)), 0.5 + rnd() * 0.8]);
+  }
+  for (let i = 0; i < 700; i++) {
+    const r = Math.abs(gauss()) * 0.07 * R;
+    const a = rnd() * TAU;
+    pts.push([...place(r * Math.cos(a) * 1.5, r * Math.sin(a)), 0.5 + rnd() * 0.9]);
+  }
+  const rim = [];
+  for (let k = 0; k <= 180; k++) rim.push(place(R * Math.cos((k / 180) * TAU), R * Math.sin((k / 180) * TAU)));
+  return { pts, rim, center: place(0, 0) };
+})();
+
+// The planets today, and each orbit as the path of one full period.
+const PERIOD = { mercury: 87.969, venus: 224.701, emb: 365.256, mars: 686.98, jupiter: 4332.59, saturn: 10759.22, uranus: 30685.4, neptune: 60189 };
+const NAMES = { mercury: 'Mercury', venus: 'Venus', emb: 'Earth', mars: 'Mars', jupiter: 'Jupiter', saturn: 'Saturn', uranus: 'Uranus', neptune: 'Neptune' };
+const EARTH = A.heliocentric('emb', JD);
+const PLANETS = Object.keys(PERIOD).map((id) => {
+  const path = [];
+  for (let k = 0; k <= 160; k++) {
+    const p = A.heliocentric(id, JD + (k / 160) * PERIOD[id]);
+    path.push([p[0] - EARTH[0], p[1] - EARTH[1]]);
+  }
+  return { id, name: NAMES[id], path, at: path[0], inner: id === 'mercury' || id === 'venus' || id === 'emb' || id === 'mars' };
+});
+const SUN = [-EARTH[0], -EARTH[1]]; // AU, from the Earth
+
+// The Moon from the Earth's center, in km, for the coming month.
+const moonAt = (jd) => {
+  const m = A.moonEcliptic(jd);
+  const d = 6378.14 / Math.sin(m.parallax * D2R);
+  return [d * Math.cos(m.lat * D2R) * Math.cos(m.lon * D2R), d * Math.cos(m.lat * D2R) * Math.sin(m.lon * D2R)];
+};
+const MOON = [];
+for (let k = 0; k <= 120; k++) MOON.push(moonAt(JD + (k / 120) * 27.6));
+
+// ---- Plate I ---------------------------------------------------------------------------------
+
+const plate = document.getElementById('plate');
+const zoomIn = document.getElementById('zoom');
+const stopItems = [...document.querySelectorAll('#stops li')];
+const STOPS = stopItems.map((li) => ({ li, z: Number(li.dataset.z), d: Number(li.dataset.d), name: li.querySelector('b').textContent }));
+let z = 13.1;
+let tween = 0;
+
+function pow(g, n, x, y, alpha) {
+  g.font = `italic 12px ${SERIF}`;
+  const w = g.measureText('10').width;
+  label(g, '10', x, y, { size: 12, color: white(alpha) });
+  label(g, String(n).replace('-', '−'), x + w + 1, y - 5, { size: 9, color: white(alpha) });
+  g.font = `italic 12px ${SERIF}`;
+  label(g, 'm', x + w + 4 + g.measureText(String(n)).width * 0.8, y, { size: 12, color: white(alpha) });
+}
+
+function drawPlate() {
+  const { g, w, h } = fit(plate);
+  const cx = w / 2;
+  const cy = h / 2;
+  const edge = Math.min(w, h) / 2 - 1;
+  const R = edge - Math.max(14, edge * 0.06);
+  const ppm = (2 * R) / 10 ** z; // pixels per meter
+  const X = (m) => cx + m * ppm;
+  const Y = (m) => cy - m * ppm;
+
+  // The graduated rim: ecliptic longitude, a tick every 2 degrees.
+  g.fillStyle = '#0a0c33';
+  g.beginPath();
+  g.arc(cx, cy, edge, 0, TAU);
+  g.fill();
+  g.strokeStyle = white(0.85);
+  g.lineWidth = 1;
+  for (const r of [edge - 0.5, R]) {
+    g.beginPath();
+    g.arc(cx, cy, r, 0, TAU);
+    g.stroke();
+  }
+  g.lineWidth = 0.7;
+  g.beginPath();
+  for (let d = 0; d < 360; d += 2) {
+    const len = d % 30 === 0 ? edge - R - 2 : d % 10 === 0 ? (edge - R) * 0.6 : (edge - R) * 0.32;
+    const c = Math.cos(d * D2R);
+    const s = -Math.sin(d * D2R);
+    g.moveTo(cx + c * R, cy + s * R);
+    g.lineTo(cx + c * (R + len), cy + s * (R + len));
+  }
+  g.stroke();
+
+  g.save();
+  g.beginPath();
+  g.arc(cx, cy, R - 0.5, 0, TAU);
+  g.clip();
+
+  // A dashed ring at every power of ten, labeled.
+  for (let n = Math.ceil(z) - 3; n <= Math.ceil(z); n++) {
+    const r = (10 ** n * ppm) / 2;
+    const a = ramp(0.03, 0.16, r / R) * (1 - ramp(0.9, 1.02, r / R));
+    if (a <= 0.01) continue;
+    g.strokeStyle = white(0.34 * a);
+    g.lineWidth = 0.7;
+    g.setLineDash([1, 4]);
+    g.beginPath();
+    g.arc(cx, cy, r, 0, TAU);
+    g.stroke();
+    g.setLineDash([]);
+    pow(g, n, cx + r * Math.cos(-1.1) + 5, cy + r * Math.sin(-1.1), 0.62 * a);
+  }
+
+  // The Milky Way.
+  const ga = ramp(19.7, 20.5, z);
+  if (ga > 0.01) {
+    const k = LY * ppm;
+    g.fillStyle = white(0.7 * ga);
+    for (const p of GALAXY.pts) g.fillRect(cx + p[0] * k, cy - p[1] * k, p[2], p[2]);
+    g.strokeStyle = gold(0.8 * ga);
+    g.lineWidth = 0.9;
+    g.beginPath();
+    GALAXY.rim.forEach((p, i) => (i ? g.lineTo(cx + p[0] * k, cy - p[1] * k) : g.moveTo(cx + p[0] * k, cy - p[1] * k)));
+    g.stroke();
+    label(g, 'the galactic center', cx + GALAXY.center[0] * k + 8, cy - GALAXY.center[1] * k, { color: white(0.8 * ga) });
+    label(g, 'the Sun', cx + 8, cy - 9, { color: gold(ga) });
+  }
+
+  // The stars, each at its cataloged distance.
+  const sa = band(z, 16.4, 17.4, 20.2, 20.9);
+  if (sa > 0.01) {
+    const k = LY * ppm;
+    const names = [];
+    g.fillStyle = white(0.92 * sa);
+    for (const s of near) {
+      const px = s.x * k;
+      const py = -s.y * k;
+      if (px * px + py * py > R * R) continue;
+      const r = clamp(2.6 - 0.42 * s.mag, 0.45, 3.2) * (z > 19 ? 0.75 : 1);
+      g.beginPath();
+      g.arc(cx + px, cy + py, r, 0, TAU);
+      g.fill();
+      if (s.name && z < 18.7) names.push(s);
+    }
+    names.sort((a, b) => a.ly - b.ly);
+    for (const s of names.slice(0, 14)) {
+      label(g, `${s.name}, ${s.ly < 20 ? s.ly.toFixed(1) : Math.round(s.ly)} ly`, cx + s.x * k + 6, cy - s.y * k - 7, { size: 11.5, color: white(0.86 * sa) });
+    }
+  }
+  for (const [ly, text] of [
+    [1600, '1,600 light-years'],
+    [65, '65 light-years'],
+    [0.5, 'one light-year across'],
+  ]) {
+    const r = ly * LY * ppm;
+    const a = ramp(0.05, 0.2, r / R) * (1 - ramp(1.0, 1.3, r / R));
+    if (a <= 0.01) continue;
+    g.strokeStyle = gold(0.85 * a);
+    g.lineWidth = 0.9;
+    g.beginPath();
+    g.arc(cx, cy, r, 0, TAU);
+    g.stroke();
+    label(g, text, cx + r * Math.cos(0.75) + 6, cy + r * Math.sin(0.75) + 4, { color: gold(a) });
+  }
+
+  // The Sun and the planets.
+  const pa = band(z, 9.4, 10.4, 14.4, 15.4);
+  if (pa > 0.01) {
+    const k = AU * ppm;
+    for (const p of PLANETS) {
+      const size = Math.hypot(p.path[40][0] - SUN[0], p.path[40][1] - SUN[1]) * k;
+      const a = pa * ramp(5, 16, size);
+      if (a <= 0.01) continue;
+      g.strokeStyle = white(0.6 * a);
+      g.lineWidth = 0.8;
+      g.beginPath();
+      p.path.forEach((q, i) => (i ? g.lineTo(cx + q[0] * k, cy - q[1] * k) : g.moveTo(cx + q[0] * k, cy - q[1] * k)));
+      g.stroke();
+      if (p.id === 'emb') continue;
+      const px = cx + p.at[0] * k;
+      const py = cy - p.at[1] * k;
+      g.fillStyle = INK;
+      g.strokeStyle = gold(a);
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.arc(px, py, 3.2, 0, TAU);
+      g.fill();
+      g.stroke();
+      if (size > 26) label(g, p.name, px + 8, py - 6, { size: 12.5, color: white(0.95 * a) });
+    }
+  }
+  const su = band(z, 9.4, 10.6, 16.6, 17.4);
+  if (su > 0.01) {
+    const px = X(SUN[0] * AU);
+    const py = Y(SUN[1] * AU);
+    g.strokeStyle = gold(su);
+    g.fillStyle = gold(su);
+    g.lineWidth = 0.9;
+    g.beginPath();
+    g.arc(px, py, 3.4, 0, TAU);
+    g.fill();
+    g.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * TAU;
+      const r1 = 6;
+      const r2 = i % 2 ? 9 : 13;
+      g.moveTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1);
+      g.lineTo(px + Math.cos(a) * r2, py + Math.sin(a) * r2);
+    }
+    g.stroke();
+    if (z < 15.6 && Math.hypot(px - cx, py - cy) > 24) label(g, 'the Sun', px + 16, py + 10, { color: gold(su) });
+  }
+
+  // The Moon's path for a month, and the Moon now.
+  const ma = band(z, 7.7, 8.3, 9.9, 10.6);
+  if (ma > 0.01) {
+    const k = 1000 * ppm;
+    g.strokeStyle = white(0.6 * ma);
+    g.lineWidth = 0.8;
+    g.beginPath();
+    MOON.forEach((q, i) => (i ? g.lineTo(cx + q[0] * k, cy - q[1] * k) : g.moveTo(cx + q[0] * k, cy - q[1] * k)));
+    g.stroke();
+    const mx = cx + MOON[0][0] * k;
+    const my = cy - MOON[0][1] * k;
+    g.fillStyle = INK;
+    g.strokeStyle = gold(ma);
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.arc(mx, my, Math.max(3, 1737.4 * k), 0, TAU);
+    g.fill();
+    g.stroke();
+    label(g, 'the Moon', mx + 9, my - 7, { color: white(0.95 * ma) });
+  }
+
+  // The Earth: its true size, the half turned from the Sun hatched as night.
+  const er = 6371000 * ppm;
+  const ea = 1 - ramp(1.5, 2.6, er / R);
+  if (z < 10.6 && ea > 0.01) {
+    const a = Math.min(1, ea) * (1 - ramp(9.6, 10.6, z));
+    const r = Math.max(er, 2.2);
+    const toSun = Math.atan2(-SUN[1], SUN[0]); // on the canvas, y runs down
+    g.save();
+    g.beginPath();
+    g.arc(cx, cy, r, toSun + Math.PI / 2, toSun - Math.PI / 2);
+    g.closePath();
+    g.clip();
+    g.strokeStyle = white(0.5 * a);
+    g.lineWidth = 0.6;
+    g.beginPath();
+    for (let t = -r * 2; t < r * 2; t += 4) {
+      g.moveTo(cx + t - r, cy + r);
+      g.lineTo(cx + t + r, cy - r);
+    }
+    g.stroke();
+    g.restore();
+    g.strokeStyle = gold(a);
+    g.lineWidth = 1.1;
+    g.beginPath();
+    g.arc(cx, cy, r, 0, TAU);
+    g.stroke();
+    if (z > 6.4) label(g, 'the Earth', cx + Math.max(r * 0.72, 6) + 4, cy + Math.max(r * 0.72, 6) + 8, { color: white(0.95 * a) });
+  }
+
+  // Below the Earth: a ring as wide as each stop, and its name.
+  for (const s of STOPS) {
+    if (s.d >= 1.2742e7) continue;
+    const r = (s.d * ppm) / 2;
+    const a = ramp(0.04, 0.16, r / R) * (1 - ramp(1.0, 1.25, r / R));
+    if (a <= 0.01) continue;
+    g.strokeStyle = gold(0.9 * a);
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(cx, cy, r, 0, TAU);
+    g.stroke();
+    label(g, `${s.name.replace(/^(The|A|One) /, (m) => m.toLowerCase())}, ${fmtLen(s.d)}`, cx, cy - r - 10 < cy - R + 16 ? cy - r + 14 : cy - r - 10, { size: 12.5, color: gold(a), align: 'center' });
+  }
+  if (z < 7) {
+    g.strokeStyle = gold(0.9);
+    g.lineWidth = 0.9;
+    g.beginPath();
+    g.moveTo(cx - 5, cy);
+    g.lineTo(cx + 5, cy);
+    g.moveTo(cx, cy - 5);
+    g.lineTo(cx, cy + 5);
+    g.stroke();
+  }
+
+  // The scale bar.
+  const bar = scaleBar(z);
+  const bw = bar.frac * 2 * R;
+  const by = cy + R * 0.8;
+  g.strokeStyle = LINE;
+  g.lineWidth = 1.1;
+  g.beginPath();
+  g.moveTo(cx - bw / 2, by - 5);
+  g.lineTo(cx - bw / 2, by);
+  g.lineTo(cx + bw / 2, by);
+  g.lineTo(cx + bw / 2, by - 5);
+  g.moveTo(cx, by - 3);
+  g.lineTo(cx, by);
+  g.stroke();
+  label(g, bar.label, cx, by - 14, { size: 13.5, align: 'center' });
+  g.restore();
+}
+
+function readout() {
+  let best = STOPS[0];
+  for (const s of STOPS) if (Math.abs(z - s.z) < Math.abs(z - best.z)) best = s;
+  for (const s of STOPS) s.li.classList.toggle('on', s === best);
+  [...document.querySelectorAll('#ticks i')].forEach((t, i) => t.classList.toggle('on', STOPS[i] === best));
+  const size = 10 ** z;
+  document.getElementById('stop-name').textContent = best.name;
+  document.getElementById('plate-size').textContent = `The plate is about ${fmtLen(size)} across.`;
+  document.getElementById('plate-light').textContent = `Light crosses it in ${lightTime(size).text}.`;
+  zoomIn.value = String(Math.round((Z_MAX - z) * 100));
+  zoomIn.setAttribute('aria-valuetext', `${best.name}; the plate is about ${fmtLen(size)} across`);
+}
+
+function setZ(v, { from } = {}) {
+  z = clamp(v, Z_MIN, Z_MAX);
+  drawPlate();
+  readout();
+  if (from === 'range') return;
+}
+
+function glide(target) {
+  cancelAnimationFrame(tween);
+  target = clamp(target, Z_MIN, Z_MAX);
+  if (still.matches) return setZ(target);
+  const from = z;
+  const ms = clamp(Math.abs(target - from) * 420, 500, 2600);
+  const t0 = performance.now();
+  const step = (t) => {
+    const u = clamp((t - t0) / ms, 0, 1);
+    const e = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+    setZ(from + (target - from) * e);
+    if (u < 1) tween = requestAnimationFrame(step);
+  };
+  tween = requestAnimationFrame(step);
+}
+
+// The next stop out (dir +1) or in (dir -1) from where the plate is.
+function nextStop(dir) {
+  const sorted = [...STOPS].sort((a, b) => a.z - b.z);
+  const s = dir > 0 ? sorted.find((q) => q.z > z + 0.02) : [...sorted].reverse().find((q) => q.z < z - 0.02);
+  if (s) glide(s.z);
+}
+
+{
+  const ticks = document.getElementById('ticks');
+  for (const s of STOPS) {
+    const t = document.createElement('i');
+    t.style.left = `${((Z_MAX - s.z) / (Z_MAX - Z_MIN)) * 100}%`;
+    ticks.append(t);
+    // Each stop in the list becomes a button that takes the plate there.
+    const b = s.li.querySelector('b');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = b.textContent;
+    b.textContent = '';
+    b.append(btn);
+    s.li.addEventListener('click', () => {
+      glide(s.z);
+      if (plate.getBoundingClientRect().top < 0 || plate.getBoundingClientRect().bottom > innerHeight) {
+        plate.scrollIntoView({ behavior: still.matches ? 'auto' : 'smooth', block: 'center' });
+      }
+    });
+  }
+  zoomIn.addEventListener('input', () => {
+    cancelAnimationFrame(tween);
+    setZ(Z_MAX - Number(zoomIn.value) / 100, { from: 'range' });
+  });
+  document.getElementById('out').addEventListener('click', () => nextStop(1));
+  document.getElementById('in').addEventListener('click', () => nextStop(-1));
+  plate.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      cancelAnimationFrame(tween);
+      setZ(z + clamp(e.deltaY, -120, 120) * 0.0022);
+    },
+    { passive: false },
+  );
+  let drag = null;
+  plate.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') return;
+    drag = { y: e.clientY, z };
+    plate.setPointerCapture(e.pointerId);
+    cancelAnimationFrame(tween);
+  });
+  plate.addEventListener('pointermove', (e) => {
+    if (drag) setZ(drag.z + (e.clientY - drag.y) * 0.02);
+  });
+  plate.addEventListener('pointerup', () => (drag = null));
+  plate.addEventListener('pointercancel', () => (drag = null));
+  plate.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowUp' || k === 'ArrowLeft' || k === '-') setZ(z + 0.1);
+    else if (k === 'ArrowDown' || k === 'ArrowRight' || k === '+' || k === '=') setZ(z - 0.1);
+    else if (k === 'PageUp') nextStop(1);
+    else if (k === 'PageDown') nextStop(-1);
+    else if (k === 'Home') glide(Z_MAX);
+    else if (k === 'End') glide(Z_MIN);
+    else return;
+    e.preventDefault();
+  });
+}
+
+// ---- Fig. 1: the sky over Cincinnati ---------------------------------------------------------
+
+const LAT = 39.1;
+const LON = -84.51;
+const skyCanvas = document.getElementById('sky');
+const hours = document.getElementById('hours');
+const when = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'long', timeStyle: 'short' });
+const BODY_NAMES = { mercury: 'Mercury', venus: 'Venus', mars: 'Mars', jupiter: 'Jupiter', saturn: 'Saturn' };
+
+function drawSky() {
+  const ms = NOW + Number(hours.value) * 60000;
+  const { g, w, h } = fit(skyCanvas);
+  const cx = w / 2;
+  const cy = h / 2;
+  const edge = Math.min(w, h) / 2 - 1;
+  const R = edge - 20;
+  const s = A.sky(ms, LAT, LON);
+  // Zenith at the center, horizon at the rim; north up and east to the left, as when looking up.
+  const spot = (enu) => {
+    const alt = Math.asin(clamp(enu[2], -1, 1));
+    const az = Math.atan2(enu[0], enu[1]);
+    const r = ((Math.PI / 2 - alt) / (Math.PI / 2)) * R;
+    return [cx - r * Math.sin(az), cy - r * Math.cos(az)];
+  };
+  g.fillStyle = '#0a0c33';
+  g.beginPath();
+  g.arc(cx, cy, edge, 0, TAU);
+  g.fill();
+  g.strokeStyle = white(0.85);
+  g.lineWidth = 1;
+  for (const r of [edge - 0.5, R]) {
+    g.beginPath();
+    g.arc(cx, cy, r, 0, TAU);
+    g.stroke();
+  }
+  g.lineWidth = 0.7;
+  g.beginPath();
+  for (let d = 0; d < 360; d += 5) {
+    const len = d % 45 === 0 ? 0 : d % 15 === 0 ? 9 : 5;
+    g.moveTo(cx - Math.sin(d * D2R) * R, cy - Math.cos(d * D2R) * R);
+    g.lineTo(cx - Math.sin(d * D2R) * (R + len), cy - Math.cos(d * D2R) * (R + len));
+  }
+  g.stroke();
+  [
+    ['N', 0],
+    ['E', 90],
+    ['S', 180],
+    ['W', 270],
+  ].forEach(([t, d]) => label(g, t, cx - Math.sin(d * D2R) * (R + 10), cy - Math.cos(d * D2R) * (R + 10), { size: 13, align: 'center', italic: false, color: GOLD }));
+  // Altitude circles at 30 and 60 degrees.
+  g.strokeStyle = white(0.16);
+  g.setLineDash([1, 4]);
+  for (const f of [1 / 3, 2 / 3]) {
+    g.beginPath();
+    g.arc(cx, cy, R * f, 0, TAU);
+    g.stroke();
+  }
+  g.setLineDash([]);
+
+  const pos = starUnit.map((v) => A.mulMV(s.matrix, v));
+  g.strokeStyle = white(0.38);
+  g.lineWidth = 0.7;
+  g.beginPath();
+  for (const c of LINES) {
+    for (let i = 0; i + 1 < c.at.length; i += 2) {
+      const a = pos[c.at[i]];
+      const b = pos[c.at[i + 1]];
+      if (!a || !b || a[2] <= 0 || b[2] <= 0) continue;
+      const p = spot(a);
+      const q = spot(b);
+      g.moveTo(p[0], p[1]);
+      g.lineTo(q[0], q[1]);
+    }
+  }
+  g.stroke();
+  g.fillStyle = LINE;
+  const named = [];
+  for (let i = 0; i < pos.length; i++) {
+    if (pos[i][2] <= 0) continue;
+    const p = spot(pos[i]);
+    const mag = STARS.mag[i];
+    g.beginPath();
+    g.arc(p[0], p[1], clamp(2.9 - 0.52 * mag, 0.5, 3.6) * (w < 420 ? 0.8 : 1), 0, TAU);
+    g.fill();
+    if (STARS.name[i] && mag <= 1.6) named.push([STARS.name[i], p]);
+  }
+  for (const [name, p] of named) label(g, name, p[0] + 6, p[1] - 6, { size: 11.5, color: white(0.82) });
+
+  const up = [];
+  for (const id of Object.keys(BODY_NAMES)) {
+    const b = s.bodies[id];
+    if (b.alt <= 0) continue;
+    const p = spot(b.enu);
+    g.fillStyle = GOLD;
+    g.beginPath();
+    g.arc(p[0], p[1], 3.4, 0, TAU);
+    g.fill();
+    label(g, BODY_NAMES[id], p[0] + 7, p[1] + 8, { size: 12.5, color: GOLD });
+    up.push(BODY_NAMES[id]);
+  }
+  const moon = s.bodies.moon;
+  if (moon.alt > 0) {
+    const p = spot(moon.enu);
+    g.fillStyle = INK;
+    g.strokeStyle = GOLD;
+    g.lineWidth = 1.3;
+    g.beginPath();
+    g.arc(p[0], p[1], 6, 0, TAU);
+    g.fill();
+    g.stroke();
+    label(g, 'Moon', p[0] + 10, p[1] + 9, { size: 12.5, color: GOLD });
+    up.push(`the Moon, ${Math.round(moon.illum * 100)}% lit`);
+  }
+  const sun = s.bodies.sun;
+  if (sun.alt > 0) {
+    const p = spot(sun.enu);
+    g.strokeStyle = GOLD;
+    g.fillStyle = GOLD;
+    g.beginPath();
+    g.arc(p[0], p[1], 5, 0, TAU);
+    g.fill();
+    g.beginPath();
+    g.arc(p[0], p[1], 9, 0, TAU);
+    g.stroke();
+    label(g, 'Sun', p[0] + 13, p[1] + 9, { size: 12.5, color: GOLD });
+  }
+  const light = sun.alt > 0 ? 'The Sun is up, so the stars are there but out of sight.' : sun.alt > -18 ? 'Twilight.' : 'Full night.';
+  document.getElementById('sky-read').textContent =
+    `Cincinnati, ${when.format(ms)}. ${light} ${up.length ? `Above the horizon: ${up.join(', ')}.` : 'No planet is above the horizon.'}`;
+}
+
+{
+  hours.addEventListener('input', drawSky);
+  document.getElementById('now').addEventListener('click', () => {
+    hours.value = '0';
+    drawSky();
+  });
+  let drag = null;
+  skyCanvas.addEventListener('pointerdown', (e) => {
+    drag = { x: e.clientX, v: Number(hours.value) };
+    skyCanvas.setPointerCapture(e.pointerId);
+  });
+  skyCanvas.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    hours.value = String(clamp(Math.round((drag.v + (e.clientX - drag.x) * 2.4) / 10) * 10, -720, 720));
+    drawSky();
+  });
+  skyCanvas.addEventListener('pointerup', () => (drag = null));
+  skyCanvas.addEventListener('pointercancel', () => (drag = null));
+}
+
+// ---- Fig. 2: Mount St. Helens in contour lines -----------------------------------------------
+
+const helensCanvas = document.getElementById('helens');
+const N = HELENS.n;
+const grids = {};
+for (const key of ['before', 'after']) {
+  const bin = atob(HELENS[key].b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  grids[key] = { h: new Uint16Array(u8.buffer), top: HELENS[key].top, lines: null };
+}
+
+// Marching squares: the segments of one contour level (heights in decimeters), in grid units.
+function contour(h, level, out) {
+  const cross = (a, b) => (level - a) / (b - a);
+  for (let j = 0; j < N - 1; j++) {
+    for (let i = 0; i < N - 1; i++) {
+      const a = h[j * N + i];
+      const b = h[j * N + i + 1];
+      const c = h[(j + 1) * N + i + 1];
+      const d = h[(j + 1) * N + i];
+      const code = (a > level ? 8 : 0) | (b > level ? 4 : 0) | (c > level ? 2 : 0) | (d > level ? 1 : 0);
+      if (code === 0 || code === 15) continue;
+      const top = [i + cross(a, b), j];
+      const right = [i + 1, j + cross(b, c)];
+      const bottom = [i + cross(d, c), j + 1];
+      const left = [i, j + cross(a, d)];
+      const seg = (p, q) => out.push(p[0], p[1], q[0], q[1]);
+      switch (code) {
+        case 1: case 14: seg(left, bottom); break; // prettier-ignore
+        case 2: case 13: seg(bottom, right); break; // prettier-ignore
+        case 3: case 12: seg(left, right); break; // prettier-ignore
+        case 4: case 11: seg(top, right); break; // prettier-ignore
+        case 6: case 9: seg(top, bottom); break; // prettier-ignore
+        case 7: case 8: seg(left, top); break; // prettier-ignore
+        case 5: seg(left, top); seg(bottom, right); break; // prettier-ignore
+        case 10: seg(left, bottom); seg(top, right); break; // prettier-ignore
+      }
+    }
+  }
+}
+
+function linesOf(grid) {
+  if (grid.lines) return grid.lines;
+  const fine = [];
+  const bold = [];
+  for (let m = 800; m <= 2900; m += 100) contour(grid.h, m * 10, m % 500 === 0 ? bold : fine);
+  let peak = 0;
+  for (let i = 1; i < grid.h.length; i++) if (grid.h[i] > grid.h[peak]) peak = i;
+  grid.lines = { fine, bold, peak: [peak % N, Math.floor(peak / N)] };
+  return grid.lines;
+}
+
+let helensNow = 'before';
+let helensMix = 1;
+let helensFrom = 'before';
+function drawHelens() {
+  const { g, w, h } = fit(helensCanvas);
+  const pad = 14;
+  const k = (Math.min(w, h) - pad * 2) / (N - 1);
+  const stroke = (segs, width, alpha) => {
+    g.strokeStyle = white(alpha);
+    g.lineWidth = width;
+    g.beginPath();
+    for (let i = 0; i < segs.length; i += 4) {
+      g.moveTo(pad + segs[i] * k, pad + segs[i + 1] * k);
+      g.lineTo(pad + segs[i + 2] * k, pad + segs[i + 3] * k);
+    }
+    g.stroke();
+  };
+  const layer = (key, a) => {
+    if (a <= 0.01) return;
+    const L = linesOf(grids[key]);
+    stroke(L.fine, 0.6, 0.55 * a);
+    stroke(L.bold, 1.15, 0.95 * a);
+    const px = pad + L.peak[0] * k;
+    const py = pad + L.peak[1] * k;
+    g.strokeStyle = gold(a);
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(px - 6, py);
+    g.lineTo(px + 6, py);
+    g.moveTo(px, py - 6);
+    g.lineTo(px, py + 6);
+    g.stroke();
+    label(g, `${grids[key].top.toLocaleString('en-US')} m`, px + 10, py - 9, { size: 13, color: gold(a) });
+  };
+  if (helensFrom !== helensNow) layer(helensFrom, 1 - helensMix);
+  layer(helensNow, helensMix);
+  // North, and a bar of two kilometers.
+  const bar = ((2000 / HELENS.span) * (N - 1)) * k;
+  g.strokeStyle = LINE;
+  g.lineWidth = 1.1;
+  g.beginPath();
+  g.moveTo(pad + 10, h - pad - 16);
+  g.lineTo(pad + 10, h - pad - 10);
+  g.lineTo(pad + 10 + bar, h - pad - 10);
+  g.lineTo(pad + 10 + bar, h - pad - 16);
+  g.stroke();
+  label(g, '2 km', pad + 10 + bar / 2, h - pad - 24, { size: 12.5, align: 'center' });
+  g.beginPath();
+  g.moveTo(w - pad - 16, pad + 40);
+  g.lineTo(w - pad - 16, pad + 14);
+  g.lineTo(w - pad - 21, pad + 22);
+  g.moveTo(w - pad - 16, pad + 14);
+  g.lineTo(w - pad - 11, pad + 22);
+  g.stroke();
+  label(g, 'N', w - pad - 16, pad + 50, { size: 13, align: 'center', italic: false });
+}
+
+function showHelens(key) {
+  if (key === helensNow) return;
+  helensFrom = helensNow;
+  helensNow = key;
+  document.getElementById('before').setAttribute('aria-pressed', String(key === 'before'));
+  document.getElementById('after').setAttribute('aria-pressed', String(key === 'after'));
+  document.getElementById('helens-read').textContent =
+    key === 'before'
+      ? `Highest point in the grid: ${grids.before.top.toLocaleString('en-US')} m.`
+      : `Highest point in the grid: ${grids.after.top.toLocaleString('en-US')} m, ${grids.before.top - grids.after.top} m lower.`;
+  if (still.matches) {
+    helensMix = 1;
+    return drawHelens();
+  }
+  const t0 = performance.now();
+  const step = (t) => {
+    helensMix = clamp((t - t0) / 700, 0, 1);
+    drawHelens();
+    if (helensMix < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+document.getElementById('before').addEventListener('click', () => showHelens('before'));
+document.getElementById('after').addEventListener('click', () => showHelens('after'));
+
+// ---- Plate V: the ticks of a logarithmic rule ------------------------------------------------
+
+{
+  const host = document.getElementById('log-ticks');
+  const NS = 'http://www.w3.org/2000/svg';
+  for (let d = 0; d < 6; d++) {
+    for (let m = 1; m <= 9; m++) {
+      const x = 20 + ((d + Math.log10(m)) / 6) * 280;
+      const t = document.createElementNS(NS, 'line');
+      t.setAttribute('x1', x);
+      t.setAttribute('x2', x);
+      t.setAttribute('y1', m === 1 ? 78 : m === 5 ? 84 : 89);
+      t.setAttribute('y2', 96);
+      host.append(t);
+    }
+  }
+  const end = document.createElementNS(NS, 'line');
+  end.setAttribute('x1', 300);
+  end.setAttribute('x2', 300);
+  end.setAttribute('y1', 78);
+  end.setAttribute('y2', 96);
+  host.append(end);
+}
+
+// ---- Draw, and draw again when the page changes size or the type arrives ---------------------
+
+function drawAll() {
+  drawPlate();
+  drawSky();
+  drawHelens();
+}
+readout();
+drawAll();
+document.fonts?.ready.then(drawAll);
+let resizeTimer = 0;
+addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(drawAll, 80);
+});
