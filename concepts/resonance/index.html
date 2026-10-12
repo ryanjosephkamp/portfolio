@@ -34,6 +34,7 @@
         <ul class="how">
           <li><b>Drag</b> the bow up or down the edge to change the note, and saw it to play.</li>
           <li><b>Keys:</b> arrows pick a figure, Space bows it, S scatters the sand.</li>
+          <li><b>Sing:</b> tap Sing to it and hold a steady note. Your voice stays in this page.</li>
           <li>Sound starts with your first touch, never before.</li>
         </ul>
       </div>
@@ -89,7 +90,9 @@
           <button type="button" class="key key-loud" id="bow-btn">Bow it</button>
           <button type="button" class="key" id="scatter-btn">Scatter the sand</button>
           <button type="button" class="key" id="sound-btn" aria-pressed="true">Sound: on</button>
+          <button type="button" class="key" id="mic-btn" aria-pressed="false" hidden>Sing to it</button>
         </div>
+        <p class="mic-say" id="mic-say" role="status"></p>
       </div>
     </header>
 
@@ -130,7 +133,8 @@
                 Every grain moves on every frame: it hops more where the plate swings more, and slides toward the
                 plate's still lines. The swing is a live mix of the plate's modes, each as strong as the sound
                 drives it. Change the note and the sand sets off for the new figure from where it lies. Hold a note
-                and it settles into a crisp figure. Silence leaves it where it is.
+                and it settles into a crisp figure. Silence leaves it where it is. Turn on the microphone and the
+                note you sing drives the plate: the mode nearest your note rings, as strongly as you sing.
               </p>
               <p>
                 A second toy does it in three dimensions: beads in a small cell of water gather on the still

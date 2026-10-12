@@ -394,6 +394,17 @@ h4 {
   margin-top: 1rem;
 }
 
+.mic-say {
+  margin: 0.8rem 0 0;
+  min-height: 1.5em;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+.key[aria-pressed='true']#mic-btn {
+  background: var(--verdigris);
+  color: var(--hair);
+}
+
 /* A key: a stamped brass tag. */
 .key {
   font: inherit;

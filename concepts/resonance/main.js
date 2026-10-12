@@ -327,6 +327,80 @@ soundBtn.addEventListener('click', () => {
 });
 showMuted();
 
+// ---- Sung to: the note a visitor sings drives the plate -------------------------
+// As Splashery's plate does it: the figure nearest the note rings (moved by
+// octaves onto the plate), by a resonance curve half as strong 150 cents
+// away, times how loud the voice is. The sound goes to the screens' meter
+// and nowhere else: it is not played back, kept or sent.
+
+const mic = { on: false, stream: null, src: null, hz: 0, loud: 0, clock: 0, answer: null };
+const micBtn = $('#mic-btn');
+const micSay = $('#mic-say');
+const SING_WIDTH = 150;
+
+function singAnswer(hz, current) {
+  let best = null;
+  for (const f of FIGS) {
+    const cents = 1200 * Math.log2(hz / f.hz);
+    const folded = ((((cents + 600) % 1200) + 1200) % 1200) - 600;
+    const score = Math.abs(folded) + 0.02 * Math.abs(cents) - (f === current ? 1 : 0);
+    if (!best || score < best.score) best = { index: f.index, folded, score };
+  }
+  const x = best.folded / SING_WIDTH;
+  return { index: best.index, response: 1 / (1 + x * x) };
+}
+
+function micHeard() {
+  const was = mic.answer?.index;
+  mic.answer = mic.hz > 0 ? singAnswer(mic.hz, figAt(state.u)) : null;
+  if (!mic.answer) {
+    micSay.textContent = 'Listening. Sing a steady note, low or high.';
+    return;
+  }
+  const f = FIGS[mic.answer.index];
+  micSay.textContent = `You: ${Math.round(mic.hz)} Hz. The plate answers with figure ${f.number}.`;
+  if (reduce.matches && was !== mic.answer.index) {
+    state.u = mic.answer.index;
+    settleNow();
+  }
+}
+
+function micStop() {
+  mic.stream?.getTracks().forEach((t) => t.stop());
+  mic.src?.disconnect();
+  mic.on = false;
+  mic.stream = mic.src = mic.answer = null;
+  micBtn.setAttribute('aria-pressed', 'false');
+  micBtn.textContent = 'Sing to it';
+  micSay.textContent = '';
+}
+
+async function micToggle() {
+  if (mic.on) return micStop();
+  played();
+  if (!navigator.mediaDevices?.getUserMedia || !audio.start()) {
+    micSay.textContent = 'This browser cannot share a microphone with the page. The bow still works.';
+    return;
+  }
+  try {
+    mic.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+  } catch {
+    micSay.textContent = 'No microphone was allowed, so the plate cannot hear you. The bow still works.';
+    return;
+  }
+  mic.src = audio.ctx.createMediaStreamSource(mic.stream);
+  mic.src.connect(audio.an); // measured, never played back
+  mic.on = true;
+  mic.hz = mic.loud = 0;
+  micBtn.setAttribute('aria-pressed', 'true');
+  micBtn.textContent = 'Stop listening';
+  micSay.textContent = 'Listening. Sing a steady note, low or high.';
+}
+micBtn.hidden = false;
+micBtn.addEventListener('click', micToggle);
+
 // ---- Small plates: a figure at rest --------------------------------------------
 
 const parseFig = (text) => {
@@ -584,6 +658,16 @@ function listen(dt) {
   const peak = ((pi + off) * rate) / an.fftSize;
   heard = { rms, peak, live };
 
+  if (mic.on) {
+    mic.clock += dt;
+    if (mic.clock >= 0.06) {
+      mic.clock = 0;
+      mic.loud = clamp((20 * Math.log10(Math.max(rms, 1e-6)) + 50) / 30);
+      mic.hz = mic.loud > 0.05 ? pitchOf(td, rate) : 0;
+      micHeard();
+    }
+  }
+
   landClock += dt;
   if (landClock >= 0.04) {
     landClock %= 0.04;
@@ -816,6 +900,10 @@ function frame(now) {
   }
   if (state.keyHeld) target = Math.max(target, 0.9);
   if (state.bowing) target = Math.max(target, state.bowSpeed);
+  if (mic.on && mic.answer) {
+    state.u = mic.answer.index;
+    target = Math.max(target, mic.answer.response * mic.loud);
+  }
   state.bowSpeed *= Math.exp(-dt / 0.14);
   const tau = target > state.energy ? 0.04 : 0.5;
   state.energy += (target - state.energy) * (1 - Math.exp(-dt / tau));
@@ -832,7 +920,8 @@ function frame(now) {
   if (plateDirty && seen.get(cv) !== false) drawSand();
 
   const closest = near(Math.abs(state.u - Math.round(state.u)));
-  audio.bow(hzAt(state.u), state.energy ** 1.5 * 0.42 * (0.3 + 0.7 * closest));
+  // While the plate listens it keeps quiet, or it would hear itself.
+  audio.bow(hzAt(state.u), mic.on ? 0 : state.energy ** 1.5 * 0.42 * (0.3 + 0.7 * closest));
 
   // The bow, the glow and the width of the name.
   const frac = 1 - (state.u + 0.5) / FIGS.length;
