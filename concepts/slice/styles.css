@@ -161,6 +161,7 @@ ul {
 .rail a {
   color: var(--ink);
   text-decoration: none;
+  white-space: nowrap;
   padding-block: 15px;
 }
 .rail a:hover {
@@ -950,6 +951,10 @@ html:not(.js) .film-atlas .small {
 @media (max-width: 560px) {
   .rail-text {
     display: none;
+  }
+  .rail {
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
   }
   .rail nav {
     flex: 1;
