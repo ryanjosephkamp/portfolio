@@ -55,7 +55,7 @@ b { font-weight: 700; }
 a.chip:hover { background: var(--ink); color: var(--tile); }
 
 /* ---- Hero: the tank and its deck ---- */
-.hero { position: relative; display: grid; grid-template-rows: minmax(24rem, 1fr) auto; min-height: 100svh; }
+.hero { position: relative; display: grid; grid-template-rows: minmax(max(24rem, 32vw), 1fr) auto; min-height: 100svh; }
 .nav { position: absolute; inset: 0 0 auto 0; z-index: 3; display: flex; justify-content: space-between; gap: 0.5rem; padding: 1rem var(--pad); pointer-events: none; }
 .nav a { pointer-events: auto; }
 .nav ul { display: flex; gap: 0.4rem; }

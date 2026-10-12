@@ -2,7 +2,7 @@
 // The water is solved in sim.js; this file draws it and wires the controls.
 
 import { Tank, fringeWavelength, brightAngles, MEASURABLE, SLOW } from './sim.js';
-import { MARGIN, CELLS_PER_CM, tankLayout, arcRadius } from './layout.js';
+import { MARGIN, CELLS_PER_CM, BARRIER_Y, SETUPS, tankLayout, arcRadius } from './layout.js';
 import { sellmeier, LIGHTS, wavelengthRGB, prismCorners, trace } from './bench.js';
 
 const $ = (id) => document.getElementById(id);
@@ -168,16 +168,23 @@ function startTank() {
     const lines = vis.w / vis.h > 1.15 ? ['RYAN KAMP'] : ['RYAN', 'KAMP'];
     ctx.font = `800 100px ${FACE}`;
     const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
-    const size = Math.min((100 * tw * 0.84) / widest, th * (lines.length === 1 ? 0.5 : 0.28));
+    // The lettering keeps clear of the dippers and the barrier above it, and
+    // shrinks when the water is too short to hold it at full width.
+    const one = lines.length === 1;
+    const zoneTop = (BARRIER_Y + 1.3) * TILE;
+    const avail = th - (one ? 3 : 14) - zoneTop;
+    const perSize = one ? 0.72 : 0.72 * 2.24;
+    let size = (100 * tw * 0.84) / widest;
+    if (perSize * size + Math.max(8.5, size * 0.17) * 1.55 > avail) size = Math.max(12, (avail - 8.5 * 1.55) / perSize);
     const nameW = (widest * size) / 100;
     const cap = size * 0.72;
     const lead = cap * 1.24;
-    const base = th * 0.57 - (cap + lead * (lines.length - 1)) / 2 + cap;
+    const small = Math.max(8.5, size * 0.17);
+    const base = zoneTop + Math.max(0, (avail - cap - lead * (lines.length - 1) - small * 1.55) / 2) + cap;
     ctx.font = `800 ${size}px ${FACE}`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f00';
     lines.forEach((l, i) => ctx.fillText(l, tw / 2, base + i * lead));
-    const small = Math.max(10, size * 0.17);
     const signY = base + (lines.length - 1) * lead + small * 1.55;
     ctx.font = `800 ${small}px ${FACE}`;
     ctx.fillStyle = '#0f0';
@@ -432,13 +439,21 @@ function startTank() {
   build();
   setPlaying(state.playing);
   document.fonts.load(`800 40px ${FACE}`).then(() => vis && layTiles()).catch(() => {});
-  // Two pebbles to start, so the water is already moving when it is first seen.
-  const first = () => tank.pebble(MARGIN + vis.w * 0.27, MARGIN + vis.h * 0.36, 0.6, 0.5);
-  if (state.playing) {
+  // A link can open a setup: ?setup=double
+  const asked = new URLSearchParams(location.search).get('setup');
+  const radio = SETUPS.includes(asked) && document.querySelector(`input[name="setup"][value="${asked}"]`);
+  if (radio && asked !== 'still') {
+    radio.checked = true;
+    state.setup = asked;
+    applyLayout(true);
+    if (!state.playing) stillFrame(1.6);
+  } else if (state.playing) {
+    // Two pebbles to start, so the water is already moving when it is first seen.
+    const first = () => tank.pebble(MARGIN + vis.w * 0.27, MARGIN + vis.h * 0.36, 0.6, 0.5);
     setTimeout(first, 350);
     setTimeout(() => tank.pebble(MARGIN + vis.w * 0.7, MARGIN + vis.h * 0.72, 0.6, 0.5), 1300);
   } else {
-    first();
+    tank.pebble(MARGIN + vis.w * 0.27, MARGIN + vis.h * 0.36, 0.6, 0.5);
     stillFrame(0.5);
   }
   wake();

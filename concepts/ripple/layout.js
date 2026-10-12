@@ -5,9 +5,9 @@
 
 export const MARGIN = 4;
 export const CELLS_PER_CM = 6;
-export const DIPPER_Y = 4.5; // from the top of the visible water
-export const BAR_Y = 2.5; // the bar that makes a plane wave
-export const BARRIER_Y = 6;
+export const DIPPER_Y = 3.2; // from the top of the visible water
+export const BAR_Y = 1.4; // the bar that makes a plane wave
+export const BARRIER_Y = 4.6;
 export const SLIT = 1; // the width of each of the two slits
 
 export const SETUPS = ['still', 'one', 'two', 'plane', 'single', 'double'];
