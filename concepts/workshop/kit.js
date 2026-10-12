@@ -49,7 +49,7 @@ export function share(budget, areas) {
 export const torusArea = (rho = r) => TAU * TAU * R * rho;
 export const outerHalfArea = (rho = r) => TAU * rho * (Math.PI * R + 2 * rho); // cos v > 0
 export const innerHalfArea = (rho = r) => TAU * rho * (Math.PI * R - 2 * rho); // cos v < 0
-// A band of half-width w(u) centred on the top of the tube. The cos v term
+// A band of half-width w(u) centered on the top of the tube. The cos v term
 // cancels across the band, and the ripples in w(u) integrate to nothing.
 export const frostArea = () => RF * 2 * R * TAU * FROST_MEAN;
 export const sprinkleArea = () => SPRINKLES * (TAU * SP_RAD * SP_LEN + 2 * TAU * SP_RAD * SP_RAD);

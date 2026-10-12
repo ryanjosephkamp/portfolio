@@ -1,7 +1,7 @@
 # Workshop
 
 A concept portfolio for Ryan Kamp as a software engineering researcher, with
-[Splashery](https://ryanjosephkamp.github.io/splashery/) as the centrepiece. One page, static files,
+[Splashery](https://ryanjosephkamp.github.io/splashery/) as the centerpiece. One page, static files,
 no build step, no dependencies.
 
 **The signature.** The hero is a drafting sheet. A builder drafts a donut out of 640 Gaussian

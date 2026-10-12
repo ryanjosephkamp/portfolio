@@ -64,7 +64,7 @@ p { margin: 0 0 0.9em; text-wrap: pretty; }
 }
 .sheet__tag { margin: 0; color: var(--ink-2); font-size: 1.05rem; text-align: right; padding-bottom: 0.5em; }
 
-/* Lettering sits between its guide lines, the way it is practised. */
+/* Lettering sits between its guide lines, the way it is practiced. */
 .lettering {
   margin: 0;
   font-weight: 300;

@@ -43,7 +43,7 @@ function makeBoard(canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    // Construction lines, in non-photo blue: centre lines and the ring's axis circle.
+    // Construction lines, in non-photo blue: center lines and the ring's axis circle.
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgba(64,150,180,0.7)';
     ctx.setLineDash([14, 4, 2, 4]);
