@@ -87,8 +87,9 @@ Ryan's own word for his sites. It means:
   (`<slug>:found`).
 - Splashery embeds (README, "Embedding") are real and welcome, and heavy: the engine plus one
   captured toy is about 8 MB. Lazy-load them, keep few on a page, and give each a no-embed fallback.
-  Many science and lab toys sit behind a labs switch (`?labs=1` on the site). Load an embed of one
-  and see it work before a page relies on it.
+  Lab toys are hidden from the site's shelves unless `?labs=1` is set, but the embed player loads
+  them by id all the same: `embed/?toy=ripple-tank` and `embed/?toy=chladni-plate` were seen
+  rendering on October 12, 2026. See an embed render before a page relies on it.
 - A toy id or a quoted title that someone else spelled differently stays as they spelled it. Put
   `us-spelling: keep` in a comment on that line so the spelling check passes over it.
 - Headless Chrome renders screenshots and social cards:
