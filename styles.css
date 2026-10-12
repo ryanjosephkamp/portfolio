@@ -121,7 +121,7 @@ img, svg, canvas { display: block; max-width: 100%; }
   --u: 3rem;
   position: relative;
   width: 100%;
-  height: calc(var(--u) * 1.02);
+  height: calc(var(--u) * (1.02 + (var(--rows, 1) - 1) * 1.1));
   user-select: none;
   -webkit-user-select: none;
   /* no-JS fallback text */
@@ -139,12 +139,15 @@ img, svg, canvas { display: block; max-width: 100%; }
   width: calc(var(--u) * 0.92);
   height: calc(var(--u) * 0.92);
   margin-left: calc(var(--u) * 0.04);
-  transform: translate3d(calc(var(--x, 0) * var(--u)), 0, 0);
+  transform: translate3d(calc(var(--x, 0) * var(--u)), calc(var(--y, 0) * var(--u)), 0);
   cursor: grab;
   touch-action: pan-y;
   letter-spacing: 0;
 }
+.tiles.is-ready { transition: height 0.5s var(--ease-out); }
 .tiles.is-ready .tile { transition: transform 0.75s var(--ease-out); }
+/* stacked rows are dragged up and down as well as across */
+.tiles.is-stacked .tile { touch-action: none; }
 .tile.is-held {
   transition: none !important;
   z-index: var(--z-held);

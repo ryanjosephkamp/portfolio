@@ -2,6 +2,7 @@
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const GAP = 0.5; // width of a word space, in tile units
+const LEADING = 1.1; // distance between stacked lines, in tile units
 
 const letters = (phrase) => [...phrase.replace(/\s/g, '')];
 
@@ -72,10 +73,12 @@ function unrank(rank, chars) {
  * into any of the phrases it knows. Every phrase must use the same letters.
  */
 class TileRow {
-  constructor(root, phrases, { maxUnit = 150, onChange } = {}) {
+  constructor(root, phrases, { maxUnit = 150, stackBelow = 0, onChange } = {}) {
     this.root = root;
     this.phrases = phrases;
     this.maxUnit = maxUnit;
+    this.stackBelow = stackBelow; // narrower than this, each word gets its own line
+    this.longest = Math.max(...phrases.flatMap((p) => p.split(' ').map((w) => w.length)));
     this.onChange = onChange;
     this.known = new Map(phrases.map((p) => [letters(p).join(''), p]));
     this.units = Math.max(...phrases.map((p) => letters(p).length + breaksOf(p).size * GAP));
@@ -87,8 +90,8 @@ class TileRow {
     this.cursor = 0; // how many tiles have been placed by typing
 
     this.measure();
-    this.layout();
-    new ResizeObserver(() => this.measure()).observe(root);
+    // Width only: stacking changes the row's own height.
+    new ResizeObserver(() => { if (root.clientWidth !== this.width) this.measure(); }).observe(root);
     requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('is-ready')));
   }
 
@@ -107,28 +110,56 @@ class TileRow {
   }
 
   measure() {
-    this.u = Math.min(this.root.clientWidth / this.units, this.maxUnit);
+    const width = this.root.clientWidth;
+    this.width = width;
+    this.stacked = width < this.stackBelow;
+    this.u = Math.min(width / (this.stacked ? this.longest : this.units), this.maxUnit);
     this.root.style.setProperty('--u', `${this.u.toFixed(2)}px`);
+    this.root.classList.toggle('is-stacked', this.stacked);
+    this.layout();
   }
 
-  // Left edge of every slot, in tile units, centred on zero.
+  // Top-left corner of every slot, in tile units, centred on zero across.
   slots() {
-    const xs = [];
-    let x = 0;
-    for (let i = 0; i < this.order.length; i += 1) {
-      xs.push(x);
-      x += 1;
-      if (this.breaks.has(i)) x += GAP;
+    const n = this.order.length;
+    const out = [];
+    if (!this.stacked) {
+      let x = 0;
+      for (let i = 0; i < n; i += 1) {
+        out.push({ x, y: 0 });
+        x += 1;
+        if (this.breaks.has(i)) x += GAP;
+      }
+      out.forEach((slot) => { slot.x -= x / 2; });
+      this.rows = 1;
+      return out;
     }
-    return xs.map((v) => v - x / 2);
+    let line = [];
+    let row = 0;
+    for (let i = 0; i < n; i += 1) {
+      line.push(i);
+      if (this.breaks.has(i) || i === n - 1) {
+        line.forEach((_, j) => out.push({ x: j - line.length / 2, y: row * LEADING }));
+        row += 1;
+        line = [];
+      }
+    }
+    this.rows = row;
+    return out;
   }
 
   layout(skip) {
-    const xs = this.slots();
+    if (!this.order) return;
+    const slots = this.slots();
+    this.root.style.setProperty('--rows', this.rows);
     this.order.forEach((tile, i) => {
       tile.i = i;
-      tile.x = xs[i];
-      if (tile !== skip) tile.el.style.setProperty('--x', xs[i].toFixed(3));
+      tile.x = slots[i].x;
+      tile.y = slots[i].y;
+      if (tile !== skip) {
+        tile.el.style.setProperty('--x', tile.x.toFixed(3));
+        tile.el.style.setProperty('--y', tile.y.toFixed(3));
+      }
     });
   }
 
@@ -264,23 +295,35 @@ class TileRow {
     e.preventDefault();
     this.clearTyped();
     const { el } = tile;
-    const startX = e.clientX;
+    const start = { x: e.clientX, y: e.clientY };
     // Start from where the tile is drawn right now, which may be mid-flight.
     const box = this.root.getBoundingClientRect();
-    const origin = (el.getBoundingClientRect().left - box.left - box.width / 2) / this.u - 0.04;
+    const rect = el.getBoundingClientRect();
+    const origin = {
+      x: (rect.left - box.left - box.width / 2) / this.u - 0.04,
+      y: (rect.top - box.top) / this.u,
+    };
     let moved = false;
     el.setPointerCapture(e.pointerId);
     el.classList.add('is-held');
-    el.style.transitionDelay = '0ms';
     this.order.forEach((t) => { t.el.style.transitionDelay = '0ms'; });
 
     const move = (ev) => {
-      const x = origin + (ev.clientX - startX) / this.u;
-      if (Math.abs(x - origin) > 0.08) moved = true;
+      const x = origin.x + (ev.clientX - start.x) / this.u;
+      const y = origin.y + (ev.clientY - start.y) / this.u;
+      if (Math.hypot(x - origin.x, y - origin.y) > 0.08) moved = true;
       el.style.setProperty('--x', x.toFixed(3));
-      const xs = this.slots();
+      el.style.setProperty('--y', y.toFixed(3));
+      const slots = this.slots();
       let to = 0;
-      xs.forEach((sx, i) => { if (Math.abs(sx - x) < Math.abs(xs[to] - x)) to = i; });
+      let best = Infinity;
+      slots.forEach((slot, i) => {
+        const d = Math.hypot(slot.x - x, slot.y - y);
+        if (d < best) {
+          best = d;
+          to = i;
+        }
+      });
       const from = this.order.indexOf(tile);
       if (to !== from) {
         this.order.splice(from, 1);
@@ -376,6 +419,7 @@ function hero() {
 
   const row = new TileRow(root, phrases, {
     maxUnit: 148,
+    stackBelow: 560,
     onChange({ phrase, text, byHand, typing, placed }) {
       root.dataset.state = phrase === NAME ? 'name' : phrase ? 'anagram' : 'scramble';
       word.textContent = text;
