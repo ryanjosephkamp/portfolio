@@ -10,6 +10,8 @@
 // 2. The catalog the page uses lists exactly those 24, in pitch order.
 // 3. For every one of the 24, sand scattered evenly and rung for four
 //    seconds ends up on that figure's still lines.
+// Also: every figure's pitch is a whole multiple of the lowest, and the 24
+// figures share 14 pitches, as the page says.
 //
 // Exits 1 if any of it fails.
 
@@ -63,6 +65,12 @@ if (cat.length !== distinct.length) fail(`the catalog lists ${cat.length}`);
 for (const d of distinct) if (!cat.some((f) => same(field(f), d.v))) fail(`missing from the catalog: ${d.n}, ${d.m}, ${d.s}`);
 for (let i = 1; i < cat.length; i++) if (cat[i].hz < cat[i - 1].hz) fail(`out of pitch order at ${i + 1}`);
 for (const f of cat) if (Math.abs(f.hz - BASE_HZ * (f.n * f.n + f.m * f.m)) > 1e-9) fail(`pitch of figure ${f.number}`);
+
+// Every pitch is a whole multiple of the lowest, and there are 14 of them.
+const pitches = new Set(cat.map((f) => f.k));
+for (const f of cat) if (!Number.isInteger(f.k) || Math.abs(f.hz / cat[0].hz - f.k) > 1e-9) fail(`figure ${f.number} is not a whole multiple`);
+console.log(`${pitches.size} pitches: ${[...pitches].join(', ')} × the lowest`);
+if (pitches.size !== 14) fail(`expected 14 pitches, counted ${pitches.size}`);
 
 // 3. The sand finds every figure.
 let worst = 1;

@@ -64,6 +64,7 @@
             <circle class="bow-eye" cx="586" cy="26.5" r="4.2" />
             <rect class="bow-screw" x="632" y="12.5" width="8" height="8" rx="1.5" />
           </svg>
+          <span class="hint" id="hint" aria-hidden="true">Drag the bow ↑↓</span>
         </div>
 
         <div class="readout" aria-live="off">
@@ -75,7 +76,7 @@
             </div>
             <div>
               <dt>Pitch</dt>
-              <dd id="fig-hz">654 Hz</dd>
+              <dd><span id="fig-hz">654 Hz</span> <small id="fig-times">10 × the lowest</small></dd>
             </div>
             <div>
               <dt>Sand on a still line</dt>
@@ -139,11 +140,31 @@
                 w(x, y) = cos(nπx)·cos(mπy) ± cos(mπx)·cos(nπy)
               </p>
               <p class="note">
-                On this page: the plate at the top follows that model, and a figure's pitch follows n² + m². With n
-                and m up to 4 it can make exactly 24 figures. Here is every one, lowest note first. Tap any to ring it.
+                On this page: the plate at the top follows that model, and a figure's pitch follows n² + m², so
+                every note is a whole multiple of the lowest. With n and m up to 4 it can make exactly 24 figures on
+                14 pitches. Here is every one, lowest note first. Tap any to ring it.
               </p>
             </div>
-            <div class="sheet" id="sheet" role="group" aria-label="All 24 figures"></div>
+            <div class="way-art">
+              <div class="sheet" id="sheet" role="group" aria-label="All 24 figures"></div>
+              <div class="real" id="real">
+                <p class="stamp">The real one</p>
+                <p class="real-say">
+                  This page draws its own plate. The one in Splashery is made of Gaussian splats, and it is one tap
+                  away: load it here, then tap the plate to hear its note and watch the sand find its figure.
+                </p>
+                <p class="real-keys">
+                  <button type="button" class="key key-loud" id="real-btn" hidden>Load the real plate</button>
+                  <a
+                    class="real-link"
+                    href="https://ryanjosephkamp.github.io/splashery/embed/?toy=chladni-plate&amp;sound=on&amp;turntable=off"
+                    >Open the real plate on its own page</a
+                  >
+                </p>
+                <p class="real-status" id="real-status" role="status"></p>
+                <div class="real-frame" id="real-frame" hidden></div>
+              </div>
+            </div>
           </article>
 
           <article class="way" id="way-lab">
@@ -160,19 +181,38 @@
                 On this page: three screens, drawn in sand, that read this page's own sound. Loudest now:
                 <b id="lab-peak">nothing yet</b>.
               </p>
-              <p><button type="button" class="key key-loud" data-phrase>Play a phrase</button></p>
+              <p class="real-keys">
+                <button type="button" class="key key-loud" data-phrase>Play a phrase</button>
+                <a
+                  class="real-link"
+                  href="https://ryanjosephkamp.github.io/splashery/embed/?toy=sound-lab&amp;sound=on&amp;turntable=off"
+                  >Open the real sound lab on its own page</a
+                >
+              </p>
             </div>
             <div class="screens">
               <figure class="screen screen-wide">
-                <canvas id="spectrogram" width="640" height="220"></canvas>
+                <div class="glass">
+                  <canvas id="spectrogram" width="640" height="220"></canvas>
+                  <span class="mark" style="--p: 59.9" aria-hidden="true">1 kHz</span>
+                  <span class="mark" style="--p: 12.3" aria-hidden="true">100 Hz</span>
+                </div>
                 <figcaption>Spectrogram · time runs left, pitch runs up</figcaption>
               </figure>
               <figure class="screen">
-                <canvas id="spectrum" width="320" height="180"></canvas>
+                <div class="glass">
+                  <canvas id="spectrum" width="320" height="180"></canvas>
+                  <span class="mark mark-x" style="--p: 12.3" aria-hidden="true">100 Hz</span>
+                  <span class="mark mark-x" style="--p: 59.9" aria-hidden="true">1 kHz</span>
+                  <span class="mark mark-x mark-end" style="--p: 93.1" aria-hidden="true">5 kHz</span>
+                </div>
                 <figcaption>Spectrum</figcaption>
               </figure>
               <figure class="screen">
-                <canvas id="scope" width="320" height="180"></canvas>
+                <div class="glass">
+                  <canvas id="scope" width="320" height="180"></canvas>
+                  <span class="mark" style="--p: 50" aria-hidden="true"></span>
+                </div>
                 <figcaption>Oscilloscope</figcaption>
               </figure>
             </div>
@@ -249,7 +289,7 @@
             <path class="edge" d="M292 96 H 418" />
             <path class="edge" d="M474 96 H 548" />
             <path class="edge edge-back" d="M264 124 C 264 190, 82 190, 82 124" />
-            <path class="arrow" d="M228 90 l10 6 l-10 6 Z M410 90 l10 6 l-10 6 Z M540 90 l10 6 l-10 6 Z M76 134 l6 -11 l6 11 Z" />
+            <path class="arrow" d="M170 89 l12 7 l-12 7 Z M352 89 l12 7 l-12 7 Z M508 89 l12 7 l-12 7 Z M166 183 l12 -7 l0 14 Z" />
           </svg>
           <ol class="loop-nodes">
             <li data-node="build" style="--x: 13.7%">Build</li>

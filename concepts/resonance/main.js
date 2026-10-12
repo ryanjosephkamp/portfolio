@@ -165,6 +165,7 @@ const stage = $('#stage');
 const cv = $('#sand');
 const g2 = cv.getContext('2d');
 const bowEl = $('#bow');
+const hintEl = $('#hint');
 const rail = $('#rail');
 let sand = new Sand(9000);
 let plateDirty = true;
@@ -230,7 +231,9 @@ function setFigure(index, seconds) {
   strike(seconds);
 }
 
+let phraseTimer = 0;
 function ring(index, el) {
+  clearTimeout(phraseTimer);
   audio.start();
   setFigure(index, 1.6);
   if (el) {
@@ -257,8 +260,10 @@ function bowFrom(e) {
   }
   lastMove = { x: e.clientX, y: e.clientY, t: now };
 }
+const played = () => stage.classList.add('is-played');
 stage.addEventListener('pointerdown', (e) => {
   if (e.button > 0) return;
+  played();
   audio.start();
   stage.setPointerCapture(e.pointerId);
   state.bowing = true;
@@ -292,6 +297,7 @@ stage.addEventListener('keydown', (e) => {
   } else if (e.key === 's' || e.key === 'S') {
     scatter();
   } else return;
+  played();
   e.preventDefault();
 });
 stage.addEventListener('keyup', (e) => {
@@ -451,7 +457,6 @@ function runLoop(sound) {
 $('#loop-btn').addEventListener('click', () => runLoop(true));
 
 // A phrase: eight figures, for the screens to read.
-let phraseTimer = 0;
 function playPhrase() {
   audio.start();
   clearTimeout(phraseTimer);
@@ -547,6 +552,7 @@ function pitchOf(td, rate) {
 
 const NB = 56;
 const gramBands = new Float32Array(NB);
+const gramBuf = document.createElement('canvas');
 const specBands = new Float32Array(96);
 const LAND_NB = 44;
 const LAND_MAX = 64;
@@ -603,20 +609,33 @@ function listen(dt) {
   }
 }
 
-function drawGram(dt) {
+function drawGram() {
   const c = screens.gram;
   const g = c.getContext('2d');
   if (fit(c)) g.clearRect(0, 0, c.width, c.height);
-  if (!heard.live) return;
-  gramClock += dt;
-  const every = reduce.matches ? 0.3 : 0.03;
-  if (gramClock < every) return;
-  gramClock = 0;
-  const step = Math.max(2, Math.round(c.width / (reduce.matches ? 60 : 300)));
-  g.globalCompositeOperation = 'copy';
-  g.drawImage(c, -step, 0);
-  g.globalCompositeOperation = 'source-over';
-  g.clearRect(c.width - step, 0, step, c.height);
+  // By the clock, not by the frame: a slow device crosses the screen in the
+  // same six seconds, in wider steps.
+  const now = performance.now();
+  const since = Math.min(0.5, (now - gramClock) / 1000);
+  if (!heard.live) {
+    gramClock = now;
+    return;
+  }
+  const every = reduce.matches ? 0.3 : 0.035;
+  if (since < every) return;
+  gramClock = now;
+  const step = Math.max(2, Math.round((c.width * since) / 6));
+  // Slide the picture left by way of a second canvas: a canvas drawn onto
+  // itself does not keep what it had.
+  if (gramBuf.width !== c.width || gramBuf.height !== c.height) {
+    gramBuf.width = c.width;
+    gramBuf.height = c.height;
+  }
+  const bg = gramBuf.getContext('2d');
+  bg.clearRect(0, 0, c.width, c.height);
+  bg.drawImage(c, 0, 0);
+  g.clearRect(0, 0, c.width, c.height);
+  g.drawImage(gramBuf, -step, 0);
   bandsOf(audio.fd, audio.ctx.sampleRate, NB, gramBands);
   const rowH = c.height / NB;
   const grain = Math.max(1.2, c.width / 520);
@@ -745,6 +764,7 @@ const out = {
   no: $('#fig-no'),
   mode: $('#fig-mode'),
   hz: $('#fig-hz'),
+  times: $('#fig-times'),
   share: $('#fig-share'),
 };
 let shown = { index: -1, share: -1, wdth: 0, ring: -1, text: '' };
@@ -761,6 +781,7 @@ function readout(dt) {
     out.no.textContent = f.number;
     out.mode.textContent = `n ${f.n} · m ${f.m} · ${f.s > 0 ? '+' : '−'}`;
     out.hz.textContent = `${Math.round(f.hz).toLocaleString('en-US')} Hz`;
+    out.times.textContent = f.k === 1 ? 'the lowest' : `${f.k} × the lowest`;
     stage.setAttribute('aria-valuenow', f.number);
     stage.setAttribute(
       'aria-valuetext',
@@ -815,7 +836,7 @@ function frame(now) {
 
   // The bow, the glow and the width of the name.
   const frac = 1 - (state.u + 0.5) / FIGS.length;
-  bowEl.style.top = `${4 + 92 * frac}%`;
+  bowEl.style.top = hintEl.style.top = `${4 + 92 * frac}%`;
   if (!state.bowing) {
     const sway = reduce.matches ? 0 : Math.sin(now / 95) * stage.clientWidth * 0.07 * state.energy;
     state.stroke += (sway - state.stroke) * 0.3;
@@ -829,7 +850,7 @@ function frame(now) {
   // The screens.
   listen(dt);
   labClock += dt;
-  if (seen.get(screens.gram)) drawGram(dt);
+  if (seen.get(screens.gram)) drawGram();
   if (labClock > (reduce.matches ? 0.4 : 0.03)) {
     labClock = 0;
     if (seen.get(screens.spec)) drawSpec();
@@ -860,3 +881,20 @@ const loopSeen = new IntersectionObserver(
   { threshold: 0.6 },
 );
 loopSeen.observe(loopEl);
+
+// The real plate, from Splashery: loaded only when asked, silent until tapped.
+const realBtn = $('#real-btn');
+realBtn.hidden = false;
+realBtn.addEventListener('click', () => {
+  const holder = $('#real-frame');
+  const frame = document.createElement('iframe');
+  frame.src = 'https://ryanjosephkamp.github.io/splashery/embed/?toy=chladni-plate&sound=on&turntable=off';
+  frame.title = "Splashery's Chladni plate. Tap the plate to play its note.";
+  frame.allow = 'autoplay';
+  const status = $('#real-status');
+  status.textContent = 'Loading the plate from Splashery. It can take a few seconds.';
+  frame.addEventListener('load', () => (status.textContent = 'When the plate appears, tap it.'));
+  holder.append(frame);
+  holder.hidden = false;
+  realBtn.hidden = true;
+});
