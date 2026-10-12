@@ -12,63 +12,110 @@ when it is in neither, leave it out.
 - BA in Mathematics and BS in Neuroscience, University of Cincinnati, January 2020 to May 2025.
   Capstone advisor: [Dr. Hyunjoong Kim](https://sites.google.com/view/hkimmathbio/home).
 - **Research interests, verbatim:** scientific visualization, computer graphics, digital media,
-  software engineering, and information retrieval.
-- Earlier interests (corpus linguistics, LLM evaluation) are what v1 at the repo root reflects.
-  New pages lead with the list above.
+  software engineering, and information retrieval. A concept leads with the one it is built on.
 
-## Projects, in the CV's words
+## The core set
 
-Use these verbs for what Ryan did.
+Every concept site presents these five, Splashery first and largest. The text under each is what
+the project does, ready to adapt.
 
-- **Splashery** (2026 to present). Interactive Gaussian splat playground.
-  [Demo](https://ryanjosephkamp.github.io/splashery/) ·
-  [code](https://github.com/ryanjosephkamp/splashery) ·
-  [Tinkerer's Manual](https://ryanjosephkamp.github.io/splashery/manual/).
-  Defined the project vision and toy categories, directed multi-agent development, and refined
-  interaction design through hands-on testing. Developed and contributed selected mathematical
-  recipes to a PlayCanvas-based playground, combining Gaussian splats, captured and procedural
-  objects, creative interactions, and scientific examples.
-- **grooph** (2026 to present). Visual loop graphs for coding-agent workflows.
-  [Demo](https://ryanjosephkamp.github.io/grooph/) · [code](https://github.com/ryanjosephkamp/grooph).
-  Implemented a multi-agent pipeline and refined a visual tool for expressing builder/checker
-  roles, human decision points, and stopping conditions. The tool validates graph documents and
-  compiles prompt packages for a separate coding-agent harness.
-- **Undergraduate research capstone** (April 2025). The Speed-Accuracy Trade-Off in Perceptual
-  Decision-Making. [Code](https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone) ·
-  [video](https://youtu.be/LRAP1YHy3g0). Modeled evidence accumulation as a diffusion process and
-  used dynamic programming and value iteration to study decision boundaries in a simulated
-  autonomous-vehicle obstacle-avoidance scenario.
-- **English OpenList** (December 2025 to present). English word dataset and lexical explorer.
-  [Website](https://english-openlist.pages.dev/) ·
-  [code](https://github.com/ryanjosephkamp/english-openlist) ·
-  [dataset](https://huggingface.co/datasets/ryanjosephkamp/english-openlist).
-- **resmon** (April 2026 to present). Local-first literature-monitoring desktop application with
-  scheduled searches, deduplication, and optional LLM summarization.
-  [Code](https://github.com/ryanjosephkamp/resmon).
-- **Spring 2026 AI Research Prototype Portfolio.** An exploratory portfolio of predominantly
-  AI-generated research software prototypes, documenting AI contributions and limitations without
-  claiming independently validated scientific findings.
-  [Article](https://ryanjosephkamp.github.io/blog/articles/s26-airp/).
-- Also public, described in their READMEs: [Ars Magna](https://ars-magna.pages.dev/) (anagram
-  finder), [Amordle](https://amordle.vercel.app) (word game),
-  [Link Meteor](https://ryanjosephkamp.github.io/link-meteor/),
-  [aqrobat](https://ryanjosephkamp.github.io/aqrobat/).
+1. **Splashery** (2026 to present). An interactive Gaussian splat playground that runs entirely in
+   the browser. Pick a toy (a real captured object, or one generated from a seed), spin it, poke
+   it, blow on it, splash paint on it, drop it, watch it fall apart and come back, make your own,
+   and share it as a link, an embed, a GIF or a video.
+   [Play](https://ryanjosephkamp.github.io/splashery/) ·
+   [code](https://github.com/ryanjosephkamp/splashery) ·
+   [Tinkerer's Manual](https://ryanjosephkamp.github.io/splashery/manual/).
+   Ryan's part, where a page needs it: he defined the project's vision and its toy categories,
+   refined the interaction design through hands-on testing, and contributed mathematical recipes.
+2. **grooph** (2026 to present). Visual loop graphs for coding-agent workflows. You draw who
+   builds, who checks, where a person decides and when the work stops. grooph checks that every
+   loop names a stop, then compiles the graph into a prompt package for a separate coding-agent
+   harness. It runs no agent and calls no model, and graphs stay on your device.
+   [Open](https://ryanjosephkamp.github.io/grooph/) ·
+   [docs](https://ryanjosephkamp.github.io/grooph/docs/) ·
+   [code](https://github.com/ryanjosephkamp/grooph).
+3. **The Speed-Accuracy Trade-Off in Perceptual Decision-Making** (April 2025). Ryan's
+   undergraduate research capstone. It models evidence accumulation as a diffusion process and
+   uses dynamic programming and value iteration to study decision boundaries in a simulated
+   autonomous-vehicle obstacle-avoidance scenario.
+   [Code](https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone) ·
+   [video](https://youtu.be/LRAP1YHy3g0).
+4. **English OpenList** (December 2025 to present). A free, open, continuously maintained list of
+   valid English words, about 345,000 of them, with the provenance of every word (which sources
+   attested it, and when), auditable correction records, and a browser explorer.
+   [Explore](https://english-openlist.pages.dev/) ·
+   [code](https://github.com/ryanjosephkamp/english-openlist) ·
+   [dataset](https://huggingface.co/datasets/ryanjosephkamp/english-openlist).
+5. **resmon** (April 2026 to present). A local-first literature-monitoring desktop application. It
+   runs scheduled searches across open-access scholarly sources, removes duplicates, and compiles
+   reading reports, with optional summaries.
+   [Code](https://github.com/ryanjosephkamp/resmon).
 
-## Splashery, for pages that centre it
+## The shelf
 
-Read its README before writing about it; it is long and exact. What it holds:
+Add the two or three that suit the concept.
 
-- Captured toys (real scans, up to 450,000 splats) and generated ones built from seeded recipes.
-- Science shelves: a tiny-world pack (virus, neuron, DNA, cells), atoms (electron orbitals,
-  molecules, crystal lattices, proteins), body (brain, eye, lungs), space, and maths (Lorenz
-  attractor, Klein bottle, gyroid, Mandelbulb and more).
-- Effects that run on the GPU for every splat, every frame: poke, wind, dissolve, drop, magnet,
+- **Ars Magna.** An anagram finder. Give it any text and it returns every way those exact letters
+  can be re-partitioned into real English words, by a deterministic search.
+  [Try](https://ars-magna.pages.dev/) · [code](https://github.com/ryanjosephkamp/ars-magna).
+- **Amordle.** A free word game: any word length from 2 to 35 letters, three difficulties, a daily
+  puzzle, and ranked multiplayer with an Elo rating.
+  [Play](https://amordle.vercel.app) · [code](https://github.com/ryanjosephkamp/amordle).
+- **aqrobat.** A local text and emoji QR lab: QR artwork built from letters, symbols or emoji.
+  [Make one](https://ryanjosephkamp.github.io/aqrobat/) ·
+  [code](https://github.com/ryanjosephkamp/aqrobat).
+- **Link Meteor.** A Chrome extension that collects links with their anchor text and URL in
+  separate fields. [Website](https://ryanjosephkamp.github.io/link-meteor/) ·
+  [code](https://github.com/ryanjosephkamp/link-meteor).
+
+Leave out unless a prompt asks for it: the Spring 2026 AI Research Prototype Portfolio, reword-nerd,
+and any repository that is not public.
+
+## Splashery, in depth
+
+For concepts that center a part of it. Read the README, and the header comment of the pack you
+write about (`src/packs/<pack>.js`), before writing; they are long and exact.
+
+- **Toys.** Captured ones are real scans of up to 450,000 splats. Generated ones are built from
+  seeded recipes, so a saved scene rebuilds the same toy. Shelves include space, a tiny world of
+  cells and viruses, atoms, the body, nature, weather, food, playthings, games, landmarks,
+  vehicles, animals and math.
+- **Effects** run on the GPU for every splat, every frame: poke, wind, dissolve, drop, magnet,
   twist, slice, paint.
-- Labs: PDFs, pictures, GIFs and videos rebuilt from splats; photos and videos turned into 3D.
-- The Tinkerer's Manual: what one splat is (the Gaussian and its covariance), how a recipe is
-  built, and a splat equation language.
-- Sharing as a link, a JSON file, a PNG, a GIF, a WebM, or an embed (iframe or `<splashery-toy>`).
-- Static files and ES modules only: no build step, no framework, no server.
+- **Waves and optics.** A ripple tank that solves the 2D wave equation (dippers, a plane wave, one
+  or two slits), and a light bench that traces rays with Snell's law through lenses, mirrors, a
+  prism, a glass block and a fiber.
+- **Light lab.** Line spectra of sixteen elements from NIST data; a prism (Snell's law, with the
+  glass's index from its Sellmeier fit) and a grating (d sin θ = m λ).
+- **Sound.** A Chladni plate whose sand moves live with the sound, and a 3D version based on the
+  acoustic radiation force. A sound lab with a spectrogram, a spectrum and an oscilloscope. A song
+  landscape drawn from measured features: bands, loudness, spectral centroid, pitch.
+- **Molecules and crystals.** A molecule viewer that opens PDB, mmCIF, SDF, MOL and XYZ files or
+  fetches an entry from the Protein Data Bank, drawn as balls and sticks, space-filling atoms, a
+  cartoon or a surface, with distance and angle measurement. Crystal unit cells from published
+  lattice constants. Hydrogen orbitals sampled from |ψ|².
+- **Volumes and imaging.** A volume viewer that opens CT, MRI and microscope scans (DICOM, NIfTI,
+  TIFF stacks) on the device, with window and level, a transfer function, cut planes and a
+  maximum-intensity picture; its samples are a walnut and a gar's head. Toys that show how CT, MRI,
+  an electron microscope and a thermal camera see. An anatomy atlas peeled layer by layer.
+- **Scale and sky.** Powers of ten: one continuous zoom from a galaxy down to a single molecular
+  machine, through real pictures and data at every scale. The night sky for any date, time and
+  place: stars to magnitude 6 from the HYG database, constellation lines, the Sun, the Moon and
+  the planets.
+- **Earth and data.** Real landscapes from public data (the Grand Canyon, Mount St. Helens before
+  and after May 18, 1980, the Mariana Trench). Data in 3D: a CSV becomes a scatter, bars or a
+  surface. Climate records: Mauna Loa CO2 as a spiral, GISTEMP temperature anomalies.
+- **How splats work.** A Gaussian splatting toy that fits 2D Gaussians to a picture by gradient
+  descent, step by step, and shows one splat, many splats and sorting. A splat equation toy that
+  places every splat from equations in u, v and t. The Tinkerer's Manual: what one splat is (the
+  Gaussian and its covariance), how a recipe is built, and the equation language.
+- **Media.** PDFs, pictures, GIFs and videos rebuilt from splats; photos and videos turned into 3D
+  reliefs. A synthesized sound for every toy. An arcade of games made of splats.
+- **Sharing.** A link, a JSON file, a PNG, a GIF, a WebM, or an embed (an iframe or a
+  `<splashery-toy>` element). Bring your own splat file: PLY, SOG, SPLAT, SPZ.
+- **Engineering.** Static files and ES modules only: no build step, no framework, no server.
+  PlayCanvas engine, WebGPU with a WebGL2 fallback.
 
 ## Links
 

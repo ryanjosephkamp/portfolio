@@ -119,7 +119,7 @@ class TileRow {
     this.layout();
   }
 
-  // Top-left corner of every slot, in tile units, centred on zero across.
+  // Top-left corner of every slot, in tile units, centered on zero across.
   slots() {
     const n = this.order.length;
     const out = [];
@@ -377,7 +377,7 @@ function hero() {
   } catch { /* storage unavailable: start fresh */ }
   let touched = false;
 
-  // The shelf: this ordering between its neighbours in the alphabetical
+  // The shelf: this ordering between its neighbors in the alphabetical
   // list of every ordering. It spins like an odometer as the rank changes.
   const shelf = document.getElementById('shelf');
   const bag = letters(NAME);

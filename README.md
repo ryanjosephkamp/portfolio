@@ -27,6 +27,13 @@ Then open http://localhost:4173.
 To add an anagram to the hero, add an entry to `ENTRIES` in `main.js` and a fifth-plus `<i>` to `#pips`
 in `index.html`. Every phrase must use exactly the same letters.
 
+## Concepts
+
+The root is v1. Other concept sites, one per research direction, live in `concepts/<slug>/`; the
+registry is [docs/CONCEPTS.md](docs/CONCEPTS.md). The rules every page follows are in
+[CLAUDE.md](CLAUDE.md), the process in [docs/PLAYBOOK.md](docs/PLAYBOOK.md), and the facts in
+[docs/FACTS.md](docs/FACTS.md). `node tools/us-spelling.mjs` checks spelling and dates.
+
 ## Deploy
 
 The site is plain files at the repository root, so GitHub Pages can serve the `main` branch as is.
