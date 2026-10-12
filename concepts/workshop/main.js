@@ -121,9 +121,10 @@ function makeBoard(canvas) {
     dirty = frac < 1 || !!poke;
   }
 
-  function frame(now) {
+  function frame() {
     requestAnimationFrame(frame);
     if (!visible) return;
+    const now = performance.now(); // the same clock the loop's timers use
     const dt = Math.min((now - lastFrame) / 1000, 0.05);
     lastFrame = now;
     if (!reduce.matches && !down && now - lastInput > 2600) { yaw += dt * 0.16; dirty = true; }
