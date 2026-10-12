@@ -37,7 +37,7 @@ export class Tank {
     this.c = 20;
     this.f = 8;
     this.amp = 0.1;
-    this.lineAmp = 0.09;
+    this.lineAmp = 0.07;
     this.time = 0;
     this.phase = 0;
     this.debt = 0;

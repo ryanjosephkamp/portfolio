@@ -12,6 +12,24 @@ const GAIN = 3; // heights are drawn this many times taller
 const TILE = 4; // mosaic tiles per cm
 const FACE = '"Atkinson Hyperlegible Next", system-ui, sans-serif';
 
+// The pool sign is set one tile to a dot, five wide and seven tall.
+const SIGN = {
+  D: '11110 10001 10001 10001 10001 10001 11110',
+  E: '11111 10000 10000 11110 10000 10000 11111',
+  P: '11110 10001 10001 11110 10000 10000 10000',
+  T: '11111 00100 00100 00100 00100 00100 00100',
+  H: '10001 10001 10001 11111 10001 10001 10001',
+  3: '11110 00001 00001 01110 00001 00001 11110',
+  C: '01111 10000 10000 10000 10000 10000 01111',
+  M: '10001 11011 10101 10101 10001 10001 10001',
+  N: '10001 11001 10101 10011 10001 10001 10001',
+  O: '01110 10001 10001 10001 10001 10001 01110',
+  I: '11111 00100 00100 00100 00100 00100 11111',
+  V: '10001 10001 10001 10001 10001 01010 00100',
+  G: '01111 10000 10000 10111 10001 10001 01111',
+};
+const signWidth = (text) => [...text].reduce((w, ch) => w + (ch === ' ' ? 3 : 6), -1);
+
 const VERT = `#version 300 es
 in vec2 a; void main() { gl_Position = vec4(a, 0., 1.); }`;
 
@@ -172,34 +190,43 @@ function startTank() {
     // shrinks when the water is too short to hold it at full width.
     const one = lines.length === 1;
     const zoneTop = (BARRIER_Y + 1.3) * TILE;
+    const signH = 3 + 7; // a gap of three tiles, then the sign
     const avail = th - (one ? 3 : 14) - zoneTop;
     const perSize = one ? 0.72 : 0.72 * 2.24;
     let size = (100 * tw * 0.84) / widest;
-    if (perSize * size + Math.max(8.5, size * 0.17) * 1.55 > avail) size = Math.max(12, (avail - 8.5 * 1.55) / perSize);
+    if (perSize * size + signH > avail) size = Math.max(12, (avail - signH) / perSize);
     const nameW = (widest * size) / 100;
     const cap = size * 0.72;
     const lead = cap * 1.24;
-    const small = Math.max(8.5, size * 0.17);
-    const base = zoneTop + Math.max(0, (avail - cap - lead * (lines.length - 1) - small * 1.55) / 2) + cap;
+    const base = Math.round(zoneTop + Math.max(0, (avail - cap - lead * (lines.length - 1) - signH) / 2) + cap);
     ctx.font = `800 ${size}px ${FACE}`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f00';
     lines.forEach((l, i) => ctx.fillText(l, tw / 2, base + i * lead));
-    const signY = base + (lines.length - 1) * lead + small * 1.55;
-    ctx.font = `800 ${small}px ${FACE}`;
-    ctx.fillStyle = '#0f0';
-    if (lines.length === 1) {
-      ctx.textAlign = 'left';
-      ctx.fillText('DEPTH 3 CM', tw / 2 - nameW / 2, signY);
-      ctx.textAlign = 'right';
-      ctx.fillText('NO DIVING', tw / 2 + nameW / 2, signY);
-    } else ctx.fillText('NO DIVING', tw / 2, signY);
     const img = ctx.getImageData(0, 0, tw, th);
     const d = img.data;
-    for (let k = 0; k < d.length; k += 4) {
-      d[k] = d[k] > 120 ? 255 : 0;
-      d[k + 1] = d[k + 1] > 120 ? 255 : 0;
-    }
+    for (let k = 0; k < d.length; k += 4) d[k] = d[k] > 120 ? 255 : 0;
+    const signY = Math.round(base + (lines.length - 1) * lead) + 3;
+    const sign = (text, x0) => {
+      let x = Math.round(x0);
+      for (const ch of text) {
+        if (ch === ' ') {
+          x += 3;
+          continue;
+        }
+        SIGN[ch].split(' ').forEach((row, j) => {
+          for (let i = 0; i < 5; i++) {
+            const k = ((signY + j) * tw + x + i) * 4;
+            if (row[i] === '1' && k >= 0 && k < d.length) d[k + 1] = 255;
+          }
+        });
+        x += 6;
+      }
+    };
+    if (one) {
+      sign('DEPTH 3 CM', tw / 2 - nameW / 2);
+      sign('NO DIVING', tw / 2 + nameW / 2 - signWidth('NO DIVING'));
+    } else sign('NO DIVING', tw / 2 - signWidth('NO DIVING') / 2);
     gl.activeTexture(gl.TEXTURE1);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, tw, th, 0, gl.RGBA, gl.UNSIGNED_BYTE, d);
     tileGrid = [tw, th];
@@ -242,8 +269,12 @@ function startTank() {
     const lambda = tank.wavelength;
     $('n-lambda').textContent = state.setup === 'still' ? 'still water, pebbles only' : `${lambda.toFixed(2)} cm`;
     $('n-grid').textContent = `${tank.nx} × ${tank.ny} cells, Courant number 0.5`;
+    let high = 0;
+    const u = tank.u;
+    for (let k = 0; k < u.length; k++) if (u[k] > high) high = u[k];
+    $('n-high').textContent = high < 0.005 ? 'flat' : `${(high * 10).toFixed(1)} mm`;
     if (!layout.pair) {
-      $('n-lines').textContent = $('n-young').textContent = 'with two dippers or two slits';
+      $('n-lines').textContent = $('n-young').textContent = 'needs two sources';
       return;
     }
     const angles = brightAngles(layout.pair.d, lambda).map((a, m) => (m ? `±${a.toFixed(1)}°` : '0°'));
@@ -323,9 +354,16 @@ function startTank() {
     numbers();
   }
 
+  // Until a visitor first touches it, still water drips on its own.
+  let touched = false;
+  let nextDrip = 0;
+  function touch() {
+    touched = true;
+    host.classList.add('is-touched');
+  }
   function pebbleAt(x, y, r, depth) {
     tank.pebble(x, y, r, depth);
-    host.classList.add('is-touched');
+    touch();
     if (!state.playing) stillFrame();
   }
 
@@ -338,7 +376,13 @@ function startTank() {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000 || 0);
     last = now;
-    if (state.playing) tank.advance(dt / SLOW);
+    if (state.playing) {
+      if (!touched && state.setup === 'still' && now > nextDrip) {
+        tank.pebble(MARGIN + vis.w * (0.12 + 0.76 * Math.random()), MARGIN + vis.h * (0.2 + 0.65 * Math.random()), 0.5, 0.38);
+        nextDrip = now + 1900 + 1500 * Math.random();
+      }
+      tank.advance(dt / SLOW);
+    }
     draw();
     if (now - lastRead > 300) {
       lastRead = now;
@@ -370,7 +414,7 @@ function startTank() {
     const [x, y] = toTank(ev);
     if (trail && Math.hypot(x - trail[0], y - trail[1]) < 0.7) return;
     tank.pebble(x, y, 0.45, ev.buttons ? 0.16 : 0.06);
-    if (trail) host.classList.add('is-touched');
+    if (trail) touch();
     trail = [x, y];
   });
   canvas.addEventListener('keydown', (ev) => {
@@ -391,7 +435,7 @@ function startTank() {
   $('setups').addEventListener('change', (ev) => {
     state.setup = ev.target.value;
     applyLayout(true);
-    host.classList.add('is-touched');
+    touch();
     if (!state.playing) stillFrame(1.6);
   });
   $('freq').addEventListener('input', (ev) => {
@@ -448,10 +492,7 @@ function startTank() {
     applyLayout(true);
     if (!state.playing) stillFrame(1.6);
   } else if (state.playing) {
-    // Two pebbles to start, so the water is already moving when it is first seen.
-    const first = () => tank.pebble(MARGIN + vis.w * 0.27, MARGIN + vis.h * 0.36, 0.6, 0.5);
-    setTimeout(first, 350);
-    setTimeout(() => tank.pebble(MARGIN + vis.w * 0.7, MARGIN + vis.h * 0.72, 0.6, 0.5), 1300);
+    nextDrip = performance.now() + 300;
   } else {
     tank.pebble(MARGIN + vis.w * 0.27, MARGIN + vis.h * 0.36, 0.6, 0.5);
     stillFrame(0.5);
@@ -545,5 +586,24 @@ function startBench() {
   draw();
 }
 
+// The real toys: Splashery's own player, put in the page only when asked.
+// Without this the buttons are plain links to the same player.
+function startReal() {
+  for (const link of document.querySelectorAll('.real__load'))
+    link.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const frame = document.createElement('iframe');
+      frame.src = link.href;
+      frame.title = link.dataset.title;
+      frame.allow = 'fullscreen';
+      const wait = document.createElement('p');
+      wait.className = 'real__wait';
+      wait.textContent = 'Loading the player…';
+      frame.addEventListener('load', () => wait.remove());
+      link.closest('.real__frame').replaceChildren(wait, frame);
+    });
+}
+
 startTank();
 startBench();
+startReal();

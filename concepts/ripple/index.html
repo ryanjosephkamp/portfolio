@@ -9,6 +9,9 @@
   <meta property="og:title" content="Ryan Kamp — waves and light you can touch">
   <meta property="og:description" content="A ripple tank over white tile, solved from the wave equation, with his name on the floor. Touch the water.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ryanjosephkamp.github.io/portfolio/concepts/ripple/">
+  <meta property="og:image" content="https://ryanjosephkamp.github.io/portfolio/concepts/ripple/assets/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23e9f9f9'/%3E%3Cg fill='none' stroke='%230b2a36' stroke-width='4'%3E%3Ccircle cx='32' cy='32' r='22' opacity='.35'/%3E%3Ccircle cx='32' cy='32' r='13' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='5' fill='%23ff3b4a'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -64,8 +67,9 @@
         <h2 class="label">The numbers</h2>
         <dl class="numbers">
           <div><dt>Wavelength, c ÷ f</dt><dd id="n-lambda">2.50 cm</dd></div>
-          <div><dt>Bright lines, d·sin θ = m·λ</dt><dd id="n-lines">with two dippers or two slits</dd></div>
-          <div><dt>λ measured from the fringes</dt><dd id="n-young">with two dippers or two slits</dd></div>
+          <div><dt>Bright lines, d·sin θ = m·λ</dt><dd id="n-lines">needs two sources</dd></div>
+          <div><dt>λ measured from the fringes</dt><dd id="n-young">needs two sources</dd></div>
+          <div><dt>Highest crest right now</dt><dd id="n-high">flat</dd></div>
           <div><dt>Grid</dt><dd id="n-grid">6 cells per cm, Courant number 0.5</dd></div>
         </dl>
         <p class="fine">Shown 4 times slower than life, with the heights drawn taller than they are.</p>
@@ -118,6 +122,24 @@
             </dl>
           </figcaption>
         </figure>
+        <div class="real">
+          <p class="label">The real ones, in Splashery's own player</p>
+          <div class="real__pair">
+            <figure class="real__toy">
+              <div class="real__frame">
+                <a class="btn btn--loud real__load" href="https://ryanjosephkamp.github.io/splashery/embed/?toy=ripple-tank&amp;theme=dark" data-title="Splashery ripple tank">Load the real ripple tank</a>
+              </div>
+              <figcaption>The ripple tank, drawn in splats: a plane wave through two slits, with the bright lines marked. Drag to look around it.</figcaption>
+            </figure>
+            <figure class="real__toy">
+              <div class="real__frame">
+                <a class="btn btn--loud real__load" href="https://ryanjosephkamp.github.io/splashery/embed/?toy=light-bench&amp;theme=dark" data-title="Splashery light bench">Load the real light bench</a>
+              </div>
+              <figcaption>The light bench: white light through the prism and onto a screen. Drag to look around it.</figcaption>
+            </figure>
+          </div>
+          <p class="fine">Each player is a few megabytes, so nothing loads until you ask. The setups, the parts you drag and the numbers are in Splashery itself, on the labs shelf.</p>
+        </div>
       </article>
 
       <article class="lane" id="grooph">
