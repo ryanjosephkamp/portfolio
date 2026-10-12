@@ -89,7 +89,9 @@ Ryan's own word for his sites. It means:
   captured toy is about 8 MB. Lazy-load them, keep few on a page, and give each a no-embed fallback.
   Lab toys are hidden from the site's shelves unless `?labs=1` is set, but the embed player loads
   them by id all the same: `embed/?toy=ripple-tank` and `embed/?toy=chladni-plate` were seen
-  rendering on October 12, 2026. See an embed render before a page relies on it.
+  rendering on October 12, 2026. See an embed render before a page relies on it: an embed with
+  `bg=transparent` stayed blank inside one page, and the song landscape's embed showed an empty
+  platform.
 - A toy id or a quoted title that someone else spelled differently stays as they spelled it. Put
   `us-spelling: keep` in a comment on that line so the spelling check passes over it.
 - Headless Chrome renders screenshots and social cards:

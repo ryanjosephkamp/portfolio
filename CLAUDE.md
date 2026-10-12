@@ -24,7 +24,8 @@ its preview port.
 - **Commits:**
   `git -c user.name="Ryan" -c user.email="192532973+ryanjosephkamp@users.noreply.github.com" commit …`
   The machine's default git email is private, and GitHub rejects any push (tags included) that
-  carries it.
+  carries it. A merge commit counts: the app's sync tool writes one with the private email, so
+  re-author it (`commit --amend --no-edit --reset-author` with the same `-c` flags) before pushing.
 - **Serving:** static files with relative URLs.
 - **One session per checkout.** Parallel sessions each work in their own git worktree and preview
   on their own port.
