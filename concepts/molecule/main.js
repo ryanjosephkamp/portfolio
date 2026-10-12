@@ -47,11 +47,15 @@ class Stage {
     this.cartoonTo = 0;
     this.picks = [];
     this.cursor = -1;
+    this.hover = -1; // the atom under a mouse, before any tap
+    this.over = false;
     this.vel = [0, 0];
     this.spin = spin && !still.matches;
     this.visible = false;
     this.raf = 0;
     this.bind();
+    // Size it now, not at the first painted frame: a tap can arrive before one.
+    this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas);
     new IntersectionObserver(([e]) => {
       this.visible = e.isIntersecting;
@@ -75,6 +79,7 @@ class Stage {
     this.scene = scene;
     this.picks = [];
     this.cursor = -1;
+    this.hover = -1;
     if (!keepView) this.vel = [0, 0];
     this.report();
     this.kick();
@@ -109,7 +114,7 @@ class Stage {
     const dt = Math.min(0.05, (t - (this.last || t)) / 1000);
     this.last = t;
     let moving = false;
-    if (this.spin && !this.dragging) (this.turn(dt * 0.35, 0), (moving = true));
+    if (this.spin && !this.dragging && !this.over) (this.turn(dt * 0.35, 0), (moving = true));
     if (!this.dragging && Math.hypot(...this.vel) > 0.0004) {
       this.turn(this.vel[0], this.vel[1]);
       this.vel = this.vel.map((v) => v * 0.93);
@@ -177,12 +182,20 @@ class Stage {
     if (scene.points) {
       const pts = scene.points;
       const size = Math.max(1.3, this.w / 330);
+      // Dots share a fill by sign and by depth: twelve fills a frame, not one per dot.
+      const LEVELS = 6;
+      const fills = Array.from({ length: 2 * LEVELS }, () => []);
       for (let i = 0; i < pts.length; i += 4) {
-        if (scene.cut && pts[i] > 0) continue;
+        if (scene.cut && pts[i + 2] > 0) continue;
         const p = at([pts[i], pts[i + 1], pts[i + 2]]);
-        ctx.fillStyle = pts[i + 3] > 0 ? `rgba(126,178,255,${0.35 + 0.6 * depth(p[2])})` : `rgba(255,150,178,${0.35 + 0.6 * depth(p[2])})`; // prettier-ignore
-        ctx.fillRect(p[0], p[1], size, size);
+        const near = Math.max(0, Math.min(1, (p[2] / scene.extent + 1) / 2));
+        fills[(pts[i + 3] > 0 ? 0 : LEVELS) + Math.round(near * (LEVELS - 1))].push(p[0], p[1]);
       }
+      fills.forEach((xy, n) => {
+        const a = 0.28 + 0.7 * ((n % LEVELS) / (LEVELS - 1));
+        ctx.fillStyle = n < LEVELS ? `rgba(126,178,255,${a})` : `rgba(255,150,178,${a})`;
+        for (let i = 0; i < xy.length; i += 2) ctx.fillRect(xy[i], xy[i + 1], size, size);
+      });
       ctx.fillStyle = "#efece2";
       const o = at([0, 0, 0]);
       ctx.beginPath();
@@ -263,7 +276,45 @@ class Stage {
     ctx.fillRect(0, 0, this.w, this.h);
     ctx.globalCompositeOperation = "source-over";
 
+    this.drawRuler();
     this.drawMeasure();
+  }
+
+  // A chalk ruler in the corner: a round length that is 40 to 110 pixels at this zoom.
+  drawRuler() {
+    const { ctx, scale, scene } = this;
+    const len = [1, 2, 5, 10, 20, 50].find((v) => v * scale >= 40) ?? 50;
+    const px = len * scale;
+    const x = 14;
+    const y = this.h - 16;
+    ctx.strokeStyle = ctx.fillStyle = "rgba(239,236,226,0.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 5);
+    ctx.lineTo(x, y + 5);
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + px, y);
+    ctx.moveTo(x + px, y - 5);
+    ctx.lineTo(x + px, y + 5);
+    ctx.stroke();
+    ctx.font = '600 14px "Shantell Sans", sans-serif';
+    ctx.textAlign = "left";
+    ctx.fillText(`${len} ${scene.unit || "Å"}`, x + px + 8, y + 5);
+  }
+
+  write(text, x, y, color = YELLOW, size = Math.max(17, this.w / 26)) {
+    const { ctx } = this;
+    ctx.font = `700 ${size}px "Shantell Sans", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "#1c2526";
+    const tw = ctx.measureText(text).width / 2 + 6;
+    const tx = Math.max(tw, Math.min(this.w - tw, x));
+    const ty = Math.max(size, Math.min(this.h - 8, y));
+    ctx.strokeText(text, tx, ty);
+    ctx.fillStyle = color;
+    ctx.fillText(text, tx, ty);
   }
 
   drawMeasure() {
@@ -280,7 +331,13 @@ class Stage {
       ctx.stroke();
       ctx.setLineDash([]);
     };
-    if (this.cursor >= 0 && proj[this.cursor]) ring(this.cursor, "#efece2", [4, 5]);
+    for (const i of new Set([this.cursor, this.hover])) {
+      if (i < 0 || !proj[i] || picks.includes(i)) continue;
+      ring(i, "#efece2", [4, 5]);
+      const a = this.scene.atoms[i];
+      const r = a.r * this.ball * (1 - this.cartoon) * this.scale * proj[i][3];
+      this.write(this.short(i), proj[i][0], proj[i][1] - r - 14, "#efece2", 15);
+    }
     if (!picks.length) return;
     ctx.strokeStyle = YELLOW;
     ctx.lineWidth = 2.5;
@@ -312,16 +369,12 @@ class Stage {
       const mid = a0 + d / 2;
       where = [m[0] + Math.cos(mid) * 52, m[1] + Math.sin(mid) * 52 + 6];
     }
-    if (text) {
-      ctx.font = `700 ${Math.max(17, this.w / 26)}px "Shantell Sans", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = "#1c2526";
-      ctx.strokeText(text, where[0], where[1]);
-      ctx.fillStyle = YELLOW;
-      ctx.fillText(text, where[0], where[1]);
-    }
+    if (text) this.write(text, where[0], where[1]);
+  }
+
+  // What to call an atom beside the pointer: its residue and name, or its element.
+  short(i) {
+    return this.scene.labels?.[i] ?? chem.BY_SYMBOL.get(this.scene.atoms[i].el.toLowerCase()).name.toLowerCase();
   }
 
   name(i) {
@@ -359,6 +412,7 @@ class Stage {
   hit(x, y) {
     let best = -1;
     let bestZ = -Infinity;
+    if (!this.proj) return best;
     const ball = this.ball * (1 - this.cartoon);
     this.proj.forEach(([px, py, z, k], i) => {
       if (!this.pickable(i)) return;
@@ -373,15 +427,38 @@ class Stage {
     let start = null;
     c.addEventListener("pointerdown", (e) => {
       if (this.scene.points && e.pointerType === "touch" && !e.isPrimary) return;
-      c.setPointerCapture(e.pointerId);
+      // Capture keeps a drag alive past the canvas edge; a pointer that cannot be captured still turns it.
+      try {
+        c.setPointerCapture(e.pointerId);
+      } catch {}
       start = { x: e.clientX, y: e.clientY, moved: 0, lx: e.clientX, ly: e.clientY };
       this.dragging = true;
       this.spin = false;
+      this.hover = -1;
       this.vel = [0, 0];
       c.classList.add("holding");
     });
+    c.addEventListener("pointerenter", (e) => (this.over = e.pointerType === "mouse"));
+    c.addEventListener("pointerleave", () => {
+      this.over = false;
+      this.hover = -1;
+      c.classList.remove("on-atom");
+      this.draw();
+      this.kick();
+    });
     c.addEventListener("pointermove", (e) => {
-      if (!start) return;
+      if (!start) {
+        // A mouse over an atom: ring it and name it, so a tap is never a guess.
+        if (e.pointerType !== "mouse" || !this.scene.atoms.length) return;
+        const r = c.getBoundingClientRect();
+        const h = this.hit(e.clientX - r.left, e.clientY - r.top);
+        if (h !== this.hover) {
+          this.hover = h;
+          c.classList.toggle("on-atom", h >= 0);
+          this.draw();
+        }
+        return;
+      }
       const dx = e.clientX - start.lx;
       const dy = e.clientY - start.ly;
       start.lx = e.clientX;
@@ -525,7 +602,7 @@ if (cellCanvas) {
   const readout = $("#cell-readout");
   const meta = $("#cell-meta");
   let key = "diamond";
-  let bonds = false;
+  let touching = false;
   const RULE = { diamond: "a√3 ⁄ 4", fcc: "a ⁄ √2", bcc: "a√3 ⁄ 2" };
   const idle = () => `${chem.CRYSTALS[key].name}: a = ${chem.CRYSTALS[key].a} Å.`;
   const stage = new Stage(cellCanvas, { spin: false, onMeasure: (t) => (readout.textContent = t || idle()) });
@@ -534,17 +611,17 @@ if (cellCanvas) {
     // Touching spheres: each atom's radius is half the nearest-neighbor distance.
     const atoms = c.atoms.map((a) => ({ el: a.el, p: a.p, r: c.d / 2 }));
     stage.setScene({ atoms, bonds: c.bonds, edges: c.edges, extent: (c.a * Math.sqrt(3)) / 2 + c.d / 2 }, true);
-    stage.ballTo = bonds ? 0.3 : 1;
+    stage.ballTo = touching ? 1 : 0.36;
     if (still.matches) stage.ball = stage.ballTo;
-    meta.textContent = `One conventional cell of ${c.name.toLowerCase()}, with the lattice constant Splashery uses (${c.source}). Tap two touching atoms: the distance should come to ${RULE[c.kind]} = ${c.d.toFixed(3)} Å. Each atom has ${c.neighbors} nearest neighbors.`;
+    meta.textContent = `One conventional cell of ${c.name.toLowerCase()}, with the lattice constant Splashery uses (${c.source}). Tap two bonded atoms: the distance should come to ${RULE[c.kind]} = ${c.d.toFixed(3)} Å. Each atom has ${c.neighbors} nearest neighbors.`;
     $$("[data-crystal]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.crystal === key));
     stage.kick();
   };
-  stage.ball = 1;
+  stage.ball = 0.36;
   $$("[data-crystal]").forEach((b) => b.addEventListener("click", () => ((key = b.dataset.crystal), show())));
   $("[data-cellmode]").addEventListener("click", (e) => {
-    bonds = !bonds;
-    e.currentTarget.setAttribute("aria-pressed", bonds);
+    touching = !touching;
+    e.currentTarget.setAttribute("aria-pressed", touching);
     show();
   });
   show();
@@ -561,11 +638,17 @@ if (orbCanvas) {
   const count = innerWidth < 600 ? 5000 : 9000;
   const show = (label) => {
     const cloud = chem.sampleOrbital(...q, count, 1);
+    // Chemistry's axes (z along the orbital's axis) to the board's (z up, y toward the room).
+    for (let i = 0; i < cloud.points.length; i += 4) {
+      const [y, z] = [cloud.points[i + 1], cloud.points[i + 2]];
+      cloud.points[i + 1] = z;
+      cloud.points[i + 2] = -y;
+    }
     // Fit to the radius that holds 98% of the dots.
     const radii = [];
     for (let i = 0; i < cloud.points.length; i += 4) radii.push(Math.hypot(cloud.points[i], cloud.points[i + 1], cloud.points[i + 2]));
     radii.sort((a, b) => a - b);
-    stage.setScene({ atoms: [], bonds: [], points: cloud.points, cut, extent: radii[Math.floor(radii.length * 0.98)] }, true);
+    stage.setScene({ atoms: [], bonds: [], points: cloud.points, cut, unit: "a₀", extent: radii[Math.floor(radii.length * 0.98)] }, true);
     if (label) readout.textContent = `${label}: n = ${q[0]}, l = ${q[1]}, m = ${q[2]}. ${q[0] - q[1] - 1} radial node${q[0] - q[1] - 1 === 1 ? "" : "s"}, ${count.toLocaleString("en")} dots.`; // prettier-ignore
   };
   $$("[data-orb]").forEach((b) =>
@@ -579,6 +662,10 @@ if (orbCanvas) {
     cut = !cut;
     e.currentTarget.setAttribute("aria-pressed", cut);
     stage.scene.cut = cut;
+    // Face the cut: the half toward the room is taken away, so look straight at what is left.
+    stage.spin = false;
+    stage.rot = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    stage.turn(cut ? -0.25 : -0.5, cut ? 0.15 : 0.35);
     stage.draw();
   });
   show("3d z²");
@@ -644,4 +731,21 @@ if (spellIn) {
   };
   spellIn.addEventListener("input", write);
   write();
+}
+
+// ---- The real viewer, when asked for ---------------------------------------------------------------
+
+const realLoad = $("#real-load");
+if (realLoad) {
+  realLoad.addEventListener("click", (e) => {
+    e.preventDefault();
+    const frame = document.createElement("iframe");
+    frame.src = realLoad.href;
+    frame.title = "Splashery's molecule viewer";
+    frame.loading = "lazy";
+    const wait = document.createElement("p");
+    wait.className = "real-wait";
+    wait.textContent = "Fetching the viewer from Splashery…";
+    realLoad.replaceWith(wait, frame);
+  });
 }

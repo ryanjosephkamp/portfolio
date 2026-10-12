@@ -87,7 +87,7 @@
       <section class="board" id="splashery" aria-labelledby="splashery-h">
         <p class="eyebrow">Project 1 · 2026 to present</p>
         <h2 class="chalk" id="splashery-h">Splashery</h2>
-        <p class="tiles" aria-label="Splashery, written in element symbols">
+        <p class="tiles long" aria-label="Splashery, written in element symbols: sulfur, phosphorus, lanthanum, sulfur, hydrogen, erbium, yttrium">
           <span class="el" style="--c: #ffff30"><small>16</small>S<i>sulfur</i></span>
           <span class="el" style="--c: #ff8000"><small>15</small>P<i>phosphorus</i></span>
           <span class="el" style="--c: #70d4ff"><small>57</small>La<i>lanthanum</i></span>
@@ -143,12 +143,12 @@
               <button type="button" data-crystal="diamond" aria-pressed="true">Diamond</button>
               <button type="button" data-crystal="copper" aria-pressed="false">Copper</button>
               <button type="button" data-crystal="iron" aria-pressed="false">Iron</button>
-              <button type="button" data-cellmode aria-pressed="false">Show the bonds</button>
+              <button type="button" data-cellmode aria-pressed="false">Touching spheres</button>
             </div>
             <figcaption>
               <p id="cell-readout" class="readout" aria-live="polite">Diamond: a = 3.56679 Å.</p>
               <p class="meta" id="cell-meta">
-                One conventional cell of diamond, with the lattice constant Splashery uses. Tap two touching atoms: the
+                One conventional cell of diamond, with the lattice constant Splashery uses. Tap two bonded atoms: the
                 distance should come to a√3 ⁄ 4 = 1.544 Å.
               </p>
             </figcaption>
@@ -178,6 +178,23 @@
             </figcaption>
           </figure>
         </div>
+
+        <figure class="real" id="real">
+          <div>
+            <h3 class="chalk">And the real one</h3>
+            <p>
+              Everything above is chalk. This is Splashery's own molecule viewer, drawn in splats. It opens on
+              crambin, the protein in the tray of the first board, as a cartoon. Drag to turn it.
+            </p>
+            <p class="meta">
+              It comes from the Splashery site, about 1 MB, and only when you ask for it. Or
+              <a href="https://ryanjosephkamp.github.io/splashery/embed/?toy=molecule-viewer&amp;theme=dark">open the viewer on its own page</a>.
+            </p>
+          </div>
+          <div class="real-frame" id="real-frame">
+            <a class="real-load" id="real-load" href="https://ryanjosephkamp.github.io/splashery/embed/?toy=molecule-viewer&amp;theme=dark">Put the real viewer on the board</a>
+          </div>
+        </figure>
       </section>
 
       <section class="board" id="grooph" aria-labelledby="grooph-h">
