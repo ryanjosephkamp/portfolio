@@ -2,9 +2,10 @@
 // Cincinnati, and Mount St. Helens in contour lines. The astronomy is
 // Splashery's own module (assets/astro.js); the measures are in scale.js.
 
-import { STARS, LINES, HELENS } from './assets/data.js';
+import { STARS, LINES, HELENS, COAST } from './assets/data.js';
 import * as A from './assets/astro.js';
 import { LY, AU, Z_MIN, Z_MAX, scaleBar, lightTime, fmtLen, ramp, band } from './scale.js';
+import { surface, swing, dot, unit } from './earth.js';
 
 const INK = '#0d1040';
 const LINE = '#eef0ff';
@@ -32,9 +33,19 @@ function fit(canvas) {
   return { g, w: r.width, h: r.height };
 }
 
-// Text with a halo of the ground color, so line work never runs through it.
+// Text with a halo of the ground color, so line work never runs through it. While a round
+// plate is being drawn (`rim` is set), a label that would cross the rim slides back inside.
+let rim = null;
 function label(g, text, x, y, { size = 12, color = LINE, align = 'left', italic = true } = {}) {
   g.font = `${italic ? 'italic ' : ''}${size}px ${SERIF}`;
+  if (rim) {
+    const w = g.measureText(text).width;
+    const half = Math.sqrt(Math.max(0, rim.R * rim.R - (y - rim.cy) ** 2)) - 6;
+    const left = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+    const min = rim.cx - half;
+    const fit = Math.min(Math.max(left, min), Math.max(min, rim.cx + half - w));
+    x += fit - left;
+  }
   g.textAlign = align;
   g.textBaseline = 'middle';
   g.lineJoin = 'round';
@@ -133,6 +144,37 @@ const moonAt = (jd) => {
 const MOON = [];
 for (let k = 0; k <= 120; k++) MOON.push(moonAt(JD + (k / 120) * 27.6));
 
+// The Earth as it is turned at this minute. Two views of it: from the north of the ecliptic
+// (the frame of every larger plate), and from straight above the garden in Washington, north
+// up (the frame of every smaller one). The plate swings from one to the other as it closes in.
+const GARDEN = { lat: 38.888321, lon: -77.025649 };
+const placeAt = surface(A, JD);
+const gardenUp = placeAt(GARDEN.lat, GARDEN.lon);
+const pole = placeAt(90, 0);
+const VIEW_ECLIPTIC = { axis: [0, -Math.sin(OBLIQUITY), Math.cos(OBLIQUITY)], up: [0, Math.cos(OBLIQUITY), Math.sin(OBLIQUITY)] };
+const VIEW_GARDEN = { axis: gardenUp, up: unit(pole.map((p, i) => p - dot(pole, gardenUp) * gardenUp[i])) };
+const runs = (lines) => lines.map((run) => {
+  const out = [];
+  for (let i = 0; i < run.length; i += 2) out.push(placeAt(run[i + 1], run[i]));
+  return out;
+});
+const WORLD = runs(COAST.world);
+const REGION = runs(COAST.region);
+const GRATICULE = (() => {
+  const lines = [];
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const run = [];
+    for (let lon = -180; lon <= 180; lon += 4) run.push(lon, lat);
+    lines.push(run);
+  }
+  for (let lon = -180; lon < 180; lon += 30) {
+    const run = [];
+    for (let lat = -88; lat <= 88; lat += 4) run.push(lon, lat);
+    lines.push(run);
+  }
+  return runs(lines);
+})();
+
 // ---- Plate I ---------------------------------------------------------------------------------
 
 const plate = document.getElementById('plate');
@@ -188,6 +230,7 @@ function drawPlate() {
   g.beginPath();
   g.arc(cx, cy, R - 0.5, 0, TAU);
   g.clip();
+  rim = { cx, cy, R };
 
   // A dashed ring at every power of ten, labeled.
   for (let n = Math.ceil(z) - 3; n <= Math.ceil(z); n++) {
@@ -325,33 +368,78 @@ function drawPlate() {
     label(g, 'the Moon', mx + 9, my - 7, { color: white(0.95 * ma) });
   }
 
-  // The Earth: its true size, the half turned from the Sun hatched as night.
+  // The Earth: its true size, its coasts where they are turned at this minute, and the half
+  // turned from the Sun hatched as night. Closing in, the view swings to look straight down
+  // on the garden, north up, and the coast of the Mid-Atlantic takes over.
   const er = 6371000 * ppm;
-  const ea = 1 - ramp(1.5, 2.6, er / R);
-  if (z < 10.6 && ea > 0.01) {
-    const a = Math.min(1, ea) * (1 - ramp(9.6, 10.6, z));
+  const ea = (1 - ramp(9.6, 10.6, z)) * ramp(4.5, 5.1, z);
+  if (ea > 0.01) {
+    const t = 1 - ramp(6.3, 7.25, z);
+    const view = swing(VIEW_ECLIPTIC, VIEW_GARDEN, t);
     const r = Math.max(er, 2.2);
-    const toSun = Math.atan2(-SUN[1], SUN[0]); // on the canvas, y runs down
-    g.save();
-    g.beginPath();
-    g.arc(cx, cy, r, toSun + Math.PI / 2, toSun - Math.PI / 2);
-    g.closePath();
-    g.clip();
-    g.strokeStyle = white(0.5 * a);
-    g.lineWidth = 0.6;
-    g.beginPath();
-    for (let t = -r * 2; t < r * 2; t += 4) {
-      g.moveTo(cx + t - r, cy + r);
-      g.lineTo(cx + t + r, cy - r);
+    const strokeRuns = (lines) => {
+      g.beginPath();
+      for (const run of lines) {
+        let pen = false;
+        for (const v of run) {
+          if (dot(v, view.axis) <= 0) {
+            pen = false;
+            continue;
+          }
+          const px = cx + dot(v, view.right) * er;
+          const py = cy - dot(v, view.up) * er;
+          if (pen) g.lineTo(px, py);
+          else g.moveTo(px, py);
+          pen = true;
+        }
+      }
+      g.stroke();
+    };
+    const night = ea * (1 - ramp(0, 0.3, t));
+    if (night > 0.01) {
+      const toSun = Math.atan2(-SUN[1], SUN[0]); // on the canvas, y runs down
+      g.save();
+      g.beginPath();
+      g.arc(cx, cy, r, toSun + Math.PI / 2, toSun - Math.PI / 2);
+      g.closePath();
+      g.clip();
+      g.strokeStyle = white(0.32 * night);
+      g.lineWidth = 0.6;
+      g.beginPath();
+      for (let k = -r * 2; k < r * 2; k += 5) {
+        g.moveTo(cx + k - r, cy + r);
+        g.lineTo(cx + k + r, cy - r);
+      }
+      g.stroke();
+      g.restore();
     }
-    g.stroke();
-    g.restore();
-    g.strokeStyle = gold(a);
+    const detail = ea * ramp(14, 60, er);
+    if (detail > 0.01) {
+      g.lineWidth = 0.6;
+      g.strokeStyle = white(0.2 * detail * ramp(5.9, 6.6, z));
+      strokeRuns(GRATICULE);
+      g.lineWidth = 0.9;
+      g.strokeStyle = white(0.9 * detail * ramp(5.9, 6.5, z));
+      if (z > 5.9) strokeRuns(WORLD);
+      g.strokeStyle = white(0.9 * ea * (1 - ramp(6.2, 6.7, z)));
+      if (z < 6.7) strokeRuns(REGION);
+      // The garden's place on the globe.
+      const gx = cx + dot(gardenUp, view.right) * er;
+      const gy = cy - dot(gardenUp, view.up) * er;
+      if (z > 6.3) {
+        g.fillStyle = gold(detail);
+        g.beginPath();
+        g.arc(gx, gy, 2.6, 0, TAU);
+        g.fill();
+        label(g, 'Washington', gx + 7, gy - 7, { color: gold(detail) });
+      }
+    }
+    g.strokeStyle = gold(ea);
     g.lineWidth = 1.1;
     g.beginPath();
     g.arc(cx, cy, r, 0, TAU);
     g.stroke();
-    if (z > 6.4) label(g, 'the Earth', cx + Math.max(r * 0.72, 6) + 4, cy + Math.max(r * 0.72, 6) + 8, { color: white(0.95 * a) });
+    if (z > 7.9) label(g, 'the Earth', cx + Math.max(r * 0.72, 6) + 4, cy + Math.max(r * 0.72, 6) + 8, { color: white(0.95 * ea) });
   }
 
   // Below the Earth: a ring as wide as each stop, and its name.
@@ -393,6 +481,7 @@ function drawPlate() {
   g.lineTo(cx, by);
   g.stroke();
   label(g, bar.label, cx, by - 14, { size: 13.5, align: 'center' });
+  rim = null;
   g.restore();
 }
 
@@ -465,27 +554,76 @@ function nextStop(dir) {
   });
   document.getElementById('out').addEventListener('click', () => nextStop(1));
   document.getElementById('in').addEventListener('click', () => nextStop(-1));
+  // The wheel zooms the plate where the page has room to scroll beside it. Where the plate
+  // fills the column, the wheel scrolls the page until the plate is clicked (as a Splashery
+  // embed does); Ctrl or Command with the wheel always zooms.
+  const stacked = matchMedia('(max-width: 980px)');
+  const hint = document.getElementById('plate-hint');
+  let armed = false;
+  let hintTimer = 0;
+  plate.addEventListener('focus', () => (armed = true));
+  plate.addEventListener('blur', () => (armed = false));
+  plate.addEventListener('pointerleave', () => {
+    if (document.activeElement !== plate) armed = false;
+  });
   plate.addEventListener(
     'wheel',
     (e) => {
+      if (stacked.matches && !armed && !e.ctrlKey && !e.metaKey) {
+        hint.hidden = false;
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(() => (hint.hidden = true), 2600);
+        return;
+      }
       e.preventDefault();
       cancelAnimationFrame(tween);
       setZ(z + clamp(e.deltaY, -120, 120) * 0.0022);
     },
     { passive: false },
   );
+  // A mouse drags up and down. A finger drags sideways (up and down scrolls the page), and
+  // two fingers pinch.
+  const fingers = new Map();
   let drag = null;
+  let pinch = null;
+  const spread = () => {
+    const [a, b] = [...fingers.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  };
   plate.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'touch') return;
-    drag = { y: e.clientY, z };
-    plate.setPointerCapture(e.pointerId);
+    armed = true;
+    hint.hidden = true;
     cancelAnimationFrame(tween);
+    try {
+      plate.setPointerCapture(e.pointerId);
+    } catch {
+      // A pointer that is already gone cannot be captured.
+    }
+    if (e.pointerType === 'touch') {
+      fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (fingers.size === 2) {
+        pinch = { d: spread(), z };
+        drag = null;
+      } else drag = { x: e.clientX, z, touch: true };
+    } else drag = { y: e.clientY, z };
   });
   plate.addEventListener('pointermove', (e) => {
-    if (drag) setZ(drag.z + (e.clientY - drag.y) * 0.02);
+    if (e.pointerType === 'touch' && fingers.has(e.pointerId)) {
+      fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && fingers.size === 2) return setZ(pinch.z - Math.log10(spread() / pinch.d));
+    }
+    if (!drag) return;
+    if (drag.touch) setZ(drag.z - (e.clientX - drag.x) * 0.02);
+    else setZ(drag.z + (e.clientY - drag.y) * 0.02);
   });
-  plate.addEventListener('pointerup', () => (drag = null));
-  plate.addEventListener('pointercancel', () => (drag = null));
+  const lift = (e) => {
+    fingers.delete(e.pointerId);
+    pinch = null;
+    drag = null;
+    if (fingers.size === 1) drag = { x: [...fingers.values()][0].x, z, touch: true };
+  };
+  plate.addEventListener('pointerup', lift);
+  plate.addEventListener('pointercancel', lift);
   plate.addEventListener('keydown', (e) => {
     const k = e.key;
     if (k === 'ArrowUp' || k === 'ArrowLeft' || k === '-') setZ(z + 0.1);
@@ -498,6 +636,20 @@ function nextStop(dir) {
     e.preventDefault();
   });
 }
+
+if (matchMedia('(pointer: coarse)').matches) {
+  document.getElementById('how').textContent = 'Pinch the plate, drag a finger across it, slide the rule, or step with the arrows.';
+}
+
+// The real toy, in a frame, only when asked for.
+document.getElementById('load-real').addEventListener('click', (e) => {
+  const frame = document.createElement('iframe');
+  frame.src = 'https://ryanjosephkamp.github.io/splashery/embed/?toy=powers-of-ten&theme=dark';
+  frame.title = 'Splashery: Powers of ten';
+  frame.className = 'real-frame';
+  frame.allow = 'fullscreen';
+  e.currentTarget.replaceWith(frame);
+});
 
 // ---- Fig. 1: the sky over Cincinnati ---------------------------------------------------------
 

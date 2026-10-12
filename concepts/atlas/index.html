@@ -41,12 +41,10 @@
             The plate is one continuous zoom. It takes the same journey as Powers of ten in
             <a href="#splashery">Splashery</a>, his Gaussian splat playground: from the Milky Way down to a single
             ribosome, by way of a garden bed beside the Smithsonian Castle. Here the journey is cut in line. The
-            planets and the Moon stand where they are at this minute, each star sits at its cataloged distance, and
-            the scale bar is true at every step.
+            planets and the Moon stand where they are at this minute, the Earth is turned as it is turned now, each
+            star sits at its cataloged distance, and the scale bar is true at every step.
           </p>
-          <p class="how">
-            <i>Turn the wheel over the plate, drag it, slide the rule, or press the arrow keys.</i>
-          </p>
+          <p class="how" id="how">Turn the wheel over the plate, drag it, slide the rule, or press the arrow keys.</p>
         </div>
 
         <div class="plate-wrap">
@@ -57,6 +55,7 @@
             role="img"
             aria-label="An engraved plate that zooms from the Milky Way to a ribosome. Use the arrow keys to zoom, Page Up and Page Down to move between stops."
           ></canvas>
+          <p class="plate-hint" id="plate-hint" hidden>Click the plate, then the wheel zooms it.</p>
 
           <div class="readout" aria-live="polite">
             <p class="stop-name" id="stop-name">The planets, out to Neptune</p>
@@ -102,8 +101,11 @@
               <b>The Earth and the Moon</b>, about 384,400 km apart on average, with the Moon's path for the coming
               month.
             </li>
-            <li data-z="7.3" data-d="1.2742e7"><b>The Earth</b>, about 12,700 km across. The hatched half is night.</li>
-            <li data-z="5.7" data-d="3.22e5"><b>The Chesapeake Bay</b>, about 320 km long.</li>
+            <li data-z="7.3" data-d="1.2742e7">
+              <b>The Earth</b>, about 12,700 km across, its coasts turned as they are at this minute. The hatched
+              half is night.
+            </li>
+            <li data-z="5.7" data-d="3.22e5"><b>The Chesapeake Bay</b>, about 320 km long, and the Mid-Atlantic coast.</li>
             <li data-z="4.4" data-d="1.6e4"><b>Washington, D.C.</b>, about 16 km across.</li>
             <li data-z="3.7" data-d="3.2e3">
               <b>The National Mall</b>, about 3.2 km from the Capitol to the Lincoln Memorial.
@@ -118,8 +120,9 @@
             <li data-z="-7.55" data-d="2e-8"><b>A ribosome</b>, the machine that builds proteins, about 20 nm across.</li>
           </ol>
           <p class="fine">
-            Every plate looks down from the north of the ecliptic, with the Earth at the center. Below the Earth,
-            Splashery shows a real picture at every scale; this plate keeps only the measure.
+            Down to the Earth, every plate looks from the north of the ecliptic. Closing in on Washington, the view
+            swings round to look straight down on the garden, north up. From the city inward, Splashery shows a
+            real picture at every scale; this plate keeps only the measure.
           </p>
         </div>
       </section>
@@ -169,7 +172,7 @@
               </div>
               <p class="fig-read" id="sky-read" aria-live="polite">Cincinnati, Ohio: 39.10° N, 84.51° W.</p>
               <p class="links">
-                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/night-sky/">The Night sky toy</a>
+                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/night-sky/?labs=1">The Night sky toy</a>
               </p>
             </div>
           </article>
@@ -196,9 +199,9 @@
               </div>
               <p class="fig-read" id="helens-read" aria-live="polite">Highest point in the grid: 2,945 m.</p>
               <p class="links">
-                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/st-helens/">Mount St. Helens</a>
-                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/grand-canyon/">The Grand Canyon</a>
-                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/sea-floor/">The Mariana Trench</a>
+                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/st-helens/?labs=1">Mount St. Helens</a>
+                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/grand-canyon/?labs=1">The Grand Canyon</a>
+                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/sea-floor/?labs=1">The Mariana Trench</a>
               </p>
             </div>
           </article>
@@ -213,9 +216,15 @@
                 pictures of Washington at every half power of ten, a maple leaf, the cells of a leaf under the
                 microscope, and a ribosome from its cryo-EM map. <a href="#name">Plate I</a> follows its stops.
               </p>
-              <p class="links">
-                <a href="https://ryanjosephkamp.github.io/splashery/site/toys/powers-of-ten/">The Powers of ten toy</a>
-              </p>
+              <div class="real">
+                <button type="button" id="load-real">Load the real toy here</button>
+                <p class="fine">
+                  It is Splashery itself, running in a frame: about 5 MB to begin with, and more pictures as you
+                  zoom. Or open
+                  <a href="https://ryanjosephkamp.github.io/splashery/site/toys/powers-of-ten/?labs=1">the Powers of ten toy</a>
+                  on its own page.
+                </p>
+              </div>
             </div>
             <div class="fig-text">
               <p class="fig-no">Also on the shelves</p>
@@ -496,7 +505,7 @@
         Stars: the HYG database v4.1 by David Nash, CC BY-SA 4.0. Constellation lines: the Stellarium team's Western
         sky culture, CC BY-SA. Planets: E. M. Standish's Keplerian elements for approximate positions (JPL). The
         Moon: the low-precision series of the Astronomical Almanac. Mount St. Helens: the USGS pre-1980 DEM and
-        USGS 3DEP, public domain. The data files and the astronomy module are Splashery's own. Set in IM Fell
+        USGS 3DEP, public domain. Coastlines: Natural Earth, public domain. The data files and the astronomy module are Splashery's own. Set in IM Fell
         English, Igino Marini's revival of the Fell types, under the SIL Open Font License.
       </p>
       <p><a href="../../">The other concepts</a></p>

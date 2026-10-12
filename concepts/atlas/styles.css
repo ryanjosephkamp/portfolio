@@ -118,7 +118,7 @@ h3 {
 }
 .top nav a {
   text-decoration: none;
-  padding: 6px 0;
+  padding: 10px 0;
 }
 
 .plate-no {
@@ -170,6 +170,7 @@ h1 {
 }
 .how {
   color: var(--line) !important;
+  font-style: italic;
 }
 
 .plate {
@@ -180,6 +181,24 @@ h1 {
   border-radius: 50%;
   cursor: ns-resize;
   touch-action: pan-y;
+}
+.plate-hint {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 4px 12px;
+  background: var(--ink-deep);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-style: italic;
+  font-size: 0.9em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.plate-hint[hidden] {
+  display: none;
 }
 .readout {
   text-align: center;
@@ -216,7 +235,7 @@ h1 {
   border: 1px solid var(--faint);
   border-radius: 2px;
   padding: 6px 12px;
-  min-height: 40px;
+  min-height: 44px;
   cursor: pointer;
 }
 .step:hover,
@@ -469,6 +488,34 @@ input[type='range']::-moz-range-thumb {
   border-color: var(--gold);
   color: var(--ink);
   background: var(--gold);
+}
+
+.real {
+  margin-top: 0.8em;
+}
+.real button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  padding: 8px 16px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.real button:hover {
+  background: transparent;
+  color: var(--gold);
+}
+.real-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--faint);
+  background: #000;
+}
+.real .fine {
+  margin-top: 0.7em;
 }
 
 /* Plates III to VI */
@@ -757,15 +804,19 @@ input[type='range']::-moz-range-thumb {
   .stops-wrap {
     grid-area: auto;
   }
-  .cartouche > p:not(.plate-no):not(.sub) {
+  .cartouche > p:not(.plate-no):not(.sub):not(.how) {
     order: 2;
+  }
+  .cartouche > .how {
+    margin-bottom: 14px;
   }
   .stops-wrap {
     order: 3;
     margin-top: 20px;
   }
   .plate-wrap {
-    position: static;
+    position: relative;
+    top: auto;
     order: 1;
     margin-bottom: 28px;
   }

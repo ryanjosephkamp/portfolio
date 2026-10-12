@@ -4,7 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { Z_MIN, Z_MAX, LY, AU, C, UNITS, scaleBar, lightTime, fmtLen } from '../scale.js';
 import * as A from '../assets/astro.js';
-import { STARS, LINES, HELENS } from '../assets/data.js';
+import { STARS, LINES, HELENS, COAST } from '../assets/data.js';
+import { surface, swing, dot, cross } from '../earth.js';
 
 let failed = 0;
 const check = (name, ok, detail = '') => {
@@ -121,6 +122,49 @@ const num = (s) => Number(s.replace(/,/g, ''));
   const after = grid(HELENS.after.b64);
   check('two grids of the same size', before.length === HELENS.n ** 2 && after.length === HELENS.n ** 2);
   check('the summit fell 412 m', HELENS.before.top - HELENS.after.top === 412 && HELENS.before.top === 2945, `${HELENS.before.top} to ${HELENS.after.top}`);
+}
+
+// 7. The Earth's turn: the zenith over a place, found two ways (earth.js, and the third row of
+//    Splashery's sky matrix), agrees for every hour of 2026; Washington never leaves the face
+//    the plate shows; and the camera's frame stays square at every step of its swing.
+{
+  const places = [
+    [38.888321, -77.025649],
+    [39.1, -84.51],
+  ];
+  const e = (23.43928 * Math.PI) / 180;
+  const eclipticNorth = [0, -Math.sin(e), Math.cos(e)];
+  let n = 0;
+  let worst = 0;
+  let lowest = 1;
+  for (let t = Date.UTC(2026, 0, 1); t < Date.UTC(2027, 0, 1); t += 3600000) {
+    const jd = A.julianDay(t);
+    const at = surface(A, jd);
+    for (const [lat, lon] of places) {
+      const v = at(lat, lon);
+      const M = A.skyMatrix(jd, lat, lon);
+      worst = Math.max(worst, Math.abs(v[0] - M[6]), Math.abs(v[1] - M[7]), Math.abs(v[2] - M[8]));
+      n++;
+    }
+    lowest = Math.min(lowest, dot(at(places[0][0], places[0][1]), eclipticNorth));
+  }
+  check(`a place's zenith agrees with Splashery's sky matrix at ${n.toLocaleString('en-US')} place-hours of 2026`, worst < 1e-12, `worst difference ${worst.toExponential(1)}`);
+  check('Washington stays on the face the plate shows, every hour of 2026', lowest > 0, `never nearer the rim than ${(Math.asin(lowest) * 180 / Math.PI).toFixed(1)} degrees`);
+  const jd = A.julianDay(Date.UTC(2026, 9, 12, 19));
+  const up = surface(A, jd)(38.888321, -77.025649);
+  const pole = surface(A, jd)(90, 0);
+  const k = dot(pole, up);
+  const north = pole.map((p, i) => p - k * up[i]);
+  let bad = 0;
+  for (let i = 0; i <= 1000; i++) {
+    const f = swing({ axis: eclipticNorth, up: [0, Math.cos(e), Math.sin(e)] }, { axis: up, up: north }, i / 1000);
+    const c = cross(f.right, f.up);
+    const square = Math.abs(dot(f.right, f.up)) + Math.abs(dot(f.up, f.axis)) + Math.abs(dot(f.right, f.axis)) + Math.abs(dot(c, f.axis) - 1) + Math.abs(dot(f.up, f.up) - 1);
+    if (!(square < 1e-9)) bad++;
+  }
+  check('the camera keeps a square, right-handed frame at 1,001 steps of its swing', bad === 0);
+  const pts = COAST.world.concat(COAST.region).flat();
+  check('every coast point is a real longitude and latitude', pts.length % 2 === 0 && pts.every((x, i) => Number.isFinite(x) && (i % 2 ? Math.abs(x) <= 90 : Math.abs(x) <= 180)), `${pts.length / 2} points`);
 }
 
 console.log(failed ? `${failed} check(s) failed` : 'all checks pass');

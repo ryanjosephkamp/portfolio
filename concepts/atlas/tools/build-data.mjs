@@ -2,6 +2,8 @@
 //   node concepts/atlas/tools/build-data.mjs <dir with sky.json and sth.bin.gz>
 // sky.json is assets/toys/night-sky/sky.json and sth.bin.gz is
 // assets/toys/st-helens/terrain.bin.gz, both from the splashery repository.
+// ne_110m_coastline.geojson and ne_50m_coastline.geojson are Natural Earth's
+// (github.com/nvkelso/natural-earth-vector, geojson/).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { join } from 'node:path';
@@ -56,13 +58,40 @@ for (const L of meta.layers) {
 }
 const helens = { n: N, span: meta.span[0], site: meta.site, fetched: meta.fetched, before: grids.before, after: grids.after };
 
+// Coastlines: Natural Earth (public domain), as runs of lon, lat. The 1:110m set for the globe,
+// and the 1:50m set cut to the Mid-Atlantic for the region around Washington.
+function coast(file, digits, keep) {
+  const gj = JSON.parse(readFileSync(join(dir, file), 'utf8'));
+  const p = 10 ** digits;
+  const out = [];
+  for (const f of gj.features) {
+    const lines = f.geometry.type === 'MultiLineString' ? f.geometry.coordinates : [f.geometry.coordinates];
+    for (const line of lines) {
+      let run = [];
+      for (const [lon, lat] of line) {
+        if (keep(lon, lat)) run.push(Math.round(lon * p) / p, Math.round(lat * p) / p);
+        else {
+          if (run.length >= 4) out.push(run);
+          run = [];
+        }
+      }
+      if (run.length >= 4) out.push(run);
+    }
+  }
+  return out;
+}
+const world = coast('ne_110m_coastline.geojson', 1, () => true);
+const region = coast('ne_50m_coastline.geojson', 2, (lon, lat) => lon > -83 && lon < -69 && lat > 33 && lat < 44);
+
 const head = `// Made by tools/build-data.mjs from Splashery's data snapshots. Do not edit by hand.
 // Stars: the HYG database v4.1 (David Nash, astronexus.com), CC BY-SA 4.0. Positions are J2000.
 // Constellation lines: the Stellarium team's Western sky culture, CC BY-SA.
 // Mount St. Helens: the USGS pre-1980 DEM and USGS 3DEP, public domain. Heights are decimeters.
+// Coastlines: Natural Earth, public domain.
 `;
 writeFileSync(
   new URL('../assets/data.js', import.meta.url),
-  `${head}export const STARS = ${JSON.stringify(stars)};\nexport const LINES = ${JSON.stringify(lines)};\nexport const HELENS = ${JSON.stringify(helens)};\n`,
+  `${head}export const STARS = ${JSON.stringify(stars)};\nexport const LINES = ${JSON.stringify(lines)};\nexport const HELENS = ${JSON.stringify(helens)};\nexport const COAST = ${JSON.stringify({ world, region })};\n`,
 );
+console.log(world.reduce((a, r) => a + r.length / 2, 0), 'world coast points;', region.reduce((a, r) => a + r.length / 2, 0), 'region points;');
 console.log(keep.length, 'stars;', lines.length, 'constellations; helens', helens.before.top, helens.after.top, helens.before.low);
