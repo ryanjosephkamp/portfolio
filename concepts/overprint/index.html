@@ -94,17 +94,35 @@ scatter points, then walk each one onto the surface</pre>
         <p class="eyebrow"><b>03</b> Visualization</p>
         <h2>The speed&ndash;accuracy trade-off</h2>
         <p class="tag">Undergraduate research capstone, April 2025.</p>
-        <p>Every thread in the figure is one decision being made. Evidence drifts toward the upper line, the right answer, while noise shoves it around, and the decision happens when a thread first touches a line. Teal threads ended on the right answer. Orange ones ended on the wrong one.</p>
+        <p>Every streak in the plot below is one decision being made. Evidence drifts toward the upper line, the right answer, while noise shoves it around, and the decision happens the moment a streak touches a line. Pull the lines apart and every answer is slower but more often right. Push them together and the answers come fast and sloppy.</p>
+        <figure class="lab" id="decide" hidden>
+          <div class="lab__plot">
+            <canvas id="ddm" role="img" aria-label="A live simulation. Streaks of accumulating evidence wander rightward through time between an upper line, the right answer, and a lower line, the wrong answer. Bars along each line count how many decisions ended there at each moment. A curve at the right edge shows right answers a minute for every height of the line."></canvas>
+            <div class="lab__grip" id="ddm-grip" role="slider" tabindex="0" aria-orientation="vertical" aria-label="How sure to be before deciding (the decision threshold)" aria-valuemin="0.3" aria-valuemax="1.6" aria-valuenow="0.9">&#8597; how sure</div>
+          </div>
+          <div class="lab__panel">
+            <label class="lab__dial">
+              <span>evidence</span>
+              <span class="lab__ends"><i aria-hidden="true">murky</i><input type="range" id="ddm-drift" min="0" max="2" step="0.05" value="0.9"><i aria-hidden="true">clear</i></span>
+            </label>
+            <dl class="lab__stats">
+              <div><dt>right</dt><dd><b id="ddm-acc">&hellip;</b><small id="ddm-acc-t"></small></dd></div>
+              <div><dt>time to decide</dt><dd><b id="ddm-rt">&hellip;</b><small id="ddm-rt-t"></small></dd></div>
+              <div><dt>right answers a minute</dt><dd><b id="ddm-rr">&hellip;</b><small id="ddm-rr-t"></small></dd></div>
+            </dl>
+          </div>
+          <figcaption class="lab__note">The textbook two-line model, simulated in your browser. It is not the capstone&rsquo;s own code. The large numbers are measured: a few hundred decisions like the streaks are run to their end every second, unseen, and counted. &ldquo;Theory&rdquo; is the closed-form answer they should settle on. Answers a minute assumes 1.5 seconds between decisions and 2 seconds lost to each mistake; the curve at the right edge plots it for every height of the line.</figcaption>
+        </figure>
+        <p>The splat figure for this section is the same model in the page&rsquo;s own material: thirty streams of evidence, each with its own fixed noise. Move the line or the dial and those same thirty are replayed under the new rule. Teal streams ended on the right answer and orange ones on the wrong one. A stream that reaches the edge still undecided is printed in both inks.</p>
         <p>The capstone, <i>The Speed-Accuracy Trade-Off in Perceptual Decision-Making</i>, modeled evidence accumulation as a diffusion process and used dynamic programming and value iteration to study decision boundaries in a simulated autonomous-vehicle obstacle-avoidance scenario. It was advised by <a href="https://sites.google.com/view/hkimmathbio/home">Dr. Hyunjoong Kim</a>.</p>
-        <p class="meta">The figure is the textbook two-line model, drawn for this page. It is not the capstone&rsquo;s own code.</p>
         <p class="links">
           <a class="link" href="https://youtu.be/LRAP1YHy3g0">Video</a>
           <a class="link" href="https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone">Code</a>
         </p>
         <figure class="fig">
-          <figcaption>Fig. 3 · Simulated decisions, time running left to right</figcaption>
+          <figcaption>Fig. 3 · Thirty simulated decisions, time running left to right</figcaption>
           <pre class="recipe">dx = v dt + dW,  x(0) = 0
-stop when |x| = 1</pre>
+stop when |x| = a</pre>
         </figure>
       </div>
     </section>

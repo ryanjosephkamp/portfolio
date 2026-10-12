@@ -22,7 +22,7 @@ Then open http://localhost:4173/concepts/overprint/ (serve from the repository r
 |---|---|
 | `index.html` | All of the content. Each section names its form in `data-form` and where the form sits in `data-at`. |
 | `styles.css` | Tokens at the top (`:root`): paper, the two inks, type steps. |
-| `main.js` | The recipes (`word`, `lorenz`, `klein`, `gyroid`, `decisions`, `loop`, `yours`), the table that names them (`FORMS`), the WebGL2 press (`Cloud`), and the page logic (`start`). |
+| `main.js` | The recipes (`word`, `lorenz`, `klein`, `gyroid`, `decisions`, `loop`, `yours`), the table that names them (`FORMS`), the WebGL2 press (`Cloud`), the live decision model beside the capstone (`decide`, with its settings in `model`), and the page logic (`start`). |
 
 ## How the print is made
 
@@ -34,6 +34,14 @@ Then open http://localhost:4173/concepts/overprint/ (serve from the repository r
    sampled a little off register, and where both inks land one multiplies the other.
 
 A change of form uploads new targets; each splat sets off from wherever it is and they leave in turn.
+
+## The decision model
+
+The capstone section carries a second, ordinary 2D canvas: a two-line drift-diffusion model a
+visitor can pull on (`decide`). It and the cloud share one small object, `model`. Moving the line
+or the evidence dial changes `model`, and the cloud's `decisions` recipe is reprinted from it, so
+the plot and the splat figure are two views of the same settings. Each of the recipe's thirty
+threads has its own seeded noise, so a change replays the same evidence under the new rule.
 
 ## Adding a form
 
