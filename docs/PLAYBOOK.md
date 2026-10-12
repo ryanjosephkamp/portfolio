@@ -49,8 +49,9 @@ plate, the contact links are tiles, and the dictionary-gloss voice of the hero n
    measured no horizontal scroll (`scrollWidth === clientWidth`), and read the reduced-motion path
    in the code.
 7. **Ship.** Run `node tools/us-spelling.mjs concepts/<slug>` until it prints nothing. Commit
-   (identity in [CLAUDE.md](../CLAUDE.md)), push the branch, open a pull request to `main`, and add
-   your row to [CONCEPTS.md](CONCEPTS.md) in the same pull request.
+   (identity in [CLAUDE.md](../CLAUDE.md)), push the branch, and open a pull request to `main` that
+   changes only `concepts/<slug>/`. State your registry row (direction, territory, signature) in
+   its description; the operator session adds it to [CONCEPTS.md](CONCEPTS.md).
 
 ## Project-first
 
