@@ -44,6 +44,29 @@ function rankOf(chars) {
   return rank;
 }
 
+// The inverse: the ordering that sits at a given rank.
+function unrank(rank, chars) {
+  const counts = {};
+  chars.forEach((c) => { counts[c] = (counts[c] || 0) + 1; });
+  const alphabet = Object.keys(counts).sort();
+  let r = rank - 1;
+  let out = '';
+  for (let n = chars.length; n > 0; n -= 1) {
+    for (const k of alphabet) {
+      if (!counts[k]) continue;
+      counts[k] -= 1;
+      const block = orderings(counts, n - 1);
+      if (r < block) {
+        out += k;
+        break;
+      }
+      r -= block;
+      counts[k] += 1;
+    }
+  }
+  return out;
+}
+
 /**
  * A row of letter tiles that can be rearranged, by code or by hand,
  * into any of the phrases it knows. Every phrase must use the same letters.
@@ -311,6 +334,23 @@ function hero() {
   } catch { /* storage unavailable: start fresh */ }
   let touched = false;
 
+  // The shelf: this ordering between its neighbours in the alphabetical
+  // list of every ordering. It spins like an odometer as the rank changes.
+  const shelf = document.getElementById('shelf');
+  const bag = letters(NAME);
+  const total = rankOf([...bag].sort().reverse());
+  const cells = Array.from({ length: 27 }, (_, i) => {
+    const cell = document.createElement('span');
+    if (i === 13) cell.className = 'is-here';
+    shelf.append(cell);
+    return cell;
+  });
+  const paintShelf = (rank) => {
+    cells.forEach((cell, i) => {
+      cell.textContent = unrank((((rank - 1 + i - 13) % total) + total) % total + 1, bag);
+    });
+  };
+
   // Count the rank readout up or down to its new value.
   let shown = 0;
   let ticking = 0;
@@ -322,6 +362,7 @@ function hero() {
       const k = reduceMotion.matches ? 1 : Math.min((now - t0) / 650, 1);
       shown = Math.round(from + (to - from) * (1 - (1 - k) ** 4));
       rankEl.textContent = shown.toLocaleString('en-US');
+      paintShelf(shown);
       if (k < 1) ticking = requestAnimationFrame(step);
     };
     ticking = requestAnimationFrame(step);
