@@ -18,6 +18,7 @@ concept's pull request changes only its own folder and states its row in its des
 | `resonance` | Sound and audio-visual media | Drenched copper, black sand, a violin bow, one patina-blue accent; the visitor can pick another plate (brass, steel, titanium or bronze), each with its own sand and tarnish | A plate you bow: sand runs to the still lines of the note, one of its 24 figures | `concept/resonance` | 4183 |
 | `slice` | Volume and medical imaging | A radiology light box: blue-black film on a backlit white wall, one fuchsia wax pencil | Two real CT scans, a walnut and a young gar's head, to cut on three planes, window, and turn as a shaded cutaway | `concept/slice` | 4184 |
 | `atlas` | Scale, astronomy and Earth | An engraved star atlas in four editions: indigo and gilt (the default), plain black ink on laid paper, hand-colored, and a field edition in white on black | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today and a true outline at every stop | `concept/atlas` | 4185 |
+| `arcade` | Games and interaction design | A vector arcade monitor: mint phosphor lines on black glass, one hot red ball | His name as a wall of 32 strokes in a vector brick-breaker, with three rule switches, eight rule sets and a house score to beat on each | `concept/arcade` | 4189 |
 
 ## Dropped
 
@@ -31,9 +32,8 @@ branch is still on GitHub, and its tip is kept as a tag. Their territories are f
 
 ## Next
 
-Ten are built. `arcade` takes Ripple's place and is not built yet: games and interaction design, a
-vector arcade monitor (bright lines on black glass), branch `concept/arcade`, port 4189. Nothing
-replaces Query for now, so no concept leads with information retrieval.
+Eleven are built. `arcade` took Ripple's place on October 13, 2026. Nothing replaces Query for now, so
+no concept leads with information retrieval.
 
 Alternates, if one is replaced: `plot` (data visualization: data in 3D and the climate records),
 `lesson` (explorable explanations: the Tinkerer's Manual).
