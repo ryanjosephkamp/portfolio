@@ -322,6 +322,18 @@ button, input { font: inherit; color: inherit; }
   color: var(--teal-deep);
 }
 
+/* A figure that has to be seen whole (the QR code): on a narrow screen its
+   text is cut away above a line and fades in below it, so it passes under
+   the figure and never over it. main.js sets --cut as the page scrolls. */
+.sec__text.is-under {
+  clip-path: inset(var(--cut) 0 0 0);
+  -webkit-mask-image: linear-gradient(to bottom, transparent var(--cut), #000 calc(var(--cut) + 1.75rem));
+  mask-image: linear-gradient(to bottom, transparent var(--cut), #000 calc(var(--cut) + 1.75rem));
+}
+@media (max-width: 59.99rem) {
+  [data-form="qr"] a { scroll-margin-top: 64svh; } /* a link reached by keyboard lands below the figure */
+}
+
 /* lines that are only true once the cloud is being drawn */
 .live, .fig { display: none; }
 .gl .live, .gl .fig { display: block; }
