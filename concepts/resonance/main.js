@@ -9,10 +9,11 @@ const $ = (s) => document.querySelector(s);
 const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 // The canvases' colors: the sand, a screen's flat fill and the accent. They
-// are read from the stylesheet, so they follow the plate a visitor picks.
-let SAND = 'rgba(22, 18, 10,';
-let SCREEN = '#dfc573';
-let ACCENT = '#0c6f68';
+// are read from the stylesheet before anything is kept on screen, so they
+// follow the plate a visitor picks; these are only where they start.
+let SAND = 'rgba(25, 13, 8,';
+let SCREEN = '#e9bda4';
+let ACCENT = '#0b6170';
 
 const saved = {
   get plate() {
@@ -926,9 +927,11 @@ function drawLand() {
 // The scheme is an attribute on <html>; the stylesheet does the rest. Here the
 // canvases take their colors from it and are drawn again.
 
-const PLATES = ['brass', 'copper', 'steel', 'titanium', 'bronze'];
+const PLATES = ['copper', 'brass', 'steel', 'titanium', 'bronze'];
 const SAND_WORD = { bronze: 'pale' }; // every other plate carries black sand
 const rootEl = document.documentElement;
+// The plate a first-time visitor sees: the one index.html names on <html>.
+const FIRST_PLATE = PLATES.includes(rootEl.dataset.plateFirst) ? rootEl.dataset.plateFirst : PLATES[0];
 const picker = $('#plates');
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 
@@ -942,7 +945,7 @@ function readPlate() {
 }
 
 function setPlate(name, keep) {
-  if (!PLATES.includes(name)) name = 'brass';
+  if (!PLATES.includes(name)) name = FIRST_PLATE;
   rootEl.dataset.plate = name;
   if (keep) saved.plate = name;
   readPlate();

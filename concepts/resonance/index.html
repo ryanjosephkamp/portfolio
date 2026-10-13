@@ -1,7 +1,8 @@
 <!doctype html>
-<!-- data-plate is the plate a first-time visitor sees: brass, copper, steel, titanium or bronze.
-     To change it, change it here and the two words marked data-plate-word and data-sand-word below. -->
-<html lang="en-US" data-plate="brass">
+<!-- data-plate is the plate a first-time visitor sees: copper, brass, steel, titanium or bronze.
+     To change it, change it here, the theme-color below (that plate's ground color), and the two
+     words marked data-plate-word and data-sand-word. -->
+<html lang="en-US" data-plate="copper">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,16 +11,19 @@
       name="description"
       content="Ryan Kamp's work, shown as sound you can see: a metal plate you bow, and sand that runs to the still lines of the note."
     />
-    <meta name="theme-color" content="#c3a04b" />
+    <meta name="theme-color" content="#cf9173" />
     <meta property="og:title" content="Ryan Kamp · Resonance" />
     <meta property="og:description" content="A metal plate you bow, and sand that runs to the still lines of the note." />
     <script>
       // Before the first paint: the plate named in the address (?plate=steel, for one
-      // visit), or else the one this visitor picked last time.
-      try {
-        var plate = new URLSearchParams(location.search).get('plate') || localStorage.getItem('resonance:plate');
-        if (plate) document.documentElement.dataset.plate = plate;
-      } catch (e) {}
+      // visit), or else the one this visitor picked last time, or else the one above.
+      (function (root) {
+        root.dataset.plateFirst = root.dataset.plate;
+        try {
+          var plate = new URLSearchParams(location.search).get('plate') || localStorage.getItem('resonance:plate');
+          if (/^(copper|brass|steel|titanium|bronze)$/.test(plate)) root.dataset.plate = plate;
+        } catch (e) {}
+      })(document.documentElement);
     </script>
     <link rel="preload" href="assets/fonts/archivo-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
@@ -31,11 +35,11 @@
     <div class="topbar">
       <div class="plates" id="plates" role="radiogroup" aria-labelledby="plates-label" hidden>
         <span class="plates-label" id="plates-label">Plate</span>
-        <label class="plate-pick" style="--a: #f0dc9c; --b: #bf9c47; --c: #16120a">
-          <input type="radio" name="plate" value="brass" aria-label="Brass" /><span class="sw" aria-hidden="true"></span><span class="nm">Brass</span>
-        </label>
         <label class="plate-pick" style="--a: #f8d9c7; --b: #c58565; --c: #190d08">
           <input type="radio" name="plate" value="copper" aria-label="Copper" /><span class="sw" aria-hidden="true"></span><span class="nm">Copper</span>
+        </label>
+        <label class="plate-pick" style="--a: #f0dc9c; --b: #bf9c47; --c: #16120a">
+          <input type="radio" name="plate" value="brass" aria-label="Brass" /><span class="sw" aria-hidden="true"></span><span class="nm">Brass</span>
         </label>
         <label class="plate-pick" style="--a: #f1f4f6; --b: #a0a9b1; --c: #0e1216">
           <input type="radio" name="plate" value="steel" aria-label="Steel" /><span class="sw" aria-hidden="true"></span><span class="nm">Steel</span>
@@ -54,7 +58,7 @@
         <p class="stamp">Sound and audio-visual media</p>
         <h1 class="name" id="name">Ryan <span>Kamp</span></h1>
         <p class="lede">
-          Sound you can see. This is a <span data-plate-word>brass</span> plate with
+          Sound you can see. This is a <span data-plate-word>copper</span> plate with
           <span data-sand-word>black</span> sand on it. Bow its edge and the sand runs to the lines where the plate
           stays still.
         </p>

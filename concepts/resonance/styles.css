@@ -1,5 +1,6 @@
-/* Resonance: a brass plate, black sand, a violin bow.
-   The page is the brass; the type is the sand; verdigris is the one accent. */
+/* Resonance: a metal plate, sand, a violin bow.
+   The page is the metal; the type is the sand; the metal's own tarnish is the one accent.
+   A visitor picks the plate: copper (the first one they see), brass, steel, titanium or bronze. */
 
 @font-face {
   font-family: 'Archivo';
@@ -12,7 +13,8 @@
 :root {
   /* The plate a visitor picks. Every color on the page comes from this set, so
      a scheme is one block: a metal, its sand, and the color of its own tarnish.
-     Brass is the set below; the others follow it. */
+     The set below is brass, and each other plate replaces what differs from it.
+     Which plate comes first is not decided here: it is data-plate on <html>. */
   --ground: #c3a04b;
   --g1: #b8943f;
   --g2: #d2b461;
@@ -720,7 +722,7 @@ h4 {
   color: var(--on-accent);
 }
 
-/* A key: a stamped brass tag. */
+/* A key: a stamped metal tag. */
 .key {
   font: inherit;
   font-size: 0.82rem;

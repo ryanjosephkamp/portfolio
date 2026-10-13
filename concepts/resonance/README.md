@@ -8,10 +8,10 @@ still lines of the note, by the rule Splashery's Chladni plate uses.
   figure, how hard the plate rang and when, never sound.
 - `main.js`: the bow, the sound (made only after a touch), the screens that read it, and the plate
   picker.
-- `styles.css`: every color comes from one block of variables per plate. The plates are brass,
-  copper, steel, titanium and bronze; a visitor's pick is kept under `resonance:plate`. The plate a
-  first-time visitor sees is the `data-plate` attribute on `<html>` in `index.html`, and
-  `?plate=steel` in the address shows a plate for one visit without keeping it.
+- `styles.css`: every color comes from one block of variables per plate. The plates are copper,
+  brass, steel, titanium and bronze; a visitor's pick is kept under `resonance:plate`. The plate a
+  first-time visitor sees is copper: the `data-plate` attribute on `<html>` in `index.html`. Adding
+  `?plate=steel` to the address shows a plate for one visit without keeping it.
 
 ## Checks
 
