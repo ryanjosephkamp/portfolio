@@ -1,16 +1,26 @@
 <!doctype html>
-<html lang="en-US">
+<!-- data-plate is the plate a first-time visitor sees: brass, copper, steel, titanium or bronze.
+     To change it, change it here and the two words marked data-plate-word and data-sand-word below. -->
+<html lang="en-US" data-plate="brass">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ryan Kamp · Resonance</title>
     <meta
       name="description"
-      content="Ryan Kamp's work, shown as sound you can see: a brass plate you bow, and black sand that runs to the still lines of the note."
+      content="Ryan Kamp's work, shown as sound you can see: a metal plate you bow, and sand that runs to the still lines of the note."
     />
     <meta name="theme-color" content="#c3a04b" />
     <meta property="og:title" content="Ryan Kamp · Resonance" />
-    <meta property="og:description" content="A brass plate you bow, and black sand that runs to the still lines of the note." />
+    <meta property="og:description" content="A metal plate you bow, and sand that runs to the still lines of the note." />
+    <script>
+      // Before the first paint: the plate named in the address (?plate=steel, for one
+      // visit), or else the one this visitor picked last time.
+      try {
+        var plate = new URLSearchParams(location.search).get('plate') || localStorage.getItem('resonance:plate');
+        if (plate) document.documentElement.dataset.plate = plate;
+      } catch (e) {}
+    </script>
     <link rel="preload" href="assets/fonts/archivo-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="main.js"></script>
@@ -18,13 +28,35 @@
   <body>
     <a class="skip" href="#splashery">Skip to the projects</a>
 
+    <div class="topbar">
+      <div class="plates" id="plates" role="radiogroup" aria-labelledby="plates-label" hidden>
+        <span class="plates-label" id="plates-label">Plate</span>
+        <label class="plate-pick" style="--a: #f0dc9c; --b: #bf9c47; --c: #16120a">
+          <input type="radio" name="plate" value="brass" aria-label="Brass" /><span class="sw" aria-hidden="true"></span><span class="nm">Brass</span>
+        </label>
+        <label class="plate-pick" style="--a: #f8d9c7; --b: #c58565; --c: #190d08">
+          <input type="radio" name="plate" value="copper" aria-label="Copper" /><span class="sw" aria-hidden="true"></span><span class="nm">Copper</span>
+        </label>
+        <label class="plate-pick" style="--a: #f1f4f6; --b: #a0a9b1; --c: #0e1216">
+          <input type="radio" name="plate" value="steel" aria-label="Steel" /><span class="sw" aria-hidden="true"></span><span class="nm">Steel</span>
+        </label>
+        <label class="plate-pick" style="--a: #e9e4ff; --b: #9285d8; --c: #110c20">
+          <input type="radio" name="plate" value="titanium" aria-label="Titanium" /><span class="sw" aria-hidden="true"></span><span class="nm">Titanium</span>
+        </label>
+        <label class="plate-pick" style="--a: #63543a; --b: #2a2317; --c: #f1e7cf">
+          <input type="radio" name="plate" value="bronze" aria-label="Bronze" /><span class="sw" aria-hidden="true"></span><span class="nm">Bronze</span>
+        </label>
+      </div>
+    </div>
+
     <header class="hero" id="top">
       <div class="hero-text">
         <p class="stamp">Sound and audio-visual media</p>
         <h1 class="name" id="name">Ryan <span>Kamp</span></h1>
         <p class="lede">
-          Sound you can see. This is a brass plate with black sand on it. Bow its edge and the sand runs to the
-          lines where the plate stays still.
+          Sound you can see. This is a <span data-plate-word>brass</span> plate with
+          <span data-sand-word>black</span> sand on it. Bow its edge and the sand runs to the lines where the plate
+          stays still.
         </p>
         <p class="lede-2">
           The same rule moves the sand on the Chladni plate in
@@ -35,6 +67,7 @@
           <li><b>Drag</b> the bow up or down the edge to change the note, and saw it to play.</li>
           <li><b>Keys:</b> arrows pick a figure, Space bows it, S scatters the sand.</li>
           <li><b>Sing:</b> tap Sing to it and hold a steady note. Your voice stays in this page.</li>
+          <li><b>Again:</b> Play it back repeats your last notes, as you played them.</li>
           <li>Sound starts with your first touch, never before.</li>
         </ul>
       </div>
@@ -88,9 +121,10 @@
 
         <div class="controls">
           <button type="button" class="key key-loud" id="bow-btn">Bow it</button>
-          <button type="button" class="key" id="scatter-btn">Scatter the sand</button>
+          <button type="button" class="key" id="scatter-btn">Scatter</button>
           <button type="button" class="key" id="sound-btn" aria-pressed="true">Sound: on</button>
           <button type="button" class="key" id="mic-btn" aria-pressed="false" hidden>Sing to it</button>
+          <button type="button" class="key" data-replay hidden disabled>Play it back</button>
         </div>
         <p class="mic-say" id="mic-say" role="status"></p>
       </div>
@@ -185,8 +219,14 @@
                 On this page: three screens, drawn in sand, that read this page's own sound. Loudest now:
                 <b id="lab-peak">nothing yet</b>.
               </p>
+              <p class="take-keys">
+                <button type="button" class="key key-loud" data-replay disabled>Play it back</button>
+                <button type="button" class="key" data-phrase>Play an example</button>
+              </p>
+              <p class="take-say" data-take-say role="status">
+                Nothing of yours yet. Bow the plate or sing to it, then play it back.
+              </p>
               <p class="real-keys">
-                <button type="button" class="key key-loud" data-phrase>Play a phrase</button>
                 <a
                   class="real-link"
                   href="https://ryanjosephkamp.github.io/splashery/embed/?toy=sound-lab&amp;sound=on&amp;turntable=off"
@@ -235,8 +275,16 @@
               <p class="note">
                 On this page: a landscape of what you have played. One ridge per 40 millisecond frame, newest in
                 front; a heavier line is a louder frame, the dot marks the measured pitch and the tick the centroid.
+                The page keeps your last notes (which figure, how hard and when, never the sound), so Play it back
+                draws them again.
               </p>
-              <p><button type="button" class="key key-loud" data-phrase>Play a phrase</button></p>
+              <p class="take-keys">
+                <button type="button" class="key key-loud" data-replay disabled>Play it back</button>
+                <button type="button" class="key" data-phrase>Play an example</button>
+              </p>
+              <p class="take-say" data-take-say role="status">
+                Nothing of yours yet. Bow the plate or sing to it, then play it back.
+              </p>
             </div>
             <figure class="screen screen-tall">
               <canvas id="landscape" width="640" height="420"></canvas>

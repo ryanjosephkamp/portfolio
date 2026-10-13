@@ -10,21 +10,244 @@
 }
 
 :root {
-  --brass: #c3a04b;
-  --brass-hi: #e9d28c;
-  --brass-pale: #dcc070;
-  --brass-lo: #9c7b2f;
-  --brass-deep: #6f551c;
-  --sand: #16120a;
-  --sand-soft: #3b3018;
-  --verdigris: #0f7f76;
-  --verdigris-hi: #3fd0bf;
+  /* The plate a visitor picks. Every color on the page comes from this set, so
+     a scheme is one block: a metal, its sand, and the color of its own tarnish.
+     Brass is the set below; the others follow it. */
+  --ground: #c3a04b;
+  --g1: #b8943f;
+  --g2: #d2b461;
+  --g3: #bf9c47;
+  --g4: #d8bc6a;
+  --g5: #b38e3b;
+  --grain-hi: rgba(255, 246, 210, 0.05);
+  --grain-lo: rgba(60, 40, 0, 0.035);
+  --ink: #16120a; /* the sand, and the type */
+  --ink-rgb: 22, 18, 10;
+  --ink-hover: #2a2212;
+  --on-ink: #e9d28c;
+  --lip-rgb: 255, 240, 190; /* the lit lower lip of an engraved line */
+  --metal-hi: #e9d28c;
+  --metal-pale: #dcc070;
+  --key-hover: #f7f0dc;
+  --key-lip: rgba(255, 255, 255, 0.6);
+  --p1: #f0dc9c; /* the plate: polished where the page is brushed */
+  --p2: #e2c672;
+  --p3: #d3b257;
+  --p4: #e6cd80;
+  --glint: rgba(255, 250, 225, 0.75);
+  --shade: rgba(120, 86, 14, 0.42);
+  --rim: rgba(255, 250, 220, 0.85);
+  --rim-lo: rgba(120, 88, 20, 0.35);
+  --inner: rgba(110, 78, 10, 0.25);
+  --edge-1: #8a6a22;
+  --edge-2: #6f551c;
+  --drop-rgb: 50, 32, 0;
+  --screw-hi: #fff4c8;
+  --screw-mid: #b8923a;
+  --mark: rgba(64, 44, 6, 0.9);
+  --accent: #0c6f68; /* verdigris */
+  --accent-hi: #3fd0bf;
+  --accent-hi-rgb: 63, 208, 191;
+  --on-accent: #f7f0dc;
   --hair: #f7f0dc;
-  --cut: 0 1px 0 rgba(255, 240, 190, 0.55); /* the lit lower lip of an engraved line */
+  --s1: #ecd795; /* the screens */
+  --s2: #dcc06a;
+  --s3: #e3c97b;
+  --screen-fill: #dfc573;
+  --stick: #5b2a17;
+  --stick-edge: #2d130a;
+  --tip: #4a2112;
+  --frog: #17120d;
+  --frog-edge: transparent;
+
+  --cut: 0 1px 0 rgba(var(--lip-rgb), 0.55);
   --wdth: 104; /* the name's width: the bowed note's wavelength */
   --ring: 0; /* how hard the plate rings, 0..1 */
   --gutter: clamp(16px, 4vw, 56px);
   color-scheme: light;
+}
+
+/* Copper: polished rose copper, black sand, the blue-green of its patina. */
+:root[data-plate='copper'] {
+  --ground: #cf9173;
+  --g1: #c58565;
+  --g2: #dba486;
+  --g3: #cc8f70;
+  --g4: #e0ac90;
+  --g5: #c08060;
+  --grain-hi: rgba(255, 236, 224, 0.06);
+  --grain-lo: rgba(80, 24, 0, 0.04);
+  --ink: #190d08;
+  --ink-rgb: 25, 13, 8;
+  --ink-hover: #33190f;
+  --on-ink: #f3cbb5;
+  --lip-rgb: 255, 226, 208;
+  --metal-hi: #f3cbb5;
+  --metal-pale: #e6b298;
+  --key-hover: #fbe9df;
+  --p1: #f8d9c7;
+  --p2: #ecbda3;
+  --p3: #dfa388;
+  --p4: #f0c6ae;
+  --glint: rgba(255, 244, 236, 0.78);
+  --shade: rgba(130, 52, 20, 0.4);
+  --rim: rgba(255, 238, 226, 0.85);
+  --rim-lo: rgba(130, 58, 24, 0.35);
+  --inner: rgba(120, 50, 20, 0.25);
+  --edge-1: #96563a;
+  --edge-2: #783f27;
+  --drop-rgb: 56, 20, 6;
+  --screw-hi: #ffe9dc;
+  --screw-mid: #c98263;
+  --mark: rgba(72, 28, 10, 0.9);
+  --accent: #0b6170;
+  --accent-hi: #49c6d8;
+  --accent-hi-rgb: 73, 198, 216;
+  --on-accent: #fbe9df;
+  --hair: #f8efe6;
+  --s1: #f4d2be;
+  --s2: #e6b79c;
+  --s3: #ecc3ab;
+  --screen-fill: #e9bda4;
+}
+
+/* Steel: brushed steel, black sand, the blue a blade turns when it is tempered. */
+:root[data-plate='steel'] {
+  --ground: #aeb7be;
+  --g1: #a0a9b1;
+  --g2: #c0c8ce;
+  --g3: #abb4bb;
+  --g4: #c7ced4;
+  --g5: #9aa3ac;
+  --grain-hi: rgba(255, 255, 255, 0.07);
+  --grain-lo: rgba(10, 24, 40, 0.04);
+  --ink: #0e1216;
+  --ink-rgb: 14, 18, 22;
+  --ink-hover: #232a31;
+  --on-ink: #e6ebef;
+  --lip-rgb: 255, 255, 255;
+  --metal-hi: #e6ebef;
+  --metal-pale: #d0d7dd;
+  --key-hover: #f7f9fa;
+  --p1: #f1f4f6;
+  --p2: #dbe1e6;
+  --p3: #c5cdd5;
+  --p4: #e2e7ec;
+  --glint: rgba(255, 255, 255, 0.85);
+  --shade: rgba(40, 58, 78, 0.36);
+  --rim: rgba(255, 255, 255, 0.9);
+  --rim-lo: rgba(52, 70, 90, 0.35);
+  --inner: rgba(44, 62, 82, 0.22);
+  --edge-1: #6f7a85;
+  --edge-2: #56606b;
+  --drop-rgb: 14, 24, 36;
+  --screw-hi: #ffffff;
+  --screw-mid: #aab4bd;
+  --mark: rgba(24, 36, 50, 0.9);
+  --accent: #1a47b8;
+  --accent-hi: #6c9bff;
+  --accent-hi-rgb: 108, 155, 255;
+  --on-accent: #f4f6f8;
+  --hair: #f4f6f8;
+  --s1: #e9edf0;
+  --s2: #d0d7dd;
+  --s3: #dbe1e6;
+  --screen-fill: #d6dce2;
+}
+
+/* Titanium: anodized violet that shifts toward blue, black sand, anodized teal. */
+:root[data-plate='titanium'] {
+  --ground: #9c90dc;
+  --g1: #9285d8;
+  --g2: #aaa3ec;
+  --g3: #ab8fe0;
+  --g4: #a3abef;
+  --g5: #8f81d6;
+  --grain-hi: rgba(255, 255, 255, 0.06);
+  --grain-lo: rgba(30, 10, 90, 0.045);
+  --ink: #110c20;
+  --ink-rgb: 17, 12, 32;
+  --ink-hover: #27204a;
+  --on-ink: #ddd7fb;
+  --lip-rgb: 236, 230, 255;
+  --metal-hi: #ddd7fb;
+  --metal-pale: #c6bdf5;
+  --key-hover: #f3f0ff;
+  --p1: #e9e4ff;
+  --p2: #cdc5f9;
+  --p3: #b6aaf2;
+  --p4: #d6cffc;
+  --glint: rgba(255, 255, 255, 0.8);
+  --shade: rgba(70, 36, 150, 0.36);
+  --rim: rgba(255, 255, 255, 0.85);
+  --rim-lo: rgba(74, 44, 150, 0.35);
+  --inner: rgba(64, 36, 140, 0.24);
+  --edge-1: #5f4fae;
+  --edge-2: #48398f;
+  --drop-rgb: 26, 12, 64;
+  --screw-hi: #ffffff;
+  --screw-mid: #a79be6;
+  --mark: rgba(38, 22, 86, 0.92);
+  --accent: #06646a;
+  --accent-hi: #4fe3d3;
+  --accent-hi-rgb: 79, 227, 211;
+  --on-accent: #f3f0ff;
+  --hair: #f6f3ff;
+  --s1: #e3ddfd;
+  --s2: #c9c0f7;
+  --s3: #d3cbfa;
+  --screen-fill: #cfc7f8;
+}
+
+/* Bronze: dark statue bronze, pale sand, bright verdigris. The one dark plate. */
+:root[data-plate='bronze'] {
+  --ground: #30281b;
+  --g1: #2a2317;
+  --g2: #3b3223;
+  --g3: #2f281b;
+  --g4: #41372a;
+  --g5: #272014;
+  --grain-hi: rgba(255, 230, 170, 0.035);
+  --grain-lo: rgba(0, 0, 0, 0.08);
+  --ink: #f1e7cf;
+  --ink-rgb: 241, 231, 207;
+  --ink-hover: #fffaf0;
+  --on-ink: #2a2317;
+  --lip-rgb: 0, 0, 0;
+  --metal-hi: #54472f;
+  --metal-pale: #463b28;
+  --key-hover: #66573b;
+  --key-lip: rgba(255, 236, 190, 0.22);
+  --p1: #63543a;
+  --p2: #52452f;
+  --p3: #433826;
+  --p4: #5b4d35;
+  --glint: rgba(255, 232, 180, 0.26);
+  --shade: rgba(0, 0, 0, 0.42);
+  --rim: rgba(255, 230, 170, 0.38);
+  --rim-lo: rgba(0, 0, 0, 0.45);
+  --inner: rgba(0, 0, 0, 0.3);
+  --edge-1: #1b150c;
+  --edge-2: #100c06;
+  --drop-rgb: 0, 0, 0;
+  --screw-hi: #e9d5a6;
+  --screw-mid: #8a7448;
+  --mark: rgba(255, 236, 196, 0.86);
+  --accent: #58d9c6;
+  --accent-hi: #8ff3e3;
+  --accent-hi-rgb: 143, 243, 227;
+  --on-accent: #10201c;
+  --hair: #f7f0dc;
+  --s1: #5c4e36;
+  --s2: #4a3e2a;
+  --s3: #53462f;
+  --screen-fill: #4f432d;
+  --stick: #8a4526;
+  --stick-edge: #3a1a0d;
+  --tip: #74391f;
+  --frog: #0d0a07;
+  --frog-edge: rgba(255, 236, 196, 0.4);
+  color-scheme: dark;
 }
 
 * {
@@ -38,16 +261,16 @@ html {
 
 body {
   margin: 0;
-  color: var(--sand);
+  color: var(--ink);
   font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.55;
   font-weight: 430;
   font-stretch: 100%;
-  background-color: var(--brass);
+  background-color: var(--ground);
   background-image:
-    repeating-linear-gradient(90deg, rgba(255, 246, 210, 0.05) 0 1px, rgba(60, 40, 0, 0.035) 1px 2px, transparent 2px 4px),
-    linear-gradient(100deg, #b8943f 0%, #d2b461 22%, #bf9c47 45%, #d8bc6a 68%, #b38e3b 100%);
+    repeating-linear-gradient(90deg, var(--grain-hi) 0 1px, var(--grain-lo) 1px 2px, transparent 2px 4px),
+    linear-gradient(100deg, var(--g1) 0%, var(--g2) 22%, var(--g3) 45%, var(--g4) 68%, var(--g5) 100%);
   overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
@@ -56,16 +279,16 @@ a {
   color: inherit;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--verdigris);
+  text-decoration-color: var(--accent);
 }
 a:hover {
-  background: var(--sand);
-  color: var(--brass-hi);
+  background: var(--ink);
+  color: var(--on-ink);
   text-decoration-color: transparent;
 }
 
 :focus-visible {
-  outline: 3px solid var(--verdigris);
+  outline: 3px solid var(--ink);
   outline-offset: 3px;
 }
 
@@ -73,8 +296,8 @@ a:hover {
   position: absolute;
   left: -999px;
   top: 8px;
-  background: var(--sand);
-  color: var(--brass-hi);
+  background: var(--ink);
+  color: var(--on-ink);
   padding: 8px 14px;
   z-index: 10;
 }
@@ -102,15 +325,101 @@ h4 {
   text-shadow: var(--cut);
 }
 
+/* ---- The plate picker ------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 8px var(--gutter) 0;
+  min-height: 54px;
+}
+.plates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 6px;
+}
+.plates-label {
+  margin-right: 6px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  font-stretch: 118%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: var(--cut);
+}
+.plate-pick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px 0 8px;
+  border: 2px solid transparent;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.plate-pick input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+/* A chip of each plate: its metal, and one still line of its sand. */
+.plate-pick .sw {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 0 0 2px var(--ink);
+  overflow: hidden;
+}
+.plate-pick .sw::after {
+  content: '';
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: calc(50% - 1px);
+  height: 2px;
+  background: var(--c);
+  transform: rotate(-45deg);
+}
+.plate-pick:hover {
+  border-color: rgba(var(--ink-rgb), 0.45);
+}
+.plate-pick.is-on {
+  border-color: var(--ink);
+  background: linear-gradient(180deg, var(--metal-hi), var(--metal-pale));
+  box-shadow: 0 3px 0 var(--ink);
+}
+.plate-pick:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
 /* ---- Hero ----------------------------------------------------------------- */
 
 .hero {
-  min-height: 100svh;
+  min-height: calc(100svh - 54px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 78svh, 640px));
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 70svh, 640px));
   gap: clamp(24px, 5vw, 80px);
   align-items: center;
-  padding: clamp(20px, 4vw, 48px) var(--gutter) clamp(28px, 4vw, 56px);
+  padding: clamp(8px, 1.2vw, 18px) var(--gutter) clamp(28px, 4vw, 56px);
   /* room on the right for the bow's frog */
   padding-right: calc(var(--gutter) + clamp(40px, 9vw, 150px));
   max-width: 1500px;
@@ -118,7 +427,7 @@ h4 {
 }
 
 .name {
-  font-size: clamp(3.6rem, 11.2vw, 10.5rem);
+  font-size: clamp(3.6rem, 10.2vw, 9.6rem);
   font-weight: 860;
   font-stretch: calc(var(--wdth) * 1%);
   font-variation-settings: 'wdth' var(--wdth);
@@ -148,14 +457,14 @@ h4 {
 .how {
   list-style: none;
   margin: 0;
-  padding: 0.9rem 0 0;
-  border-top: 2px solid var(--sand);
-  box-shadow: 0 -1px 0 rgba(255, 240, 190, 0.5) inset;
+  padding: 0.7rem 0 0;
+  border-top: 2px solid var(--ink);
+  box-shadow: 0 -1px 0 rgba(var(--lip-rgb), 0.5) inset;
   font-size: 0.92rem;
   max-width: 46ch;
 }
 .how li {
-  margin: 0.2rem 0;
+  margin: 0.12rem 0;
 }
 .how b {
   font-weight: 750;
@@ -184,17 +493,17 @@ h4 {
   inset: 0;
   border-radius: 5px;
   background:
-    radial-gradient(120% 90% at 22% 12%, rgba(255, 250, 225, 0.75), transparent 46%),
-    radial-gradient(90% 70% at 85% 95%, rgba(120, 86, 14, 0.42), transparent 60%),
-    linear-gradient(135deg, #f0dc9c 0%, #e2c672 34%, #d3b257 62%, #e6cd80 100%);
+    radial-gradient(120% 90% at 22% 12%, var(--glint), transparent 46%),
+    radial-gradient(90% 70% at 85% 95%, var(--shade), transparent 60%),
+    linear-gradient(135deg, var(--p1) 0%, var(--p2) 34%, var(--p3) 62%, var(--p4) 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 250, 220, 0.85),
-    inset 0 0 0 3px rgba(120, 88, 20, 0.35),
-    inset 0 -6px 14px rgba(110, 78, 10, 0.25),
-    0 2px 0 #8a6a22,
-    0 5px 0 #6f551c,
-    0 22px 38px rgba(50, 32, 0, 0.5),
-    0 0 calc(var(--ring) * 46px) calc(var(--ring) * 4px) rgba(63, 208, 191, calc(var(--ring) * 0.5));
+    inset 0 0 0 1px var(--rim),
+    inset 0 0 0 3px var(--rim-lo),
+    inset 0 -6px 14px var(--inner),
+    0 2px 0 var(--edge-1),
+    0 5px 0 var(--edge-2),
+    0 22px 38px rgba(var(--drop-rgb), 0.5),
+    0 0 calc(var(--ring) * 46px) calc(var(--ring) * 4px) rgba(var(--accent-hi-rgb), calc(var(--ring) * 0.5));
   overflow: hidden;
 }
 .plate canvas {
@@ -213,11 +522,11 @@ h4 {
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
-    linear-gradient(45deg, transparent 44%, rgba(40, 26, 0, 0.75) 44% 56%, transparent 56%),
-    radial-gradient(circle at 35% 30%, #fff4c8, #b8923a 60%, #7a5c1c);
+    linear-gradient(45deg, transparent 44%, rgba(var(--drop-rgb), 0.75) 44% 56%, transparent 56%),
+    radial-gradient(circle at 35% 30%, var(--screw-hi), var(--screw-mid) 60%, var(--edge-2));
   box-shadow:
-    0 1px 2px rgba(40, 24, 0, 0.6),
-    inset 0 0 0 1px rgba(60, 40, 0, 0.5);
+    0 1px 2px rgba(var(--drop-rgb), 0.6),
+    inset 0 0 0 1px rgba(var(--drop-rgb), 0.5);
 }
 .maker {
   position: absolute;
@@ -228,8 +537,8 @@ h4 {
   font-stretch: 125%;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(70, 48, 6, 0.72);
-  text-shadow: 0 1px 0 rgba(255, 248, 215, 0.8);
+  color: var(--mark);
+  text-shadow: 0 1px 0 rgba(var(--lip-rgb), 0.8);
   pointer-events: none;
 }
 
@@ -247,8 +556,8 @@ h4 {
   right: 0;
   height: 1.5px;
   width: 45%;
-  background: rgba(60, 40, 4, 0.7);
-  box-shadow: 0 1px 0 rgba(255, 248, 215, 0.7);
+  background: var(--mark);
+  box-shadow: 0 1px 0 rgba(var(--lip-rgb), 0.7);
   transform: translateY(-50%);
 }
 .rail i.long {
@@ -257,7 +566,7 @@ h4 {
 .rail i.on {
   width: 100%;
   height: 3px;
-  background: var(--verdigris);
+  background: var(--accent);
 }
 
 /* The bow lies across the right edge; its hair meets the edge at the note. */
@@ -269,17 +578,17 @@ h4 {
   margin-top: -5.2%;
   transform: translate3d(var(--bx, 0px), 0, 0) rotate(-7deg);
   transform-origin: 54% 70%;
-  filter: drop-shadow(0 9px 6px rgba(40, 24, 0, 0.42));
+  filter: drop-shadow(0 9px 6px rgba(var(--drop-rgb), 0.42));
   pointer-events: none;
   overflow: visible;
 }
 .bow-stick {
-  fill: #5b2a17;
-  stroke: #2d130a;
+  fill: var(--stick);
+  stroke: var(--stick-edge);
   stroke-width: 0.8;
 }
 .bow-tip {
-  fill: #4a2112;
+  fill: var(--tip);
 }
 .bow-hair {
   fill: var(--hair);
@@ -287,11 +596,13 @@ h4 {
   stroke-width: 0.5;
 }
 .bow-frog {
-  fill: #17120d;
+  fill: var(--frog);
+  stroke: var(--frog-edge);
+  stroke-width: 1;
 }
 .bow-eye {
   fill: #e8f4ee;
-  stroke: var(--verdigris);
+  stroke: var(--accent);
   stroke-width: 1.4;
 }
 .bow-screw {
@@ -307,9 +618,9 @@ h4 {
   margin-top: 5%;
   padding: 0.5em 0.85em;
   border-radius: 3px;
-  background: var(--sand);
-  color: var(--brass-hi);
-  box-shadow: 0 3px 0 var(--verdigris);
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: 0 3px 0 var(--accent);
   font-size: 0.72rem;
   font-weight: 750;
   font-stretch: 112%;
@@ -338,10 +649,10 @@ h4 {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0.6rem 1.6rem;
+  gap: 0.6rem 1.1rem;
   margin-top: clamp(22px, 3.2vw, 38px);
   padding-top: 0.8rem;
-  border-top: 2px solid var(--sand);
+  border-top: 2px solid var(--ink);
 }
 .fig {
   margin: 0;
@@ -364,7 +675,7 @@ h4 {
 .readout dl {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 1.4rem;
+  gap: 0.4rem 1rem;
   margin: 0;
 }
 .readout dt {
@@ -390,8 +701,12 @@ h4 {
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-top: 1rem;
+}
+.controls .key {
+  font-size: 0.76rem;
+  padding: 0.7em 0.8em;
 }
 
 .mic-say {
@@ -401,8 +716,8 @@ h4 {
   font-weight: 650;
 }
 .key[aria-pressed='true']#mic-btn {
-  background: var(--verdigris);
-  color: var(--hair);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 /* A key: a stamped brass tag. */
@@ -413,37 +728,43 @@ h4 {
   font-stretch: 112%;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sand);
+  color: var(--ink);
   padding: 0.7em 1.05em;
   min-height: 44px;
-  border: 2px solid var(--sand);
+  border: 2px solid var(--ink);
   border-radius: 3px;
-  background: linear-gradient(180deg, var(--brass-hi), var(--brass-pale));
+  background: linear-gradient(180deg, var(--metal-hi), var(--metal-pale));
   box-shadow:
-    0 3px 0 var(--sand),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 3px 0 var(--ink),
+    inset 0 1px 0 var(--key-lip);
   cursor: pointer;
   transition: transform 0.06s, box-shadow 0.06s;
 }
 .key:hover {
-  background: var(--hair);
+  background: var(--key-hover);
 }
 .key:active,
 .key.is-down {
   transform: translateY(3px);
   box-shadow:
-    0 0 0 var(--sand),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 0 0 var(--ink),
+    inset 0 1px 0 var(--key-lip);
+}
+.key:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  transform: translateY(3px);
+  cursor: default;
 }
 .key-loud {
-  background: var(--sand);
-  color: var(--brass-hi);
+  background: var(--ink);
+  color: var(--on-ink);
   box-shadow:
-    0 3px 0 var(--verdigris),
+    0 3px 0 var(--accent),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .key-loud:hover {
-  background: #2a2212;
+  background: var(--ink-hover);
 }
 .key[aria-pressed='false']#sound-btn {
   background: transparent;
@@ -469,8 +790,8 @@ h4 {
   right: var(--gutter);
   top: 0;
   height: 3px;
-  background: var(--sand);
-  box-shadow: 0 1px 0 rgba(255, 240, 190, 0.6);
+  background: var(--ink);
+  box-shadow: 0 1px 0 rgba(var(--lip-rgb), 0.6);
 }
 
 .sec-head h2 {
@@ -513,7 +834,7 @@ h4 {
   align-items: center;
   min-height: 40px;
   padding: 0.35em 0.9em;
-  border: 2px solid var(--sand);
+  border: 2px solid var(--ink);
   border-radius: 3px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -521,21 +842,21 @@ h4 {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
-  box-shadow: 0 2px 0 var(--sand);
+  box-shadow: 0 2px 0 var(--ink);
 }
 .links a:first-child {
-  background: var(--sand);
-  color: var(--brass-hi);
-  box-shadow: 0 2px 0 var(--verdigris);
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: 0 2px 0 var(--accent);
 }
 .links a:hover {
-  background: var(--hair);
-  color: var(--sand);
+  background: var(--key-hover);
+  color: var(--ink);
 }
 .part {
   font-size: 0.95rem;
   padding-left: 0.9rem;
-  border-left: 3px solid var(--verdigris);
+  border-left: 3px solid var(--accent);
 }
 
 /* A small plate with a project's figure on it. */
@@ -547,13 +868,13 @@ h4 {
   aspect-ratio: 1;
   border-radius: 4px;
   background:
-    radial-gradient(120% 90% at 22% 12%, rgba(255, 250, 225, 0.7), transparent 50%),
-    linear-gradient(135deg, #efdb9a, #dcc06a 50%, #e6cd80);
+    radial-gradient(120% 90% at 22% 12%, var(--glint), transparent 50%),
+    linear-gradient(135deg, var(--p1), var(--p2) 50%, var(--p4));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 250, 220, 0.85),
-    0 2px 0 #8a6a22,
-    0 4px 0 #6f551c,
-    0 10px 16px rgba(50, 32, 0, 0.38);
+    inset 0 0 0 1px var(--rim),
+    0 2px 0 var(--edge-1),
+    0 4px 0 var(--edge-2),
+    0 10px 16px rgba(var(--drop-rgb), 0.38);
   cursor: pointer;
   transition: transform 0.08s;
 }
@@ -574,17 +895,17 @@ h4 {
 @keyframes ring {
   0% {
     box-shadow:
-      inset 0 0 0 1px rgba(255, 250, 220, 0.85),
-      0 2px 0 #8a6a22,
-      0 4px 0 #6f551c,
-      0 0 0 0 rgba(63, 208, 191, 0.9);
+      inset 0 0 0 1px var(--rim),
+      0 2px 0 var(--edge-1),
+      0 4px 0 var(--edge-2),
+      0 0 0 0 rgba(var(--accent-hi-rgb), 0.9);
   }
   100% {
     box-shadow:
-      inset 0 0 0 1px rgba(255, 250, 220, 0.85),
-      0 2px 0 #8a6a22,
-      0 4px 0 #6f551c,
-      0 0 0 18px rgba(63, 208, 191, 0);
+      inset 0 0 0 1px var(--rim),
+      0 2px 0 var(--edge-1),
+      0 4px 0 var(--edge-2),
+      0 0 0 18px rgba(var(--accent-hi-rgb), 0);
   }
 }
 
@@ -601,15 +922,15 @@ h4 {
   text-transform: uppercase;
   letter-spacing: -0.01em;
   padding-bottom: 0.7rem;
-  border-bottom: 2px solid var(--sand);
+  border-bottom: 2px solid var(--ink);
 }
 .way {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: clamp(20px, 4vw, 64px);
   padding: clamp(24px, 4vw, 48px) 0;
-  border-bottom: 1px solid rgba(22, 18, 10, 0.55);
-  box-shadow: 0 1px 0 rgba(255, 240, 190, 0.45);
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.55);
+  box-shadow: 0 1px 0 rgba(var(--lip-rgb), 0.45);
   align-items: start;
 }
 .way-last {
@@ -633,15 +954,15 @@ h4 {
   font-weight: 650;
   font-stretch: 90%;
   padding: 0.7rem 0;
-  border-top: 1px solid var(--sand);
-  border-bottom: 1px solid var(--sand);
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 .note {
   font-size: 0.95rem;
   padding-left: 0.9rem;
-  border-left: 3px solid var(--verdigris);
+  border-left: 3px solid var(--accent);
 }
 
 /* The contact sheet: every figure the plate can make. */
@@ -661,18 +982,27 @@ h4 {
   font-weight: 750;
   font-stretch: 112%;
   letter-spacing: 0.06em;
-  color: rgba(70, 48, 6, 0.8);
+  color: var(--mark);
   pointer-events: none;
 }
 .sheet .is-current {
-  outline: 3px solid var(--verdigris);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
+.take-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.take-say {
+  font-size: 0.92rem;
+  font-weight: 650;
+}
 .real {
   margin-top: clamp(20px, 3vw, 36px);
   padding-top: 1rem;
-  border-top: 2px solid var(--sand);
+  border-top: 2px solid var(--ink);
 }
 .real-say {
   max-width: 54ch;
@@ -701,10 +1031,10 @@ h4 {
   border-radius: 4px;
   overflow: hidden;
   background: #fff;
-  border: 2px solid var(--sand);
+  border: 2px solid var(--ink);
   box-shadow:
-    0 3px 0 var(--sand),
-    0 12px 18px rgba(50, 32, 0, 0.35);
+    0 3px 0 var(--ink),
+    0 12px 18px rgba(var(--drop-rgb), 0.35);
 }
 .real-frame iframe {
   display: block;
@@ -730,13 +1060,13 @@ h4 {
   width: 100%;
   height: auto;
   border-radius: 4px;
-  background: linear-gradient(135deg, #ecd795, #dcc06a 55%, #e3c97b);
+  background: linear-gradient(135deg, var(--s1), var(--s2) 55%, var(--s3));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 250, 220, 0.85),
-    inset 0 0 0 3px rgba(120, 88, 20, 0.28),
-    0 2px 0 #8a6a22,
-    0 4px 0 #6f551c,
-    0 12px 18px rgba(50, 32, 0, 0.35);
+    inset 0 0 0 1px var(--rim),
+    inset 0 0 0 3px var(--rim-lo),
+    0 2px 0 var(--edge-1),
+    0 4px 0 var(--edge-2),
+    0 12px 18px rgba(var(--drop-rgb), 0.35);
 }
 .glass {
   position: relative;
@@ -747,8 +1077,8 @@ h4 {
   right: 2.5%;
   bottom: calc(var(--p) * 1%);
   padding-left: 4px;
-  border-bottom: 1px solid rgba(22, 18, 10, 0.28);
-  color: rgba(64, 44, 6, 0.9);
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.28);
+  color: var(--mark);
   font-size: 0.58rem;
   font-weight: 700;
   font-stretch: 112%;
@@ -765,7 +1095,7 @@ h4 {
   display: flex;
   align-items: flex-end;
   border-bottom: 0;
-  border-left: 1px solid rgba(22, 18, 10, 0.28);
+  border-left: 1px solid rgba(var(--ink-rgb), 0.28);
   line-height: 1;
 }
 .mark-x {
@@ -775,7 +1105,7 @@ h4 {
   transform: translateX(-100%);
   padding: 0 4px 0 0;
   border-left: 0;
-  border-right: 1px solid rgba(22, 18, 10, 0.28);
+  border-right: 1px solid rgba(var(--ink-rgb), 0.28);
 }
 .screen figcaption {
   margin-top: 0.7rem;
@@ -804,7 +1134,7 @@ h4 {
 }
 .loop .edge {
   fill: none;
-  stroke: var(--sand);
+  stroke: var(--ink);
   stroke-width: 2.5;
 }
 .loop .edge-back {
@@ -813,7 +1143,7 @@ h4 {
   stroke-width: 3.5;
 }
 .loop .arrow {
-  fill: var(--sand);
+  fill: var(--ink);
 }
 .loop-nodes {
   list-style: none;
@@ -828,27 +1158,27 @@ h4 {
   top: 43.6%;
   transform: translate(-50%, -50%);
   padding: 0.5em 0.9em;
-  border: 2px solid var(--sand);
+  border: 2px solid var(--ink);
   border-radius: 999px;
-  background: linear-gradient(180deg, var(--brass-hi), var(--brass-pale));
+  background: linear-gradient(180deg, var(--metal-hi), var(--metal-pale));
   font-size: clamp(0.62rem, 1.5vw, 0.86rem);
   font-weight: 750;
   font-stretch: 100%;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
-  box-shadow: 0 3px 0 var(--sand);
+  box-shadow: 0 3px 0 var(--ink);
   transition: background 0.12s, color 0.12s, box-shadow 0.12s;
 }
 .loop-nodes li.loop-stop {
   border-radius: 3px;
 }
 .loop-nodes li.is-on {
-  background: var(--sand);
-  color: var(--brass-hi);
+  background: var(--ink);
+  color: var(--on-ink);
   box-shadow:
-    0 3px 0 var(--verdigris),
-    0 0 0 6px rgba(63, 208, 191, 0.45);
+    0 3px 0 var(--accent),
+    0 0 0 6px rgba(var(--accent-hi-rgb), 0.45);
 }
 .loop-back {
   position: absolute;
@@ -884,8 +1214,8 @@ h4 {
   grid-template-columns: clamp(84px, 10vw, 132px) minmax(0, 1fr);
   gap: clamp(14px, 2.4vw, 32px);
   padding: clamp(18px, 2.6vw, 30px) 0;
-  border-bottom: 1px solid rgba(22, 18, 10, 0.55);
-  box-shadow: 0 1px 0 rgba(255, 240, 190, 0.45);
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.55);
+  box-shadow: 0 1px 0 rgba(var(--lip-rgb), 0.45);
   align-items: start;
 }
 .work:first-child {
@@ -941,20 +1271,20 @@ h4 {
   padding: 0;
   border: 0;
   border-radius: 2px 2px 0 0;
-  background: var(--sand);
+  background: var(--ink);
   height: var(--h);
   cursor: pointer;
-  box-shadow: inset 0 2px 0 rgba(255, 240, 190, 0.35);
+  box-shadow: inset 0 2px 0 rgba(var(--lip-rgb), 0.35);
 }
 .bars button:hover,
 .bars button:focus-visible,
 .bars button.is-hit {
-  background: var(--verdigris);
+  background: var(--accent);
 }
 .bars-say {
   margin: 0.5rem 0 0;
   padding-top: 0.4rem;
-  border-top: 2px solid var(--sand);
+  border-top: 2px solid var(--ink);
   font-size: 0.86rem;
   font-weight: 650;
 }
@@ -974,10 +1304,10 @@ h4 {
   align-items: center;
   min-height: 44px;
   padding: 0.4em 1em;
-  border: 2px solid var(--sand);
+  border: 2px solid var(--ink);
   border-radius: 3px;
-  background: linear-gradient(180deg, var(--brass-hi), var(--brass-pale));
-  box-shadow: 0 3px 0 var(--sand);
+  background: linear-gradient(180deg, var(--metal-hi), var(--metal-pale));
+  box-shadow: 0 3px 0 var(--ink);
   font-size: 0.82rem;
   font-weight: 750;
   font-stretch: 112%;
@@ -986,9 +1316,9 @@ h4 {
   text-decoration: none;
 }
 .tags a:hover {
-  background: var(--sand);
-  color: var(--brass-hi);
-  box-shadow: 0 3px 0 var(--verdigris);
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: 0 3px 0 var(--accent);
 }
 
 .foot {
@@ -997,8 +1327,8 @@ h4 {
   justify-content: space-between;
   gap: 8px 24px;
   padding: 22px var(--gutter) 34px;
-  background: var(--sand);
-  color: var(--brass-pale);
+  background: var(--ink);
+  color: var(--on-ink);
   font-size: 0.86rem;
   font-weight: 600;
 }
@@ -1006,11 +1336,14 @@ h4 {
   margin: 0;
 }
 .foot a {
-  text-decoration-color: var(--verdigris-hi);
+  text-decoration-color: var(--accent-hi);
+}
+.foot :focus-visible {
+  outline-color: var(--on-ink);
 }
 .foot a:hover {
-  background: var(--brass-hi);
-  color: var(--sand);
+  background: var(--on-ink);
+  color: var(--ink);
 }
 
 /* ---- Narrower --------------------------------------------------------------- */
@@ -1062,6 +1395,31 @@ h4 {
 }
 
 @media (max-width: 520px) {
+  .topbar {
+    justify-content: flex-start;
+  }
+  .plates {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  /* The row has no room for its label on a phone; a screen reader still gets it. */
+  .plates-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .plate-pick {
+    padding: 0 7px;
+  }
+  .plate-pick .nm {
+    display: none;
+  }
+  .plate-pick.is-on .nm {
+    display: inline;
+  }
   .sheet {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

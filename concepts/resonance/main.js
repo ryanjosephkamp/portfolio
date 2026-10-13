@@ -2,16 +2,31 @@
 // Sound starts only after a touch: the AudioContext is made in a handler.
 
 import { catalog, Sand, restingFigure, BASE_HZ } from './plate.js';
+import { Take } from './take.js';
 
 const FIGS = catalog();
 const $ = (s) => document.querySelector(s);
 const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-const SAND = 'rgba(22, 18, 10,';
-const SCREEN = '#dfc573';
-const VERDIGRIS = '#0f7f76';
+// The canvases' colors: the sand, a screen's flat fill and the accent. They
+// are read from the stylesheet, so they follow the plate a visitor picks.
+let SAND = 'rgba(22, 18, 10,';
+let SCREEN = '#dfc573';
+let ACCENT = '#0c6f68';
 
 const saved = {
+  get plate() {
+    try {
+      return localStorage.getItem('resonance:plate');
+    } catch {
+      return null;
+    }
+  },
+  set plate(v) {
+    try {
+      localStorage.setItem('resonance:plate', v);
+    } catch {}
+  },
   get muted() {
     try {
       return localStorage.getItem('resonance:muted') === '1';
@@ -132,6 +147,7 @@ const audio = {
   // A struck bar: for Amordle's bars and grooph's loop.
   ping(hz, seconds = 0.7, gain = 0.3) {
     if (!this.start()) return;
+    if (!playing) take.ping(performance.now(), hz, seconds, gain);
     const ctx = this.ctx;
     const t = ctx.currentTime;
     const g = ctx.createGain();
@@ -158,6 +174,59 @@ const audio = {
     if (this.ctx) this.out.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.02);
   },
 };
+
+// ---- The take: what was last played, to play back ------------------------------
+// take.js keeps it: the figure the bow sat on, how hard the plate rang and the
+// bars struck, against the clock. Never the sound itself.
+
+const take = new Take();
+let playing = null; // the player of a take being played back
+let playStart = 0;
+// Only the visitor's own playing is kept. This is set when they bow, strike,
+// tap a figure or sing, and cleared when the page plays something itself (a
+// playback, the example), so the ring that follows is not taken for a note.
+let armed = false;
+
+function stopPlayback() {
+  if (!playing) return;
+  playing = null;
+  showTake();
+}
+
+function playBack() {
+  if (playing) return stopPlayback();
+  if (take.empty || !audio.start()) return;
+  if (mic.on) micStop(); // or the plate would hear itself
+  clearTimeout(phraseTimer);
+  armed = false;
+  state.hold = 0;
+  state.keyHeld = false;
+  playing = take.player();
+  playStart = performance.now();
+  showTake();
+}
+
+const replayButtons = [...document.querySelectorAll('[data-replay]')];
+const takeSays = [...document.querySelectorAll('[data-take-say]')];
+let takeShown = '';
+function showTake() {
+  const seconds = (take.length / 1000).toFixed(1);
+  const key = playing ? 'playing' : take.empty ? 'none' : seconds;
+  if (key === takeShown) return;
+  takeShown = key;
+  for (const b of replayButtons) {
+    b.hidden = false;
+    b.disabled = take.empty && !playing;
+    b.textContent = playing ? 'Stop' : 'Play it back';
+  }
+  const text = playing
+    ? `Playing your last notes back: ${seconds} seconds.`
+    : take.empty
+      ? 'Nothing of yours yet. Bow the plate or sing to it, then play it back.'
+      : `Your last notes: ${seconds} seconds.`;
+  for (const el of takeSays) el.textContent = text;
+}
+for (const b of replayButtons) b.addEventListener('click', playBack);
 
 // ---- The plate ---------------------------------------------------------------
 
@@ -234,6 +303,8 @@ function setFigure(index, seconds) {
 let phraseTimer = 0;
 function ring(index, el) {
   clearTimeout(phraseTimer);
+  armed = true;
+  stopPlayback();
   audio.start();
   setFigure(index, 1.6);
   if (el) {
@@ -264,6 +335,8 @@ const played = () => stage.classList.add('is-played');
 stage.addEventListener('pointerdown', (e) => {
   if (e.button > 0) return;
   played();
+  stopPlayback();
+  armed = true;
   audio.start();
   stage.setPointerCapture(e.pointerId);
   state.bowing = true;
@@ -298,6 +371,8 @@ stage.addEventListener('keydown', (e) => {
     scatter();
   } else return;
   played();
+  stopPlayback();
+  armed = true;
   e.preventDefault();
 });
 stage.addEventListener('keyup', (e) => {
@@ -311,6 +386,8 @@ function scatter() {
 }
 $('#scatter-btn').addEventListener('click', scatter);
 $('#bow-btn').addEventListener('click', () => {
+  stopPlayback();
+  armed = true;
   audio.start();
   strike(1.8);
 });
@@ -378,6 +455,7 @@ function micStop() {
 async function micToggle() {
   if (mic.on) return micStop();
   played();
+  stopPlayback();
   if (!navigator.mediaDevices?.getUserMedia || !audio.start()) {
     micSay.textContent = 'This browser cannot share a microphone with the page. The bow still works.';
     return;
@@ -447,7 +525,7 @@ const arsThumb = $('#ars-thumb');
 arsBtn.addEventListener('click', () => {
   const now = parseFig(arsThumb.dataset.ring);
   const next = FIGS.find((f) => f.n === now.n && f.m === now.m && f.s === -now.s);
-  arsThumb.dataset.ring = `${next.n},${next.m},${next.s}`;
+  arsThumb.dataset.ring = $('#ars-canvas').dataset.figure = `${next.n},${next.m},${next.s}`;
   drawRest($('#ars-canvas'), next);
   $('#ars-stamp').textContent = `Fig. ${next.number} · ${Math.round(next.hz).toLocaleString('en-US')} Hz`;
   arsBtn.textContent = next.s > 0 ? 'Rearrange: + to −' : 'Rearrange: − to +';
@@ -530,11 +608,14 @@ function runLoop(sound) {
 }
 $('#loop-btn').addEventListener('click', () => runLoop(true));
 
-// A phrase: eight figures, for the screens to read.
+// The example: eight figures, the same every time, for the screens to read.
+// It is the page's playing, so it never goes into the visitor's take.
 function playPhrase() {
   audio.start();
   clearTimeout(phraseTimer);
+  stopPlayback();
   const notes = [3, 5, 7, 11, 13, 11, 7, 11];
+  armed = false;
   const next = (i) => {
     setFigure(notes[i], 0.3);
     if (i < notes.length - 1) phraseTimer = setTimeout(next, 470, i + 1);
@@ -754,7 +835,7 @@ function drawSpec() {
   }
   if (heard.live) {
     const x = W * 0.04 + logPos(heard.peak) * W * 0.92;
-    g.fillStyle = VERDIGRIS;
+    g.fillStyle = ACCENT;
     g.fillRect(x - 1, H * 0.06, Math.max(2, W / 240), base - H * 0.06);
   }
 }
@@ -824,7 +905,7 @@ function drawLand() {
       g.stroke();
       if (fr.f0 > F_LO) {
         const b = logPos(fr.f0) * (LAND_NB - 1);
-        g.fillStyle = VERDIGRIS;
+        g.fillStyle = ACCENT;
         g.beginPath();
         g.arc(x(b), y0 - fr.bands[Math.round(b)] ** 1.7 * amp - 3 * px, (1.6 + 1.8 * t) * px, 0, 7);
         g.fill();
@@ -840,6 +921,47 @@ function drawLand() {
     }
   }
 }
+
+// ---- The plate a visitor picks -------------------------------------------------
+// The scheme is an attribute on <html>; the stylesheet does the rest. Here the
+// canvases take their colors from it and are drawn again.
+
+const PLATES = ['brass', 'copper', 'steel', 'titanium', 'bronze'];
+const SAND_WORD = { bronze: 'pale' }; // every other plate carries black sand
+const rootEl = document.documentElement;
+const picker = $('#plates');
+const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+function readPlate() {
+  const css = getComputedStyle(rootEl);
+  const v = (name) => css.getPropertyValue(name).trim();
+  SAND = `rgba(${v('--ink-rgb')},`;
+  SCREEN = v('--screen-fill');
+  ACCENT = v('--accent');
+  if (themeMeta) themeMeta.content = v('--ground');
+}
+
+function setPlate(name, keep) {
+  if (!PLATES.includes(name)) name = 'brass';
+  rootEl.dataset.plate = name;
+  if (keep) saved.plate = name;
+  readPlate();
+  for (const input of picker.querySelectorAll('input')) {
+    input.checked = input.value === name;
+    input.parentNode.classList.toggle('is-on', input.checked);
+  }
+  for (const el of document.querySelectorAll('[data-plate-word]')) el.textContent = name;
+  for (const el of document.querySelectorAll('[data-sand-word]')) el.textContent = SAND_WORD[name] || 'black';
+  // Everything drawn in sand is drawn again in the new sand.
+  for (const c of document.querySelectorAll('canvas[data-figure]')) drawRest(c, parseFig(c.dataset.figure));
+  sheetButtons.forEach((b, i) => drawRest(b.firstChild, FIGS[i]));
+  const gram = screens.gram;
+  gram.getContext('2d').clearRect(0, 0, gram.width, gram.height);
+  plateDirty = landDirty = true;
+}
+picker.addEventListener('change', (e) => setPlate(e.target.value, true));
+picker.hidden = false;
+setPlate(rootEl.dataset.plate, false);
 
 // ---- One loop ------------------------------------------------------------------
 
@@ -888,7 +1010,8 @@ function readout(dt) {
 
 let last = performance.now();
 function frame(now) {
-  const dt = clamp((now - last) / 1000, 0.001, 0.05);
+  const real = (now - last) / 1000;
+  const dt = clamp(real, 0.001, 0.05);
   last = now;
   fitPlate();
 
@@ -903,18 +1026,43 @@ function frame(now) {
   if (mic.on && mic.answer) {
     state.u = mic.answer.index;
     target = Math.max(target, mic.answer.response * mic.loud);
+    armed = true;
   }
   state.bowSpeed *= Math.exp(-dt / 0.14);
-  const tau = target > state.energy ? 0.04 : 0.5;
-  state.energy += (target - state.energy) * (1 - Math.exp(-dt / tau));
-  if (state.energy < 0.004 && target === 0) state.energy = 0;
+
+  // A take played back sets the bow and the ringing itself.
+  let led = false;
+  if (playing) {
+    const step = playing.at(now - playStart);
+    for (const b of step.pings) audio.ping(b.hz, b.seconds, b.gain);
+    if (step.u !== null) {
+      if (reduce.matches && Math.round(step.u) !== Math.round(state.u)) {
+        state.u = step.u;
+        settleNow();
+      }
+      state.u = step.u;
+      state.energy = step.e;
+      led = true;
+    }
+    target = 0;
+    if (step.done) stopPlayback();
+  }
+  if (!led) {
+    const tau = target > state.energy ? 0.04 : 0.5;
+    state.energy += (target - state.energy) * (1 - Math.exp(-dt / tau));
+    if (state.energy < 0.004 && target === 0) state.energy = 0;
+  }
+  // What the visitor plays goes into the take: not the first silent settle,
+  // not the example, not a playback or the ring it leaves behind.
+  if (audio.ctx && armed && !playing) take.frame(now, state.u, state.energy);
 
   // The bow finds the nearest note when it slows.
-  if (!state.bowing || state.bowSpeed < 0.06) {
+  if (!led && (!state.bowing || state.bowSpeed < 0.06)) {
     const r = Math.round(state.u);
     state.u += (r - state.u) * (1 - Math.exp(-dt / 0.09));
     if (Math.abs(r - state.u) < 0.002) state.u = r;
   }
+  showTake();
 
   if (!reduce.matches && sand.step(dt, drive())) plateDirty = true;
   if (plateDirty && seen.get(cv) !== false) drawSand();
@@ -946,7 +1094,7 @@ function frame(now) {
     if (seen.get(screens.scope)) drawScope();
   }
   if (seen.get(screens.land)) drawLand();
-  readout(dt);
+  readout(real);
   requestAnimationFrame(frame);
 }
 
