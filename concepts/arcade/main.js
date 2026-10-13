@@ -358,6 +358,7 @@ for (const btn of $$("#rules .rule")) btn.addEventListener("click", () => setBit
 for (const tr of $$("#scores tbody tr")) $("button", tr).addEventListener("click", () => setBits(Number(tr.dataset.bits)));
 $("#view").addEventListener("click", (e) => {
   view3d = !view3d;
+  monitor.classList.toggle("is-3d", view3d);
   e.currentTarget.setAttribute("aria-checked", view3d);
   $("b", e.currentTarget).textContent = view3d ? "3D" : "2D";
 });

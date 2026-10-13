@@ -76,6 +76,7 @@ h2[data-vec], h2 { font-size: clamp(30px, 5.2vw, 58px); line-height: 1.15; text-
 .monitor__still { position: absolute; inset: 14% 0 auto; margin: 0; max-width: none; text-align: center; font-size: clamp(40px, 9vw, 96px); font-weight: 200; line-height: 1.25; letter-spacing: 0.16em; color: var(--p); text-shadow: var(--glow); }
 .js .monitor__still { display: none; }
 .monitor__msg { position: absolute; left: 0; right: 0; top: 66%; margin: 0; max-width: none; text-align: center; font-size: clamp(13px, 1.5vw, 17px); letter-spacing: 0.2em; text-transform: uppercase; color: var(--p-soft); text-shadow: var(--glow); pointer-events: none; white-space: pre-line; line-height: 2; }
+.monitor.is-3d .monitor__msg { top: 79%; }
 .monitor__msg b { color: var(--hot); font-weight: 500; text-shadow: 0 0 10px color-mix(in srgb, var(--hot) 70%, transparent); }
 .monitor__msg.blink { animation: blink 1.4s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: 0.25; } }
@@ -218,7 +219,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 20px; background: v
 .stats li:first-child i { background: repeating-linear-gradient(90deg, var(--hot) 0 12px, transparent 12px 18px); }
 
 .credits { padding-block: clamp(56px, 8vw, 112px) 40px; border-top: 1px solid var(--p-faint); }
-.slots { list-style: none; margin: 0 0 56px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.slots { list-style: none; margin: 0 0 56px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .slots a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border: 1px solid var(--p-faint); border-left: 2px solid var(--p); padding: 14px 16px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12.5px; min-height: 48px; transition: box-shadow 0.15s, border-color 0.15s; }
 .slots a:hover { border-color: var(--p); box-shadow: 0 0 16px -4px var(--p); }
 .slots small { color: var(--p-dim); font-size: 10.5px; letter-spacing: 0.06em; text-transform: none; }
