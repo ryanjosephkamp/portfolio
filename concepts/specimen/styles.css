@@ -202,10 +202,11 @@ h1 {
 .pin:nth-child(5) { --lead: calc(4.4 * var(--u)); }
 .pin:nth-child(6) { --lead: calc(5.4 * var(--u)); }
 /* on a phone the cell stands upright, so the tags go out to the sides */
+.pins--tall .pin { --reach: 2.1rem; }
 .pins--tall .pin::after { width: var(--reach); height: 1px; top: 0; bottom: auto; left: 4px; }
-.pins--tall .pin button { top: 0; bottom: auto; left: calc(var(--reach) + 4px); transform: translateY(-50%); padding: 0.16rem 0.4rem 0.2rem; }
-.pins--tall .pin:nth-child(-n + 4):nth-child(even)::after { left: auto; right: 4px; }
-.pins--tall .pin:nth-child(-n + 4):nth-child(even) button { left: auto; right: calc(var(--reach) + 4px); }
+.pins--tall .pin button { top: 0; bottom: auto; left: calc(var(--reach) + 4px); transform: translateY(-50%); padding: 0.16rem 0.4rem 0.2rem; white-space: normal; width: max-content; max-width: 4.9rem; }
+.pins--tall .pin:nth-child(even)::after { left: auto; right: 4px; }
+.pins--tall .pin:nth-child(even) button { left: auto; right: calc(var(--reach) + 4px); }
 .pins--tall .pin span { display: none; }
 .pins--tall .pin b { font-size: 0.78rem; }
 

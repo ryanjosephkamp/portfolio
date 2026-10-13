@@ -246,12 +246,11 @@ export function neuron(seed = 1952, depth = DEPTH) {
   const SPEED = 0.45; // arbor length covered per ms
   const after = (s) => axonEnds + 1e-3 + s / SPEED;
   alongTube(r, tSegs, n.twigs, (q, S, s) => put(q, S, FINE, after(s), 1));
-  const tSum = [0, 0, 0];
+  marks.terminals = tSegs[4].b; // on the arbor's trunk, so the label stays put as the cell turns
   for (let i = 0; i < n.boutons; i += 1) {
     const tip = tTips[i % tTips.length];
     const q = i % 3 ? mul(onSphere(r), 0.9 + 0.1 * r()) : inBall(r);
     put(add(tip.p, mul(q, 0.03)), ball(0.006), DEEP, after(tip.s), 1, 0.8);
-    for (let k = 0; k < 3; k += 1) tSum[k] += tip.p[k] / n.boutons;
   }
 
   // What a label can point at: a place, and how to pick out its splats (by when they fire
@@ -262,7 +261,7 @@ export function neuron(seed = 1952, depth = DEPTH) {
     { id: 'hillock', at: marks.hillock, range: [T_SOMA + 1e-3, axonStarts], mask: [1, 0, 0, 0] },
     { id: 'myelin', at: marks.myelin, range: [axonStarts, axonEnds], mask: [0, 1, 1, 0] },
     { id: 'node', at: marks.node, range: [axonStarts, axonEnds], mask: [0, 0, 0, 1] },
-    { id: 'terminals', at: tSum, range: [axonEnds + 5e-4, 1e6], mask: [1, 1, 0, 1] },
+    { id: 'terminals', at: marks.terminals, range: [axonEnds + 5e-4, 1e6], mask: [1, 1, 0, 1] },
   ];
 
   if (leaves.length !== N) throw new Error(`the recipe made ${leaves.length} splats, not ${N}`);
