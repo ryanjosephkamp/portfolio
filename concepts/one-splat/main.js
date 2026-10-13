@@ -3,7 +3,7 @@
 // The hero fits a line of text with a hierarchy of 2D Gaussians (fit.js) and
 // draws one level of it, or a blend of two, as additive light.
 
-import { buildTree, checkTree, eig, covariance } from './fit.js';
+import { buildTree, checkTree, checkSplit, moments, node, eig, covariance } from './fit.js';
 
 const NAME = 'RYAN KAMP';
 const MAX_LEVEL = 14; // 16,384 splats
@@ -18,6 +18,13 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const $ = (id) => document.getElementById(id);
+
+// A small number as m × 10^e, in HTML.
+function sci(x) {
+  if (x === 0) return '0';
+  const [mantissa, exponent] = x.toExponential(1).split('e');
+  return `${mantissa} × 10<sup>${exponent.replace('-', '−').replace('+', '')}</sup>`;
+}
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -97,7 +104,7 @@ function fitText(text, { stacked = false, maxPoints = 120000, maxLevel = MAX_LEV
   if (!points) return null;
   const cap = Math.min(maxLevel, Math.floor(Math.log2(points.xs.length / 4)));
   const tree = buildTree(points.xs, points.ys, Math.max(cap, 0));
-  return { tree, width: points.width, height: points.height, per: points.per };
+  return { tree, xs: points.xs, ys: points.ys, width: points.width, height: points.height, per: points.per };
 }
 
 // One splat of the level being drawn: its own shape at blend 1, its parent's at 0.
@@ -350,9 +357,36 @@ function tween(from, to, ms, onStep, onDone) {
   return () => cancelAnimationFrame(raf);
 }
 
+// Makes a handle that is drawn on a canvas something a pointer can take hold
+// of. The grip is an element laid over the handle, so a finger anywhere else
+// on the picture still scrolls the page. drag() gets the pointer's place in
+// the canvas's own pixels.
+function hold(grip, canvas, { take, drag, drop }) {
+  let held = false;
+  grip.addEventListener('pointerdown', (e) => {
+    held = true;
+    grip.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    take();
+  });
+  grip.addEventListener('pointermove', (e) => {
+    if (!held) return;
+    const box = canvas.getBoundingClientRect();
+    const ratio = canvas.width / box.width;
+    drag((e.clientX - box.left) * ratio, (e.clientY - box.top) * ratio);
+  });
+  const release = () => {
+    if (!held) return;
+    held = false;
+    drop();
+  };
+  grip.addEventListener('pointerup', release);
+  grip.addEventListener('pointercancel', release);
+}
+
 /* ---------- Hero: the name, the dial and the probe ---------- */
 
-function hero() {
+function hero(onFit) {
   const stage = $('stage');
   if (!stage) return;
   const canvas = $('beam');
@@ -409,8 +443,8 @@ function hero() {
     probeLevel = 0;
     const check = checkTree(fit.tree);
     out.splits.textContent = fmt(check.splits);
-    const [mantissa, exponent] = check.worst.toExponential(1).split('e');
-    out.worst.innerHTML = check.worst === 0 ? '0' : `${mantissa} × 10<sup>${exponent.replace('-', '−').replace('+', '')}</sup>`;
+    out.worst.innerHTML = sci(check.worst);
+    onFit?.(fit, check);
     ticks.textContent = '';
     for (let level = 0; level <= top(); level += 1) {
       const tick = document.createElement('span');
@@ -634,6 +668,7 @@ function anatomy() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const sliders = { s1: $('a-s1'), s2: $('a-s2'), theta: $('a-theta') };
+  const grips = { major: $('a-major'), minor: $('a-minor') };
   const out = { a: $('a-a'), b: $('a-b'), b2: $('a-b2'), c: $('a-c'), cos: $('a-cos'), sin: $('a-sin'), nsin: $('a-nsin'), cos2: $('a-cos2'), s1: $('a-s1v'), s2: $('a-s2v'), det: $('a-det'), o1: $('a-o1'), o2: $('a-o2'), o3: $('a-o3') };
   const state = { s1: 1.5, s2: 0.6, theta: 25 };
   let held = null;
@@ -697,6 +732,7 @@ function anatomy() {
     ctx.lineTo(minor.x, minor.y);
     ctx.stroke();
     ctx.globalAlpha = 1;
+    const css = canvas.clientWidth / canvas.width;
     for (const h of [major, minor]) {
       ctx.beginPath();
       ctx.arc(h.x, h.y, (held === h.key ? 9 : 7) * g.ratio, 0, Math.PI * 2);
@@ -707,6 +743,7 @@ function anatomy() {
       ctx.arc(h.x, h.y, 2.5 * g.ratio, 0, Math.PI * 2);
       ctx.fillStyle = PROBE;
       ctx.fill();
+      grips[h.key].style.translate = `${h.x * css}px ${h.y * css}px`;
     }
     ctx.beginPath();
     ctx.arc(g.cx, g.cy, 2.5 * g.ratio, 0, Math.PI * 2);
@@ -732,48 +769,453 @@ function anatomy() {
     draw();
   }));
 
-  const at = (e) => {
-    const box = canvas.getBoundingClientRect();
-    const g = geometry();
-    return { g, x: (e.clientX - box.left) * g.ratio, y: (e.clientY - box.top) * g.ratio };
-  };
-  canvas.addEventListener('pointerdown', (e) => {
-    const p = at(e);
-    const hit = handles(p.g).find((h) => Math.hypot(h.x - p.x, h.y - p.y) < 26 * p.g.ratio);
-    if (!hit) return;
-    held = hit.key;
-    canvas.setPointerCapture(e.pointerId);
-    e.preventDefault();
-    draw();
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    const p = at(e);
-    if (!held) {
-      const near = handles(p.g).some((h) => Math.hypot(h.x - p.x, h.y - p.y) < 26 * p.g.ratio);
-      canvas.style.cursor = near ? 'grab' : '';
-      return;
-    }
-    const dx = p.x - p.g.cx;
-    const dy = p.g.cy - p.y;
-    const length = clamp(Math.hypot(dx, dy) / (2 * p.g.unit), held === 'major' ? 0.2 : 0.1, 2);
-    let angle = (Math.atan2(dy, dx) * 180) / Math.PI - (held === 'minor' ? 90 : 0);
-    // An axis has no direction: fold the angle into (−90°, 90°].
-    angle = ((((angle + 90) % 180) + 180) % 180) - 90;
-    state[held === 'major' ? 's1' : 's2'] = Math.round(length * 100) / 100;
-    state.theta = Math.round(angle);
-    write();
-    draw();
-  });
-  const release = () => {
-    held = null;
-    draw();
-  };
-  canvas.addEventListener('pointerup', release);
-  canvas.addEventListener('pointercancel', release);
+  Object.entries(grips).forEach(([key, grip]) => hold(grip, canvas, {
+    take() {
+      held = key;
+      draw();
+    },
+    drag(x, y) {
+      const g = geometry();
+      const dx = x - g.cx;
+      const dy = g.cy - y;
+      const length = clamp(Math.hypot(dx, dy) / (2 * g.unit), key === 'major' ? 0.2 : 0.1, 2);
+      let angle = (Math.atan2(dy, dx) * 180) / Math.PI - (key === 'minor' ? 90 : 0);
+      // An axis has no direction: fold the angle into (−90°, 90°].
+      angle = ((((angle + 90) % 180) + 180) % 180) - 90;
+      state[key === 'major' ? 's1' : 's2'] = Math.round(length * 100) / 100;
+      state.theta = Math.round(angle);
+      write();
+      draw();
+    },
+    drop() {
+      held = null;
+      draw();
+    },
+  }));
 
   write();
   new ResizeObserver(draw).observe(canvas);
   draw();
+}
+
+/* ---------- Lemma: one split of the picture, with a cut you can move ---------- */
+
+// A pixel color, packed the way a little-endian ImageData reads it.
+const packed = (r, g, b) => ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
+
+function lemma() {
+  const canvas = $('split');
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  const dial = $('s-pick');
+  const grips = { a: $('s-a'), b: $('s-b') };
+  const out = {
+    id: $('s-id'),
+    sample: $('s-sample'),
+    halves: $('s-n2'),
+    mean2: $('s-mu2'),
+    within: $('s-in'),
+    between: $('s-btw'),
+    sum: $('s-sum'),
+    whole: $('s-n'),
+    mean: $('s-mu'),
+    own: $('s-own'),
+    error: $('s-err'),
+  };
+  const FIRST = packed(255, 106, 58); // one half in the beam's own light
+  const SECOND = packed(128, 53, 29); // the other, the same light turned down
+  const REST = packed(38, 38, 42); // the rest of the picture
+  const MARGIN = 14;
+
+  let fit = null;
+  let i = 1; // the splat being divided
+  let box = null; // how far its pixels reach
+  let cut = null; // null: the tree's own cut. Otherwise two points on the line, in the picture's pixels.
+  let worstAt = 1;
+  let held = null;
+  let shown = null; // where the last frame put the handles
+  let image = null;
+  let scratch = null;
+  let map = null;
+  let queued = false;
+
+  const last = () => Math.max(1, fit.tree.size / 2 - 1); // the last splat that has two halves
+  // The dial gives every level the same width, as the one in the hero does.
+  const toDial = (n) => {
+    const level = Math.floor(Math.log2(n));
+    return level + (n - 2 ** level) / 2 ** level;
+  };
+  const fromDial = (v) => {
+    const level = clamp(Math.floor(v), 0, Math.max(fit.tree.levels - 1, 0));
+    return Math.min(2 ** level + Math.floor((v - level) * 2 ** level), 2 ** (level + 1) - 1);
+  };
+  const num = (v) => (Math.abs(v) < 0.05 ? 0 : v).toFixed(1).replace('-', '−');
+  const matrix = (el, m) => {
+    const cells = el.children;
+    cells[0].textContent = num(m.a);
+    cells[1].textContent = cells[2].textContent = num(m.b);
+    cells[3].textContent = num(m.c);
+  };
+
+  function request() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      draw();
+    });
+  }
+
+  function select(next, sync = true) {
+    i = clamp(Math.round(next), 1, last());
+    cut = null;
+    const { tree, xs, ys } = fit;
+    box = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    for (let k = tree.lo[i]; k < tree.hi[i]; k += 1) {
+      const x = xs[tree.idx[k]];
+      const y = ys[tree.idx[k]];
+      if (x < box.x0) box.x0 = x;
+      if (x > box.x1) box.x1 = x;
+      if (y < box.y0) box.y0 = y;
+      if (y > box.y1) box.y1 = y;
+    }
+    if (sync) dial.value = toDial(i);
+    dial.setAttribute('aria-valuetext', `splat ${fmt(i)} of ${fmt(last())}`);
+    out.id.textContent = `${fmt(i)} of ${fmt(last())}`;
+    request();
+  }
+
+  // The splat's pixels in two halves, list[s..m) and list[m..e), with the
+  // Gaussian of each. Without a cut of the visitor's these are the tree's own
+  // two children: the split the page has already checked. Null if the cut
+  // would leave a half empty.
+  function divide() {
+    const { tree, xs, ys } = fit;
+    if (2 * i + 1 >= tree.size) return null;
+    const p = node(tree, i);
+    const s = tree.lo[i];
+    const e = tree.hi[i];
+    if (!cut) {
+      const l = 2 * i;
+      const r = l + 1;
+      // The tree cut across its long axis. Find where: between the last pixel of one half and the first of the other.
+      const angle = eig(p.a, p.b, p.c).theta;
+      const vx = Math.cos(angle);
+      const vy = Math.sin(angle);
+      let before = -Infinity;
+      let after = Infinity;
+      for (let k = s; k < e; k += 1) {
+        const t = (xs[tree.idx[k]] - p.mx) * vx + (ys[tree.idx[k]] - p.my) * vy;
+        if (k < tree.hi[l]) before = Math.max(before, t);
+        else after = Math.min(after, t);
+      }
+      const offset = (before + after) / 2;
+      return { p, l: node(tree, l), r: node(tree, r), list: tree.idx, s, m: tree.hi[l], e, x: p.mx + offset * vx, y: p.my + offset * vy, ux: -vy, uy: vx };
+    }
+    const length = Math.hypot(cut.bx - cut.ax, cut.by - cut.ay);
+    if (length < 1e-6) return null;
+    const ux = (cut.bx - cut.ax) / length;
+    const uy = (cut.by - cut.ay) / length;
+    let m = 0;
+    let back = e - s;
+    for (let k = s; k < e; k += 1) {
+      const j = tree.idx[k];
+      // Which side of the line the pixel's center is on.
+      if ((xs[j] - cut.ax) * uy - (ys[j] - cut.ay) * ux < 0) {
+        scratch[m] = j;
+        m += 1;
+      } else {
+        back -= 1;
+        scratch[back] = j;
+      }
+    }
+    if (m === 0 || m === e - s) return null;
+    return { p, l: moments(xs, ys, scratch, 0, m), r: moments(xs, ys, scratch, m, e - s), list: scratch, s: 0, m, e: e - s, x: cut.ax, y: cut.ay, ux, uy };
+  }
+
+  function draw() {
+    if (!fit || !box) return;
+    const ratio = sizeCanvas(canvas);
+    const W = canvas.width;
+    const H = canvas.height;
+    if (!image || image.width !== W || image.height !== H) image = ctx.createImageData(W, H);
+    const d = divide();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (!d) {
+      ctx.clearRect(0, 0, W, H);
+      shown = null;
+      return;
+    }
+    const check = checkSplit(d.p, d.l, d.r);
+    const { tree, xs, ys } = fit;
+
+    // Frame the splat's pixels and its ellipse at two standard deviations.
+    const reachX = Math.max(2 * Math.sqrt(d.p.a), d.p.mx - box.x0 + 0.5, box.x1 + 0.5 - d.p.mx);
+    const reachY = Math.max(2 * Math.sqrt(d.p.c), d.p.my - box.y0 + 0.5, box.y1 + 0.5 - d.p.my);
+    const scale = Math.min((W * 0.45) / reachX, (H * 0.43) / reachY, H / 7);
+    const view = { scale, x: W / 2 - d.p.mx * scale, y: H / 2 - d.p.my * scale };
+    const X = (x) => x * scale + view.x;
+    const Y = (y) => y * scale + view.y;
+
+    // The pixels: one square each. Large ones get a hairline between them.
+    const side = Math.max(1, Math.ceil(scale - 1e-3) - (scale >= 6 ? 1 : 0));
+    const px = new Uint32Array(image.data.buffer);
+    px.fill(0);
+    const plot = (list, s, e, color) => {
+      for (let k = s; k < e; k += 1) {
+        const x0 = Math.round(X(xs[list[k]] - 0.5));
+        const y0 = Math.round(Y(ys[list[k]] - 0.5));
+        const xa = Math.max(0, x0);
+        const xb = Math.min(W, x0 + side);
+        const yb = Math.min(H, y0 + side);
+        for (let y = Math.max(0, y0); y < yb; y += 1) {
+          for (let x = xa; x < xb; x += 1) px[y * W + x] = color;
+        }
+      }
+    };
+    if (i > 1) plot(tree.idx, 0, tree.total, REST);
+    plot(d.list, d.m, d.e, SECOND);
+    plot(d.list, d.s, d.m, FIRST);
+    ctx.putImageData(image, 0, 0);
+
+    const s2 = scale * scale;
+    const ring = (m, k) => {
+      const e = eig(m.a * s2, m.b * s2, m.c * s2);
+      ctx.beginPath();
+      ctx.ellipse(X(m.mx), Y(m.my), Math.sqrt(e.l1) * k, Math.sqrt(e.l2) * k, e.theta, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+    const spot = (x, y, r) => {
+      ctx.beginPath();
+      ctx.arc(x, y, r * ratio, 0, Math.PI * 2);
+    };
+    const dashes = [4 * ratio, 5 * ratio];
+
+    // The splat measured whole: a wide band at two standard deviations.
+    ctx.strokeStyle = PROBE;
+    ctx.fillStyle = PROBE;
+    ctx.lineWidth = 7 * ratio;
+    ctx.globalAlpha = 0.32;
+    ring(d.p, 2);
+    // The two halves, and the line between their centers.
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1.25 * ratio;
+    ctx.setLineDash(dashes);
+    ring(d.l, 2);
+    ring(d.r, 2);
+    // What the halves give back when they are put together. It lies in the band.
+    ctx.strokeStyle = '#fff';
+    ring(check.sum, 2);
+    ctx.setLineDash([]);
+    ctx.strokeStyle = PROBE;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(X(d.l.mx), Y(d.l.my));
+    ctx.lineTo(X(d.r.mx), Y(d.r.my));
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    spot(X(d.l.mx), Y(d.l.my), 2.5);
+    ctx.fill();
+    spot(X(d.r.mx), Y(d.r.my), 2.5);
+    ctx.fill();
+    // The mean: the splat's own is a ring, and the one the halves give back is the dot in it.
+    spot(X(d.p.mx), Y(d.p.my), 5.5);
+    ctx.fillStyle = '#0b0b0c';
+    ctx.fill();
+    ctx.stroke();
+    spot(X(check.sum.mx), Y(check.sum.my), 2.25);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    // Name the centers, to one side of the line that joins them.
+    let nx = d.l.my - d.r.my;
+    let ny = d.r.mx - d.l.mx;
+    const apart = Math.hypot(nx, ny) || 1;
+    nx /= apart;
+    ny /= apart;
+    if (ny > 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    const name = (m, sub, away) => {
+      const x = X(m.mx) + nx * away * ratio;
+      const y = Y(m.my) + ny * away * ratio;
+      ctx.font = `italic ${17 * ratio}px "STIX Two Text", Georgia, serif`;
+      const w = ctx.measureText('μ').width;
+      ctx.lineWidth = 4 * ratio;
+      ctx.strokeStyle = 'rgb(0 0 0 / 0.75)';
+      ctx.fillStyle = PROBE;
+      ctx.strokeText('μ', x, y);
+      ctx.fillText('μ', x, y);
+      if (!sub) return;
+      ctx.font = `${11 * ratio}px "STIX Two Text", Georgia, serif`;
+      ctx.strokeText(sub, x + w * 0.5 + 3 * ratio, y + 5 * ratio);
+      ctx.fillText(sub, x + w * 0.5 + 3 * ratio, y + 5 * ratio);
+    };
+    name(d.l, '1', 16);
+    name(d.r, '2', 16);
+    name(d.p, '', -18);
+
+    // The cut, and a handle toward each end of it.
+    const cx = X(d.x);
+    const cy = Y(d.y);
+    const far = W + H;
+    ctx.strokeStyle = PROBE;
+    ctx.lineWidth = 1.25 * ratio;
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(cx - d.ux * far, cy - d.uy * far);
+    ctx.lineTo(cx + d.ux * far, cy + d.uy * far);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    const m = MARGIN * ratio;
+    const room = (dx, dy) => Math.max(0, Math.min(
+      dx > 0 ? (W - m - cx) / dx : dx < 0 ? (m - cx) / dx : Infinity,
+      dy > 0 ? (H - m - cy) / dy : dy < 0 ? (m - cy) / dy : Infinity,
+    ));
+    const reach = 0.36 * Math.min(W, H);
+    const ends = cut
+      ? { a: [X(cut.ax), Y(cut.ay)], b: [X(cut.bx), Y(cut.by)] }
+      : {
+          a: [cx - d.ux * Math.min(reach, room(-d.ux, -d.uy)), cy - d.uy * Math.min(reach, room(-d.ux, -d.uy))],
+          b: [cx + d.ux * Math.min(reach, room(d.ux, d.uy)), cy + d.uy * Math.min(reach, room(d.ux, d.uy))],
+        };
+    const css = canvas.clientWidth / W;
+    for (const key of ['a', 'b']) {
+      const [x, y] = ends[key];
+      spot(x, y, held === key ? 9 : 7);
+      ctx.fillStyle = '#0b0b0c';
+      ctx.fill();
+      ctx.stroke();
+      spot(x, y, 2.5);
+      ctx.fillStyle = PROBE;
+      ctx.fill();
+      grips[key].style.translate = `${x * css}px ${y * css}px`;
+    }
+    shown = { view, ends, W, H, m };
+
+    // Where in the picture this splat is, once it is too small to tell.
+    if (i >= 4 && map) {
+      const w = Math.min(W * 0.3, (H * 0.2 * map.width) / map.height);
+      const h = (w * map.height) / map.width;
+      const x0 = 12 * ratio;
+      const y0 = 12 * ratio;
+      const pad = 6 * ratio;
+      ctx.fillStyle = 'rgb(10 10 11 / 0.86)';
+      ctx.fillRect(x0 - pad, y0 - pad, w + 2 * pad, h + 2 * pad);
+      ctx.strokeStyle = '#2b2b2e';
+      ctx.lineWidth = ratio;
+      ctx.strokeRect(x0 - pad, y0 - pad, w + 2 * pad, h + 2 * pad);
+      ctx.drawImage(map, x0, y0, w, h);
+      ctx.strokeStyle = PROBE;
+      ctx.lineWidth = 1.25 * ratio;
+      spot(x0 + (d.p.mx / fit.width) * w, y0 + (d.p.my / fit.height) * h, 4.5);
+      ctx.stroke();
+    }
+
+    out.halves.textContent = `${fmt(d.l.n)} + ${fmt(d.r.n)}`;
+    out.mean2.textContent = `(${check.sum.mx.toFixed(1)}, ${check.sum.my.toFixed(1)})`;
+    matrix(out.within, check.within);
+    matrix(out.between, check.between);
+    matrix(out.sum, check.sum);
+    out.whole.textContent = fmt(d.p.n);
+    out.mean.textContent = `(${d.p.mx.toFixed(1)}, ${d.p.my.toFixed(1)})`;
+    matrix(out.own, d.p);
+    out.error.innerHTML = sci(check.residual);
+  }
+
+  // Move one end of the cut to a point on the canvas. The move is refused if
+  // it would leave one half with no pixels at all.
+  function move(key, x, y) {
+    if (!shown) return;
+    const { view, ends, W, H, m } = shown;
+    const before = cut;
+    const next = { a: ends.a, b: ends.b, [key]: [clamp(x, m, W - m), clamp(y, m, H - m)] };
+    cut = {
+      ax: (next.a[0] - view.x) / view.scale,
+      ay: (next.a[1] - view.y) / view.scale,
+      bx: (next.b[0] - view.x) / view.scale,
+      by: (next.b[1] - view.y) / view.scale,
+    };
+    if (!divide()) cut = before;
+    else draw();
+  }
+
+  Object.entries(grips).forEach(([key, grip]) => {
+    hold(grip, canvas, {
+      take() {
+        held = key;
+        grip.focus({ preventScroll: true });
+        request();
+      },
+      drag: (x, y) => move(key, x, y),
+      drop() {
+        held = null;
+        request();
+      },
+    });
+    grip.addEventListener('keydown', (e) => {
+      const step = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (!step || !shown) return;
+      e.preventDefault();
+      const by = (e.shiftKey ? 1 : 8) * (canvas.width / canvas.clientWidth);
+      move(key, shown.ends[key][0] + step[0] * by, shown.ends[key][1] + step[1] * by);
+    });
+  });
+
+  dial.addEventListener('input', () => select(fromDial(Number(dial.value)), false));
+  dial.addEventListener('keydown', (e) => {
+    const to = {
+      ArrowRight: i + 1,
+      ArrowUp: i + 1,
+      ArrowLeft: i - 1,
+      ArrowDown: i - 1,
+      PageUp: 2 * i <= last() ? 2 * i : i,
+      PageDown: i >> 1,
+      Home: 1,
+      End: last(),
+    }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    select(to);
+  });
+  $('s-reset').addEventListener('click', () => {
+    cut = null;
+    request();
+  });
+  $('s-worst').addEventListener('click', () => select(worstAt));
+
+  new ResizeObserver(request).observe(canvas);
+  document.fonts.load('italic 17px "STIX Two Text"', 'μ').then(request);
+
+  return (next, check) => {
+    fit = next;
+    worstAt = check.at || 1;
+    scratch = new Uint32Array(fit.tree.total);
+    dial.max = Math.max(fit.tree.levels, 1);
+
+    // The whole picture, small, to find the splat on.
+    map = document.createElement('canvas');
+    map.width = 480;
+    map.height = Math.max(1, Math.round((480 * fit.height) / fit.width));
+    const small = map.getContext('2d');
+    const dots = small.createImageData(map.width, map.height);
+    const px = new Uint32Array(dots.data.buffer);
+    const k = map.width / fit.width;
+    for (let j = 0; j < fit.xs.length; j += 1) {
+      px[Math.min(map.height - 1, Math.floor(fit.ys[j] * k)) * map.width + Math.min(map.width - 1, Math.floor(fit.xs[j] * k))] = SECOND;
+    }
+    small.putImageData(dots, 0, 0);
+
+    const { total } = fit.tree;
+    out.sample.textContent = fit.per > 1
+      ? `The fit works from a sample of the ink: ${fmt(total)} of its ${fmt(total * fit.per)} pixels.`
+      : `The fit works from every pixel of the ink: ${fmt(total)} of them.`;
+    select(1);
+  };
 }
 
 /* ---------- Other work: each title resolves out of a few splats ---------- */
@@ -826,7 +1268,7 @@ function titles() {
 }
 
 document.fonts.load(FACE, NAME).then(() => document.fonts.ready).finally(() => {
-  hero();
+  hero(lemma());
   anatomy();
   titles();
 });

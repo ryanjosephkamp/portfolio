@@ -34,6 +34,31 @@ function select(key, idx, l, r, k) {
   }
 }
 
+// The Gaussian with the exact mean and covariance of the points idx[s] to
+// idx[e - 1]: a count n, a mean (mx, my) and a covariance [[a, b], [b, c]].
+export function moments(xs, ys, idx, s, e) {
+  const n = e - s;
+  let sx = 0;
+  let sy = 0;
+  for (let k = s; k < e; k += 1) {
+    sx += xs[idx[k]];
+    sy += ys[idx[k]];
+  }
+  const mx = sx / n;
+  const my = sy / n;
+  let sxx = 0;
+  let sxy = 0;
+  let syy = 0;
+  for (let k = s; k < e; k += 1) {
+    const dx = xs[idx[k]] - mx;
+    const dy = ys[idx[k]] - my;
+    sxx += dx * dx;
+    sxy += dx * dy;
+    syy += dy * dy;
+  }
+  return { n, mx, my, a: sxx / n + PIXEL, b: sxy / n, c: syy / n + PIXEL };
+}
+
 /**
  * Nodes are stored heap-style: the root is 1 and the children of i are 2i and
  * 2i + 1, so level L occupies indices 2^L to 2^(L+1) - 1.
@@ -65,31 +90,13 @@ export function buildTree(xs, ys, maxLevel) {
   };
 
   const measure = (i, s, e) => {
-    const count = e - s;
-    let sx = 0;
-    let sy = 0;
-    for (let k = s; k < e; k += 1) {
-      sx += xs[idx[k]];
-      sy += ys[idx[k]];
-    }
-    const ux = sx / count;
-    const uy = sy / count;
-    let sxx = 0;
-    let sxy = 0;
-    let syy = 0;
-    for (let k = s; k < e; k += 1) {
-      const dx = xs[idx[k]] - ux;
-      const dy = ys[idx[k]] - uy;
-      sxx += dx * dx;
-      sxy += dx * dy;
-      syy += dy * dy;
-    }
-    tree.n[i] = count;
-    tree.mx[i] = ux;
-    tree.my[i] = uy;
-    tree.a[i] = sxx / count + PIXEL;
-    tree.b[i] = sxy / count;
-    tree.c[i] = syy / count + PIXEL;
+    const m = moments(xs, ys, idx, s, e);
+    tree.n[i] = m.n;
+    tree.mx[i] = m.mx;
+    tree.my[i] = m.my;
+    tree.a[i] = m.a;
+    tree.b[i] = m.b;
+    tree.c[i] = m.c;
     lo[i] = s;
     hi[i] = e;
   };
@@ -112,38 +119,68 @@ export function buildTree(xs, ys, maxLevel) {
   return tree;
 }
 
+// One node of the tree, in the shape moments() returns.
+export function node(tree, i) {
+  return { n: tree.n[i], mx: tree.mx[i], my: tree.my[i], a: tree.a[i], b: tree.b[i], c: tree.c[i] };
+}
+
 /**
- * The law of total covariance, tested at every split: the two halves must
- * carry the parent's mass, mean and covariance between them.
- * Returns the number of splits and the worst residual, relative to the
- * parent's own scale.
+ * The law of total covariance, tested on one split: the two halves l and r
+ * must carry the parent p's mass, mean and covariance between them.
+ * Returns what the halves give when they are put back together (the spread
+ * within them, the spread between their centers, and the sum), and the worst
+ * residual against the parent, relative to the parent's own scale.
+ */
+export function checkSplit(p, l, r) {
+  const wl = l.n / p.n;
+  const wr = r.n / p.n;
+  const dxl = l.mx - p.mx;
+  const dyl = l.my - p.my;
+  const dxr = r.mx - p.mx;
+  const dyr = r.my - p.my;
+  const within = { a: wl * l.a + wr * r.a, b: wl * l.b + wr * r.b, c: wl * l.c + wr * r.c };
+  const between = {
+    a: wl * dxl * dxl + wr * dxr * dxr,
+    b: wl * dxl * dyl + wr * dxr * dyr,
+    c: wl * dyl * dyl + wr * dyr * dyr,
+  };
+  const sum = {
+    n: l.n + r.n,
+    mx: wl * l.mx + wr * r.mx,
+    my: wl * l.my + wr * r.my,
+    a: within.a + between.a,
+    b: within.b + between.b,
+    c: within.c + between.c,
+  };
+  const scale = p.a + p.c;
+  const residual = Math.max(
+    Math.abs(sum.n - p.n),
+    Math.abs(sum.mx - p.mx) / Math.sqrt(scale),
+    Math.abs(sum.my - p.my) / Math.sqrt(scale),
+    Math.abs(sum.a - p.a) / scale,
+    Math.abs(sum.b - p.b) / scale,
+    Math.abs(sum.c - p.c) / scale,
+  );
+  return { wl, wr, within, between, sum, residual };
+}
+
+/**
+ * checkSplit at every split of the tree. Returns the number of splits, the
+ * worst residual among them, and the node it belongs to (0 if nothing splits).
  */
 export function checkTree(tree) {
-  const { n, mx, my, a, b, c } = tree;
   let worst = 0;
+  let at = 0;
   let splits = 0;
   for (let i = 1; i < tree.size / 2; i += 1) {
-    const l = 2 * i;
-    const r = l + 1;
-    const wl = n[l] / n[i];
-    const wr = n[r] / n[i];
-    const dxl = mx[l] - mx[i];
-    const dyl = my[l] - my[i];
-    const dxr = mx[r] - mx[i];
-    const dyr = my[r] - my[i];
-    const scale = a[i] + c[i];
-    const residual = Math.max(
-      Math.abs(n[l] + n[r] - n[i]),
-      Math.abs(wl * mx[l] + wr * mx[r] - mx[i]) / Math.sqrt(scale),
-      Math.abs(wl * my[l] + wr * my[r] - my[i]) / Math.sqrt(scale),
-      Math.abs(wl * (a[l] + dxl * dxl) + wr * (a[r] + dxr * dxr) - a[i]) / scale,
-      Math.abs(wl * (b[l] + dxl * dyl) + wr * (b[r] + dxr * dyr) - b[i]) / scale,
-      Math.abs(wl * (c[l] + dyl * dyl) + wr * (c[r] + dyr * dyr) - c[i]) / scale,
-    );
-    if (residual > worst) worst = residual;
+    const { residual } = checkSplit(node(tree, i), node(tree, 2 * i), node(tree, 2 * i + 1));
+    if (!at || residual > worst) {
+      worst = residual;
+      at = i;
+    }
     splits += 1;
   }
-  return { splits, worst };
+  return { splits, worst, at };
 }
 
 // Eigen-decomposition of [[a, b], [b, c]]: the two variances along the

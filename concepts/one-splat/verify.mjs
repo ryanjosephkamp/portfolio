@@ -12,9 +12,14 @@
 //    differ in size by at most one.
 // 4. Every level covers the whole set once, with no empty node.
 // 5. eig() and covariance() undo each other.
+// 6. The worst split checkTree() reports is the worst one, and it is where
+//    checkTree() says it is.
+// 7. The conservation holds however a set is divided, not only at the median:
+//    straight cuts at any angle and position, and divisions with no shape at
+//    all, where every point goes either way at random.
 
 import assert from 'node:assert/strict';
-import { buildTree, checkTree, eig, covariance, PIXEL } from './fit.js';
+import { buildTree, checkTree, checkSplit, moments, node, eig, covariance, PIXEL } from './fit.js';
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -59,6 +64,18 @@ for (const [name, at] of Object.entries(SHAPES)) {
       worst = Math.max(worst, check.worst);
       splits += check.splits;
       trees += 1;
+
+      let worstHere = 0;
+      let whereHere = 0;
+      for (let i = 1; i < tree.size / 2; i += 1) {
+        const { residual } = checkSplit(node(tree, i), node(tree, 2 * i), node(tree, 2 * i + 1));
+        if (!whereHere || residual > worstHere) {
+          worstHere = residual;
+          whereHere = i;
+        }
+      }
+      assert.equal(check.worst, worstHere, `${label}: worst residual`);
+      assert.equal(check.at, whereHere, `${label}: where the worst residual is`);
 
       for (let i = 1; i < tree.size; i += 1) {
         const s = tree.lo[i];
@@ -126,6 +143,53 @@ for (const [name, at] of Object.entries(SHAPES)) {
   }
 }
 
+let divisions = 0;
+let worstDivision = 0;
+for (const [name, at] of Object.entries(SHAPES)) {
+  for (const count of [2, 3, 7, 64, 1000, 4096, 50000]) {
+    const rand = mulberry32(count * 131 + name.length);
+    const xs = new Float32Array(count);
+    const ys = new Float32Array(count);
+    const all = new Uint32Array(count);
+    for (let i = 0; i < count; i += 1) {
+      [xs[i], ys[i]] = at(rand(), rand(), i);
+      all[i] = i;
+    }
+    const whole = moments(xs, ys, all, 0, count);
+    const order = new Uint32Array(count);
+    for (let trial = 0; trial < 200; trial += 1) {
+      // Even trials cut straight through a point of the set, at any angle.
+      // Odd trials send each point either way at random.
+      const angle = rand() * Math.PI;
+      const vx = Math.cos(angle);
+      const vy = Math.sin(angle);
+      const through = Math.floor(rand() * count);
+      const threshold = xs[through] * vx + ys[through] * vy;
+      const share = rand();
+      let first = 0;
+      let last = count;
+      for (let i = 0; i < count; i += 1) {
+        const before = trial % 2 ? rand() < share : xs[i] * vx + ys[i] * vy < threshold;
+        if (before) {
+          order[first] = i;
+          first += 1;
+        } else {
+          last -= 1;
+          order[last] = i;
+        }
+      }
+      first = Math.min(Math.max(first, 1), count - 1); // neither half may be empty
+      const left = moments(xs, ys, order, 0, first);
+      const right = moments(xs, ys, order, first, count);
+      const { residual, sum } = checkSplit(whole, left, right);
+      assert.equal(sum.n, count, `${name} n=${count}: division ${trial} loses points`);
+      assert.ok(residual < 1e-9, `${name} n=${count}: division ${trial} residual ${residual}`);
+      worstDivision = Math.max(worstDivision, residual);
+      divisions += 1;
+    }
+  }
+}
+
 let round = 0;
 for (let s1 = 0.5; s1 <= 300; s1 *= 1.7) {
   for (let s2 = 0.25; s2 < s1 * 0.99; s2 *= 1.9) {
@@ -144,4 +208,5 @@ for (let s1 = 0.5; s1 <= 300; s1 *= 1.7) {
 console.log(`${trees} trees, ${splits.toLocaleString('en-US')} splits conserve mass, mean and covariance`);
 console.log(`worst residual ${worst.toExponential(2)}`);
 console.log(`${nodes.toLocaleString('en-US')} nodes match a brute-force recomputation`);
+console.log(`${divisions.toLocaleString('en-US')} other divisions (straight cuts and random ones) conserve them too, worst residual ${worstDivision.toExponential(2)}`);
 console.log(`${round} covariance round trips`);
