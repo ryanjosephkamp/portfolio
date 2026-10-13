@@ -80,7 +80,8 @@ seconds, which is how the automatic step-down was seen working.
 ## Voice
 
 Facts trace to `docs/FACTS.md`, the project READMEs and the live pages. Invented voice: the toy
-packaging lines ("some assembly encouraged", "Take it home", "Peel one off", "The serious sticker",
-"no batteries", "Unwrap it here", "Wash it off", "And at the back of the shelf"), the line about
-Fredoka's strokes, and the section ledes. The art on aqrobat's card is a picture of a QR code's
-corner drawn with letters, not a code that scans. The paragraph under Research about splats as a material is a stated interest, not a result.
+packaging lines ("Take it home", "Peel one off", "The serious sticker", "no batteries", "Unwrap it
+here", "Wash it off", "And at the back of the shelf"), the line about Fredoka's strokes, and the
+section ledes. The art on aqrobat's card is a picture of a QR code's corner drawn with letters, not
+a code that scans. The paragraph under Research about splats as a material is a stated interest,
+not a result.

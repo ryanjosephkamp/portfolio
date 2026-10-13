@@ -122,8 +122,7 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: 0.86em; }
 }
 .pack__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .pack__brand { font-size: 0.95em; line-height: 1.25; }
-.pack__brand b { font-weight: 700; font-stretch: 118%; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.4em; }
-.pack__brand span { opacity: 0.8; }
+.pack__brand b { font-weight: 700; font-stretch: 118%; text-transform: uppercase; letter-spacing: 0.04em; }
 #sound { flex: none; }
 
 .stage {
@@ -339,7 +338,6 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: 0.86em; }
 }
 @media (max-width: 520px) {
   .stage { aspect-ratio: 1 / 1.02; max-height: 62vh; }
-  .pack__brand span { display: none; }
   .nav { padding-block: 12px 26px; }
   .nav__mark { width: 44px; height: 44px; }
   .tools { gap: 22px 20px; }
