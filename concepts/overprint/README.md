@@ -22,7 +22,7 @@ Then open http://localhost:4173/concepts/overprint/ (serve from the repository r
 |---|---|
 | `index.html` | All of the content. Each section names its form in `data-form` and where the form sits in `data-at`. |
 | `styles.css` | Tokens at the top (`:root`): paper, the two inks, type steps. |
-| `main.js` | The recipes (`word`, `lorenz`, `klein`, `gyroid`, `decisions`, `loop`, `yours`), the table that names them (`FORMS`), the WebGL2 press (`Cloud`), the live decision model beside the capstone (`decide`, with its settings in `model`), and the page logic (`start`). |
+| `main.js` | The recipes (`word`, `lorenz`, `klein`, `gyroid`, `loop`, `qr`, `yours`), the table that names them (`FORMS`), a small QR encoder for the `qr` recipe (`qrMatrix`), the WebGL2 press (`Cloud`), and the page logic (`start`). |
 
 ## How the print is made
 
@@ -35,13 +35,18 @@ Then open http://localhost:4173/concepts/overprint/ (serve from the repository r
 
 A change of form uploads new targets; each splat sets off from wherever it is and they leave in turn.
 
-## The decision model
+## The projects
 
-The capstone section carries a second, ordinary 2D canvas: a two-line drift-diffusion model a
-visitor can pull on (`decide`). It and the cloud share one small object, `model`. Moving the line
-or the evidence dial changes `model`, and the cloud's `decisions` recipe is reprinted from it, so
-the plot and the splat figure are two views of the same settings. Each of the recipe's thirty
-threads has its own seeded noise, so a change replays the same evidence under the new rule.
+The page follows the list in `docs/FACTS.md`: Splashery first and largest (two sections), grooph
+second, then Ars Magna and aqrobat, each with a form of its own. The other five share a numbered
+list, and the capstone is that list's last, short entry. The list's own form is an ampersand.
+
+## The QR code
+
+The aqrobat figure is a real QR code holding aqrobat's address, encoded on the page by `qrMatrix`:
+version 3 (29 by 29 modules), error correction M, byte mode, which is one block of 44 data words
+and 26 check words, with room for 42 bytes. Its eight masks are scored and the best is kept. The
+`qr` recipe then fills every dark module with splats.
 
 ## Adding a form
 

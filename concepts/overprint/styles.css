@@ -20,7 +20,6 @@
   --teal: #0f7f86;
   --hot: #ff5a36;
   --teal-deep: #0a676d; /* teal, dark enough for small type */
-  --hot-deep: #c23a1a; /* and orange likewise */
   --ink: #17232b;
   --ink-2: #44535b;
   --rule: #17232b33;
@@ -301,7 +300,32 @@ button, input { font: inherit; color: inherit; }
   text-transform: uppercase;
   color: var(--teal-deep);
 }
-.sub + .shelf { margin-top: 0.6rem; }
+.sub + .shelf, .sub + .inside { margin-top: 0.6rem; }
+
+/* a short list inside a project: what else is in there */
+.inside { border-top: 1.5px solid var(--ink); }
+.inside li { padding-block: 0.5rem; border-bottom: 1px solid var(--rule); font-size: 0.95rem; line-height: 1.45; color: var(--ink-2); }
+.inside b { font-weight: 700; color: var(--ink); }
+
+/* the numbered list: the projects that share a plainer entry, in plate order */
+.shelf--numbered { counter-reset: n 4; }
+.shelf--numbered li { counter-increment: n; display: grid; grid-template-columns: 2.3rem minmax(0, 1fr); }
+.shelf--numbered li > * { grid-column: 2; }
+.shelf--numbered li::before {
+  content: counter(n, decimal-leading-zero);
+  grid-row: 1 / span 3;
+  padding-top: 0.3rem;
+  --mono: 1;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  color: var(--teal-deep);
+}
+
+/* lines that are only true once the cloud is being drawn */
+.live, .fig { display: none; }
+.gl .live, .gl .fig { display: block; }
+.live { margin-top: 0.9rem; }
 
 .interests { margin-top: 1.3rem; counter-reset: n; border-top: 1.5px solid var(--ink); }
 .interests li {
@@ -318,93 +342,6 @@ button, input { font: inherit; color: inherit; }
 }
 .interests li::before { content: counter(n, decimal-leading-zero); --mono: 1; font-size: 0.78rem; font-weight: 650; letter-spacing: 0.05em; color: var(--teal-deep); }
 .interests + p { margin-top: 1.3rem; }
-
-/* ---------- The instrument: a decision model to pull on ---------- */
-
-.lab {
-  margin-top: 1.5rem;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  box-shadow: 6px 6px 0 var(--hot);
-}
-.sec__text > .lab + p { margin-top: 1.7rem; }
-.lab__plot {
-  position: relative;
-  height: clamp(15rem, 28vw, 19rem);
-  border-bottom: 1.5px solid var(--ink);
-  cursor: ns-resize;
-  touch-action: pan-y;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.lab__plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* the handle on the upper line; a finger can only move the line from here */
-.lab__grip {
-  position: absolute;
-  left: 0;
-  top: 0;
-  translate: -50% -50%;
-  padding: 0.18rem 0.65rem 0.26rem;
-  border: 1.5px solid var(--ink);
-  border-radius: 999px;
-  background: var(--hot);
-  box-shadow: 3px 3px 0 var(--ink);
-  --mono: 1;
-  font-size: 0.78rem;
-  font-weight: 750;
-  line-height: 1.25;
-  white-space: nowrap;
-  cursor: grab;
-  touch-action: none;
-  transition: translate 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
-}
-.lab__grip.is-held { cursor: grabbing; translate: calc(-50% + 2px) calc(-50% + 2px); box-shadow: 1px 1px 0 var(--ink); }
-
-.lab__panel { display: grid; gap: 0.9rem; padding: 0.9rem 1.1rem 1rem; }
-.lab__dial {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.9rem;
-  --mono: 1;
-  font-size: 0.84rem;
-  font-weight: 650;
-}
-.lab__ends {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.6rem;
-  --mono: 0;
-  font-weight: 500;
-  color: var(--ink-2);
-}
-.lab__ends input { width: 100%; margin: 0; accent-color: var(--teal); cursor: pointer; }
-.lab__stats { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.3fr); gap: 0.8rem 1rem; margin: 0; }
-.lab__stats dt { font-size: 0.8rem; line-height: 1.3; color: var(--ink-2); }
-.lab__stats dd { margin: 0.15rem 0 0; --mono: 1; }
-.lab__stats b {
-  display: block;
-  font-size: var(--step-2);
-  font-weight: 750;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.lab__stats small { display: block; margin-top: 0.2rem; font-size: 0.74rem; font-weight: 500; line-height: 1.35; color: var(--ink-2); }
-.lab__note {
-  padding: 0.75rem 1.1rem 0.85rem;
-  border-top: 1px solid var(--rule);
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: var(--ink-2);
-}
-/* narrow: one figure to a row, the number at the right */
-@media (max-width: 34rem) {
-  .lab__stats { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
-  .lab__stats div { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; align-items: baseline; }
-  .lab__stats dd { margin: 0; text-align: right; }
-}
 
 /* ---------- Contact ---------- */
 

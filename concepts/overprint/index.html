@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ryan Kamp — splats, recipes, and forms you can turn over</title>
-  <meta name="description" content="Ryan Kamp is a graduate student in computer science at the University of Cincinnati, with research interests in scientific visualization, computer graphics and digital media. This page is printed live in two inks: one cloud of Gaussian splats, re-formed by recipe.">
+  <meta name="description" content="Ryan Kamp is a graduate student in computer science at the University of Cincinnati, with research interests in digital media, computer graphics and scientific visualization. This page is printed live in two inks: one cloud of Gaussian splats, re-formed by recipe.">
   <meta name="theme-color" content="#f4f0e6">
   <meta property="og:title" content="Ryan Kamp">
   <meta property="og:description" content="A portfolio printed live in two inks: one cloud of Gaussian splats, re-formed by recipe.">
@@ -33,7 +33,7 @@
     <div class="hero__foot">
       <div class="hero__lede">
         <p class="eyebrow">Portfolio · printed live, in two inks</p>
-        <p class="lede">I&rsquo;m a graduate student in computer science at the <a href="https://www.uc.edu/">University of Cincinnati</a>. My research interests are scientific visualization, computer graphics, digital media, software engineering and information retrieval.</p>
+        <p class="lede">I&rsquo;m a graduate student in computer science at the <a href="https://www.uc.edu/">University of Cincinnati</a>. My research interests are digital media, computer graphics and scientific visualization, along with software engineering and information retrieval.</p>
       </div>
       <aside class="card" id="recipe" aria-label="The recipe for the form above" hidden>
         <p class="card__head"><b data-count>24,000</b> Gaussian splats and two inks. Push through them, drag to turn them, or change the recipe.</p>
@@ -51,10 +51,20 @@
         <p class="eyebrow"><b>01</b> Gaussian splats</p>
         <h2>Splashery</h2>
         <p class="tag">An interactive Gaussian splat playground.</p>
-        <p>A toy box of 3D Gaussian splats that runs in the browser. Pick a toy, then poke it, blow wind through it, dissolve it, drop it, pull it with a magnet, twist it, slice it or paint it: effects that run on the GPU for every splat, every frame.</p>
-        <p>I defined the project vision and toy categories, and refined the interaction design through hands-on testing.</p>
-        <p>Its science shelves hold a virus and a neuron, electron orbitals and proteins, a brain, an eye, and a math shelf with a Lorenz attractor, a Klein bottle and a gyroid. Those three appear on this page too, redrawn by a far smaller renderer written for it.</p>
-        <p class="meta">PlayCanvas · static files and ES modules · no build step, no framework, no server</p>
+        <p>It runs entirely in the browser. Pick a toy, a real captured object or one generated from a seed, then spin it, poke it, blow on it, splash paint on it, drop it, and watch it fall apart and come back. Make your own, and share it as a link, an embed, a GIF or a video.</p>
+        <p class="live">On this page, the cloud beside this text is a small cousin of those toys: <span data-count>24,000</span> splats, drawn by a renderer written for the page. Push the pointer through it, or drag to turn it.</p>
+        <p>I defined the project&rsquo;s vision and its toy categories, refined the interaction design through hands-on testing, and contributed mathematical recipes.</p>
+        <h3 class="sub">On its shelves</h3>
+        <ul class="inside">
+          <li><b>Waves and optics.</b> A ripple tank that solves the 2D wave equation, and a light bench that traces rays with Snell&rsquo;s law through lenses, mirrors, a prism, a glass block and a fiber.</li>
+          <li><b>Sound.</b> A Chladni plate whose sand moves live with the sound, and a song landscape drawn from measured features.</li>
+          <li><b>Molecules and crystals.</b> A viewer that opens PDB, mmCIF, SDF, MOL and XYZ files or fetches an entry from the Protein Data Bank, and hydrogen orbitals sampled from |&psi;|&sup2;.</li>
+          <li><b>Volumes and imaging.</b> CT, MRI and microscope scans opened on the device, with window and level, a transfer function and cut planes.</li>
+          <li><b>Scale and sky.</b> One continuous zoom from a galaxy down to a single molecular machine, and the night sky for any date, time and place.</li>
+          <li><b>Earth and data.</b> Real landscapes from public data, and a CSV turned into a scatter, bars or a surface.</li>
+          <li><b>Math.</b> A Lorenz attractor, a Klein bottle and a gyroid among them. Those three are redrawn on this page.</li>
+        </ul>
+        <p class="meta">PlayCanvas engine · WebGPU with a WebGL2 fallback · static files and ES modules: no build step, no framework, no server</p>
         <p class="links">
           <a class="link" href="https://ryanjosephkamp.github.io/splashery/">Play</a>
           <a class="link" href="https://ryanjosephkamp.github.io/splashery/manual/">Tinkerer&rsquo;s Manual</a>
@@ -71,12 +81,12 @@ dz = x y − 8⁄3 z</pre>
 
     <section class="sec sec--left" data-form="gyroid" data-at="left">
       <div class="sec__text">
-        <p class="eyebrow"><b>02</b> Procedural form</p>
+        <p class="eyebrow"><b>01</b> Splashery, continued</p>
         <h2>Recipes</h2>
         <p class="tag">A toy that is written, not scanned.</p>
-        <p>Some of Splashery&rsquo;s toys are captured: real scans, up to 450,000 splats. The rest are generated, built from seeded recipes. I developed and contributed selected mathematical recipes to the playground.</p>
-        <p>Its Tinkerer&rsquo;s Manual covers what one splat is (a Gaussian and its covariance), how a recipe is built, and a splat equation language.</p>
-        <p>Every form on this page is made the same way in miniature. A seeded recipe a few lines long says where each splat goes, which way its stroke runs, and which ink it takes. The card at the top of the page lets you change one, or write your own.</p>
+        <p>Splashery&rsquo;s captured toys are real scans of up to 450,000 splats. Its generated ones are built from seeded recipes, so a saved scene rebuilds the same toy. A splat equation toy goes further and places every splat from equations in u, v and t.</p>
+        <p>Its Tinkerer&rsquo;s Manual explains what one splat is (the Gaussian and its covariance), how a recipe is built, and the equation language. Another toy fits 2D Gaussians to a picture by gradient descent, step by step.</p>
+        <p class="live">On this page, every form is made the same way in miniature. A seeded recipe a few lines long says where each splat goes, which way its stroke runs, and which ink it takes. The card at the top of the page lets you change one, or write your own in u and v.</p>
         <p class="links">
           <a class="link" href="https://ryanjosephkamp.github.io/splashery/manual/">Read the manual</a>
           <a class="link link--up" href="#top">Write a recipe</a>
@@ -89,104 +99,135 @@ scatter points, then walk each one onto the surface</pre>
       </div>
     </section>
 
-    <section class="sec sec--right" data-form="decisions" data-at="right">
+    <section class="sec sec--right" data-form="loop" data-at="right">
       <div class="sec__text">
-        <p class="eyebrow"><b>03</b> Visualization</p>
-        <h2>The speed&ndash;accuracy trade-off</h2>
-        <p class="tag">Undergraduate research capstone, April 2025.</p>
-        <p>Every streak in the plot below is one decision being made. Evidence drifts toward the upper line, the right answer, while noise shoves it around, and the decision happens the moment a streak touches a line. Pull the lines apart and every answer is slower but more often right. Push them together and the answers come fast and sloppy.</p>
-        <figure class="lab" id="decide" hidden>
-          <div class="lab__plot">
-            <canvas id="ddm" role="img" aria-label="A live simulation. Streaks of accumulating evidence wander rightward through time between an upper line, the right answer, and a lower line, the wrong answer. Bars along each line count how many decisions ended there at each moment. A curve at the right edge shows right answers a minute for every height of the line."></canvas>
-            <div class="lab__grip" id="ddm-grip" role="slider" tabindex="0" aria-orientation="vertical" aria-label="How sure to be before deciding (the decision threshold)" aria-valuemin="0.3" aria-valuemax="1.6" aria-valuenow="0.9">&#8597; how sure</div>
-          </div>
-          <div class="lab__panel">
-            <label class="lab__dial">
-              <span>evidence</span>
-              <span class="lab__ends"><i aria-hidden="true">murky</i><input type="range" id="ddm-drift" min="0" max="2" step="0.05" value="0.9"><i aria-hidden="true">clear</i></span>
-            </label>
-            <dl class="lab__stats">
-              <div><dt>right</dt><dd><b id="ddm-acc">&hellip;</b><small id="ddm-acc-t"></small></dd></div>
-              <div><dt>time to decide</dt><dd><b id="ddm-rt">&hellip;</b><small id="ddm-rt-t"></small></dd></div>
-              <div><dt>right answers a minute</dt><dd><b id="ddm-rr">&hellip;</b><small id="ddm-rr-t"></small></dd></div>
-            </dl>
-          </div>
-          <figcaption class="lab__note">The textbook two-line model, simulated in your browser. It is not the capstone&rsquo;s own code. The large numbers are measured: a few hundred decisions like the streaks are run to their end every second, unseen, and counted. &ldquo;Theory&rdquo; is the closed-form answer they should settle on. Answers a minute assumes 1.5 seconds between decisions and 2 seconds lost to each mistake; the curve at the right edge plots it for every height of the line.</figcaption>
-        </figure>
-        <p>The splat figure for this section is the same model in the page&rsquo;s own material: thirty streams of evidence, each with its own fixed noise. Move the line or the dial and those same thirty are replayed under the new rule. Teal streams ended on the right answer and orange ones on the wrong one. A stream that reaches the edge still undecided is printed in both inks.</p>
-        <p>The capstone, <i>The Speed-Accuracy Trade-Off in Perceptual Decision-Making</i>, modeled evidence accumulation as a diffusion process and used dynamic programming and value iteration to study decision boundaries in a simulated autonomous-vehicle obstacle-avoidance scenario. It was advised by <a href="https://sites.google.com/view/hkimmathbio/home">Dr. Hyunjoong Kim</a>.</p>
-        <p class="links">
-          <a class="link" href="https://youtu.be/LRAP1YHy3g0">Video</a>
-          <a class="link" href="https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone">Code</a>
-        </p>
-        <figure class="fig">
-          <figcaption>Fig. 3 · Thirty simulated decisions, time running left to right</figcaption>
-          <pre class="recipe">dx = v dt + dW,  x(0) = 0
-stop when |x| = a</pre>
-        </figure>
-      </div>
-    </section>
-
-    <section class="sec sec--left" data-form="loop" data-at="left">
-      <div class="sec__text">
-        <p class="eyebrow"><b>04</b> Graphs for agents</p>
+        <p class="eyebrow"><b>02</b> Graphs for agents</p>
         <h2>grooph</h2>
         <p class="tag">Visual loop graphs for coding-agent workflows.</p>
-        <p>Draw who builds, who checks, where a person decides and when the work stops. The tool validates graph documents and compiles prompt packages for a separate coding-agent harness.</p>
+        <p>You draw who builds, who checks, where a person decides and when the work stops. grooph checks that every loop names a stop, then compiles the graph into a prompt package for a separate coding-agent harness. It runs no agent and calls no model, and graphs stay on your device.</p>
+        <p class="live">On this page, the figure is about the smallest such graph: a builder, a critic, one loop back, and a person at the stop.</p>
         <p class="links">
           <a class="link" href="https://ryanjosephkamp.github.io/grooph/">Open the app</a>
+          <a class="link" href="https://ryanjosephkamp.github.io/grooph/docs/">Docs</a>
           <a class="link" href="https://github.com/ryanjosephkamp/grooph">Source</a>
         </p>
         <figure class="fig">
-          <figcaption>Fig. 4 · A builder, a critic, and the person who decides</figcaption>
+          <figcaption>Fig. 3 · A builder, a critic, and the person who decides</figcaption>
           <pre class="recipe">three nodes, two edges, one loop back
 the node printed solid is a person</pre>
         </figure>
       </div>
     </section>
 
-    <section class="sec sec--right" data-form="anagram" data-at="right">
+    <section class="sec sec--left" data-form="anagram" data-at="left">
       <div class="sec__text">
-        <p class="eyebrow"><b>05</b> Words</p>
-        <h2>Tools for words</h2>
-        <p class="tag">The same letters, rearranged.</p>
-        <ul class="shelf">
-          <li>
-            <h3>Ars Magna</h3>
-            <p>An anagram finder. Its name is an anagram of &ldquo;anagrams&rdquo;, which the figure keeps proving.</p>
-            <p class="links"><a class="link" href="https://ars-magna.pages.dev/">Try it</a></p>
-          </li>
-          <li>
-            <h3>Amordle</h3>
-            <p>A word game.</p>
-            <p class="links"><a class="link" href="https://amordle.vercel.app">Play</a></p>
-          </li>
-          <li>
-            <h3>English OpenList</h3>
-            <p>An English word dataset and lexical explorer.</p>
-            <p class="links">
-              <a class="link" href="https://english-openlist.pages.dev/">Explore</a>
-              <a class="link" href="https://huggingface.co/datasets/ryanjosephkamp/english-openlist">Dataset</a>
-              <a class="link" href="https://github.com/ryanjosephkamp/english-openlist">Source</a>
-            </p>
-          </li>
-        </ul>
+        <p class="eyebrow"><b>03</b> Words, rearranged</p>
+        <h2>Ars Magna</h2>
+        <p class="tag">An anagram of &ldquo;anagrams.&rdquo;</p>
+        <p>An anagram finder. Give it any text and it returns every way those exact letters can be re-partitioned into real English words, by a deterministic search.</p>
+        <p class="live">On this page, the figure spells the proof of its name: ANAGRAMS and ARS MAGNA.</p>
+        <p class="links">
+          <a class="link" href="https://ars-magna.pages.dev/">Try it</a>
+          <a class="link" href="https://github.com/ryanjosephkamp/ars-magna">Source</a>
+        </p>
         <figure class="fig">
-          <figcaption>Fig. 5 · ARS MAGNA and ANAGRAMS, the same eight letters</figcaption>
+          <figcaption>Fig. 4 · ARS MAGNA and ANAGRAMS, the same eight letters</figcaption>
           <pre class="recipe">draw the word; keep every pixel the ink reached;
 drop a splat on each</pre>
         </figure>
       </div>
     </section>
 
-    <section class="sec sec--left" id="research" data-form="klein" data-at="left">
+    <section class="sec sec--right" data-form="qr" data-at="right">
       <div class="sec__text">
-        <p class="eyebrow"><b>06</b> Research</p>
+        <p class="eyebrow"><b>04</b> Words, as pictures</p>
+        <h2>aqrobat</h2>
+        <p class="tag">QR codes, in character.</p>
+        <p>A local text and emoji QR lab. It builds QR artwork from letters, symbols or emoji, right in the browser.</p>
+        <p class="live">On this page, the figure is a QR code built from splats instead. It is a real one, and it holds aqrobat&rsquo;s address. Try a phone camera on it.</p>
+        <p class="links">
+          <a class="link" href="https://ryanjosephkamp.github.io/aqrobat/">Make one</a>
+          <a class="link" href="https://github.com/ryanjosephkamp/aqrobat">Source</a>
+        </p>
+        <figure class="fig">
+          <figcaption>Fig. 5 · A QR code, 29 modules a side, holding aqrobat&rsquo;s address</figcaption>
+          <pre class="recipe">encode the address; add the check words;
+fill every dark module with splats;
+the hearts of the eyes take both inks</pre>
+        </figure>
+      </div>
+    </section>
+
+    <section class="sec sec--left" data-form="also" data-at="left">
+      <div class="sec__text">
+        <p class="eyebrow"><b>05&ndash;10</b> Also on the shelf</p>
+        <h2>And six more</h2>
+        <ol class="shelf shelf--numbered" start="5">
+          <li>
+            <h3>reword_nerd</h3>
+            <p>A local-first browser workbench that turns a reviewed document, or a set of images, into a portable workbook of rewriting prompts. Everything stays reviewable in the browser, the download is a separate, explicit step, and the application contacts no model provider itself.</p>
+            <p class="links">
+              <a class="link" href="https://ryanjosephkamp.github.io/reword-nerd/">Open</a>
+              <a class="link" href="https://ryanjosephkamp.github.io/blog/articles/reword-nerd/">Write-up</a>
+              <a class="link" href="https://github.com/ryanjosephkamp/reword-nerd">Source</a>
+            </p>
+          </li>
+          <li>
+            <h3>resmon</h3>
+            <p>A local-first literature-monitoring desktop application. It runs scheduled searches across open-access scholarly sources, removes duplicates, and compiles reading reports, with optional summaries.</p>
+            <p class="links"><a class="link" href="https://github.com/ryanjosephkamp/resmon">Source</a></p>
+          </li>
+          <li>
+            <h3>Link Meteor</h3>
+            <p>A Chrome extension that collects links with their anchor text and URL in separate fields, for reviewing sources and exporting a research collection. No account, ads, telemetry or backend.</p>
+            <p class="links">
+              <a class="link" href="https://ryanjosephkamp.github.io/link-meteor/">Website</a>
+              <a class="link" href="https://github.com/ryanjosephkamp/link-meteor">Source</a>
+            </p>
+          </li>
+          <li>
+            <h3>English OpenList</h3>
+            <p>A free, open, continuously maintained list of valid English words, about 345,000 of them, with the provenance of every word (which sources attested it, and when), auditable correction records, and a browser explorer.</p>
+            <p class="links">
+              <a class="link" href="https://english-openlist.pages.dev/">Explore</a>
+              <a class="link" href="https://huggingface.co/datasets/ryanjosephkamp/english-openlist">Dataset</a>
+              <a class="link" href="https://github.com/ryanjosephkamp/english-openlist">Source</a>
+            </p>
+          </li>
+          <li>
+            <h3>Amordle</h3>
+            <p>A free word game: any word length from 2 to 35 letters, three difficulties, a daily puzzle, and ranked multiplayer with an Elo rating.</p>
+            <p class="links">
+              <a class="link" href="https://amordle.vercel.app">Play</a>
+              <a class="link" href="https://ryanjosephkamp.github.io/blog/articles/amordle/">Write-up</a>
+              <a class="link" href="https://github.com/ryanjosephkamp/amordle">Source</a>
+            </p>
+          </li>
+          <li>
+            <h3>The Speed-Accuracy Trade-Off in Perceptual Decision-Making</h3>
+            <p>My undergraduate research capstone, April 2025. It models evidence accumulation as a diffusion process to study decision boundaries in a simulated autonomous-vehicle obstacle-avoidance scenario.</p>
+            <p class="links">
+              <a class="link" href="https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone">Code</a>
+              <a class="link" href="https://youtu.be/LRAP1YHy3g0">Video</a>
+            </p>
+          </li>
+        </ol>
+        <figure class="fig">
+          <figcaption>Fig. 6 · An ampersand, for everything else</figcaption>
+          <pre class="recipe">draw the character; keep every pixel the ink reached;
+drop a splat on each</pre>
+        </figure>
+      </div>
+    </section>
+
+    <section class="sec sec--right" id="research" data-form="klein" data-at="right">
+      <div class="sec__text">
+        <p class="eyebrow">Research</p>
         <h2>Interests</h2>
         <ol class="interests">
-          <li>Scientific visualization</li>
-          <li>Computer graphics</li>
           <li>Digital media</li>
+          <li>Computer graphics</li>
+          <li>Scientific visualization</li>
           <li>Software engineering</li>
           <li>Information retrieval</li>
         </ol>
@@ -196,16 +237,8 @@ drop a splat on each</pre>
           <a class="link" href="https://drive.google.com/file/d/1x3CYZOWMckdRBlrFfejLhzqY4ftGoO9h/view?usp=drive_link">Read the CV</a>
           <a class="link" href="https://ryanjosephkamp.github.io/blog/">Blog</a>
         </p>
-        <h3 class="sub">Also on the shelf</h3>
-        <ul class="shelf">
-          <li>
-            <h3>resmon</h3>
-            <p>A local-first literature-monitoring desktop application with scheduled searches, deduplication, and optional LLM summarization.</p>
-            <p class="links"><a class="link" href="https://github.com/ryanjosephkamp/resmon">Source</a></p>
-          </li>
-        </ul>
         <figure class="fig">
-          <figcaption>Fig. 6 · Klein bottle, figure-eight immersion, drawn as threads</figcaption>
+          <figcaption>Fig. 7 · Klein bottle, figure-eight immersion, drawn as threads</figcaption>
           <pre class="recipe">r = 2 + cos ½u sin v − sin ½u sin 2v
 x = r cos u,  z = r sin u
 y = sin ½u sin v + cos ½u sin 2v</pre>
@@ -216,7 +249,7 @@ y = sin ½u sin v + cos ½u sin 2v</pre>
 
   <footer class="sec contact" id="contact" data-form="name" data-at="center">
     <div class="sec__text">
-      <p class="eyebrow"><b>07</b> Contact</p>
+      <p class="eyebrow">Contact</p>
       <h2>Elsewhere</h2>
       <ul class="elsewhere">
         <li><a href="https://github.com/ryanjosephkamp">GitHub</a></li>

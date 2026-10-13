@@ -29,9 +29,8 @@ function seeded(seed) {
 const blank = (n) => ({ pos: new Float32Array(n * 3), tan: new Float32Array(n * 3), ink: new Float32Array(n), aspect: 1 });
 
 // Center the form and scale it to fit: a ball of radius 1, or, for a flat
-// form, a half-width of 1. A framed form is already in its final units and
-// is left where it is. Strokes are cut to one length.
-function finish(out, stroke, flat = false, framed = false) {
+// form, a half-width of 1. Strokes are cut to one length.
+function finish(out, stroke, flat = false) {
   const { pos, tan } = out;
   const n = out.ink.length;
   const lo = [Infinity, Infinity, Infinity];
@@ -41,7 +40,7 @@ function finish(out, stroke, flat = false, framed = false) {
     if (pos[i] < lo[a]) lo[a] = pos[i];
     if (pos[i] > hi[a]) hi[a] = pos[i];
   }
-  const mid = framed ? [0, 0, 0] : lo.map((v, a) => (v + hi[a]) / 2);
+  const mid = lo.map((v, a) => (v + hi[a]) / 2);
   let reach = 0;
   for (let i = 0; i < n; i += 1) {
     const x = pos[i * 3] - mid[0];
@@ -49,7 +48,7 @@ function finish(out, stroke, flat = false, framed = false) {
     const z = pos[i * 3 + 2] - mid[2];
     reach = Math.max(reach, flat ? Math.abs(x) : Math.hypot(x, y, z));
   }
-  const k = framed ? 1 : 1 / (reach || 1);
+  const k = 1 / (reach || 1);
   for (let i = 0; i < n; i += 1) {
     const len = Math.hypot(tan[i * 3], tan[i * 3 + 1], tan[i * 3 + 2]) || 1;
     for (let a = 0; a < 3; a += 1) {
@@ -62,7 +61,10 @@ function finish(out, stroke, flat = false, framed = false) {
 }
 
 // A word: draw it, keep every pixel the ink reached, drop a splat on each.
-function word(n, { text }, rand) {
+// `stroke` is the length of a stroke and `slip` how far off register the
+// second plate lands; one big character wants more of the first and less of
+// the second than a line of letters does.
+function word(n, { text, stroke = 0.011, slip = 1 }, rand) {
   const out = blank(n);
   const lines = String(text || '').toUpperCase().split('\n').filter((line) => line.trim());
   if (!lines.length) lines.push('?');
@@ -87,14 +89,14 @@ function word(n, { text }, rand) {
     const p = inked[Math.floor(rand() * inked.length)];
     const second = i % 7 === 0; // one splat in seven goes to the second plate, set off register
     const hatch = 0.66 + (rand() - 0.5) * 0.5;
-    out.pos[i * 3] = (p % canvas.width) + rand() + (second ? size * 0.055 : 0);
-    out.pos[i * 3 + 1] = -(Math.floor(p / canvas.width) + rand()) - (second ? size * 0.045 : 0);
-    out.pos[i * 3 + 2] = (rand() - 0.5) * size * 0.14 + (second ? size * 0.12 : 0);
+    out.pos[i * 3] = (p % canvas.width) + rand() + (second ? size * 0.055 * slip : 0);
+    out.pos[i * 3 + 1] = -(Math.floor(p / canvas.width) + rand()) - (second ? size * 0.045 * slip : 0);
+    out.pos[i * 3 + 2] = (rand() - 0.5) * size * 0.14 + (second ? size * 0.12 * slip : 0);
     out.tan[i * 3] = Math.cos(hatch);
     out.tan[i * 3 + 1] = Math.sin(hatch);
     out.ink[i] = second ? 1 : 0;
   }
-  return finish(out, 0.011, true);
+  return finish(out, stroke, true);
 }
 
 // The Lorenz system, integrated with fourth-order Runge-Kutta. Each splat is
@@ -189,54 +191,6 @@ function gyroid(n, { cells }, rand) {
   return finish(out, 0.015);
 }
 
-// Decisions: evidence starts at zero and wanders, with a drift toward the
-// upper line. A thread ends when it first touches either line. Each thread
-// has its own noise, fixed by its seed, so moving the lines or the drift
-// replays the same evidence under the new rule. The frame is fixed (time
-// across, evidence up, threads standing apart in depth) so the move shows.
-function decisions(n, { drift, bound }, rand) {
-  const out = blank(n);
-  const dt = 0.012;
-  const sd = Math.sqrt(dt);
-  const span = 2.6; // seconds shown
-  const threads = 30;
-  const across = 1.5 / span;
-  const up = 0.36;
-  let i = 0;
-  for (; i < n * 0.1; i += 1) { // the two lines
-    const top = i % 2 === 0;
-    out.pos.set([(rand() - 0.5) * 1.5, (top ? bound : -bound) * up, Math.floor(rand() * 9) / 8 - 0.5], i * 3);
-    out.tan.set([1, 0, 0], i * 3);
-    out.ink[i] = top ? 0 : 1;
-  }
-  const each = Math.floor((n - i) / threads);
-  for (let k = 0; k < threads; k += 1) {
-    const noise = seeded(7000 + k);
-    const gauss = () => Math.sqrt(-2 * Math.log(noise() || 1e-9)) * Math.cos(TAU * noise());
-    const path = [[0, 0]];
-    let x = 0;
-    for (let t = dt; Math.abs(x) < bound && t < span; t += dt) {
-      x += drift * dt + sd * gauss();
-      path.push([t, clamp(x, -bound, bound)]);
-    }
-    if (path.length < 2) path.push([dt, 0]);
-    // right, wrong, or still undecided at the edge: that one takes both inks
-    const ink = x >= bound ? 0 : x <= -bound ? 1 : 0.5;
-    const depth = k / (threads - 1) - 0.5;
-    for (let stop = k === threads - 1 ? n : i + each; i < stop; i += 1) {
-      const at = rand() * (path.length - 1);
-      const s = Math.min(Math.floor(at), path.length - 2);
-      const f = at - s;
-      const p = path[s];
-      const q = path[s + 1];
-      out.pos.set([(p[0] + (q[0] - p[0]) * f - span / 2) * across, (p[1] + (q[1] - p[1]) * f) * up, depth], i * 3);
-      out.tan.set([(q[0] - p[0]) * across, (q[1] - p[1]) * up, 0], i * 3);
-      out.ink[i] = ink;
-    }
-  }
-  return finish(out, 0.012, false, true);
-}
-
 // A loop graph: builder, critic, and the person who decides; one edge loops back.
 function loop(n, _, rand) {
   const out = blank(n);
@@ -272,9 +226,221 @@ function loop(n, _, rand) {
   return finish(out, 0.011, true);
 }
 
+/* ---------- A QR code, for the aqrobat figure ---------- */
+
+// Version 3 (29 by 29 modules), error correction M, byte mode. That holds 42
+// bytes in a single block, so there is no interleaving to do.
+const QR = { size: 29, data: 44, check: 26, align: 22 };
+
+// Multiplication in GF(256), reduced by x^8 + x^4 + x^3 + x^2 + 1.
+function gfMul(x, y) {
+  let z = 0;
+  for (let i = 7; i >= 0; i -= 1) {
+    z = (z << 1) ^ ((z >>> 7) * 0x11d);
+    z ^= ((y >>> i) & 1) * x;
+  }
+  return z;
+}
+
+// The Reed-Solomon check words for `data`: the remainder after dividing by
+// the polynomial whose roots are 1, 2, 4, ... (`degree` of them).
+function checkWords(data, degree) {
+  const gen = new Array(degree).fill(0);
+  gen[degree - 1] = 1;
+  let root = 1;
+  for (let i = 0; i < degree; i += 1) {
+    for (let j = 0; j < degree; j += 1) {
+      gen[j] = gfMul(gen[j], root);
+      if (j + 1 < degree) gen[j] ^= gen[j + 1];
+    }
+    root = gfMul(root, 2);
+  }
+  const rem = new Array(degree).fill(0);
+  for (const word of data) {
+    const factor = word ^ rem.shift();
+    rem.push(0);
+    gen.forEach((coef, i) => { rem[i] ^= gfMul(coef, factor); });
+  }
+  return rem;
+}
+
+// The code for `text`, as rows of modules: 1 is dark.
+function qrMatrix(text) {
+  const { size } = QR;
+  const bytes = [...new TextEncoder().encode(text)];
+  if (bytes.length > QR.data - 2) throw new Error(`this code holds ${QR.data - 2} bytes, and that is ${bytes.length}`);
+
+  // the message: mode, length, the bytes, a terminator, then padding
+  const bits = [];
+  const put = (value, length) => {
+    for (let i = length - 1; i >= 0; i -= 1) bits.push((value >>> i) & 1);
+  };
+  put(4, 4);
+  put(bytes.length, 8);
+  bytes.forEach((b) => put(b, 8));
+  put(0, Math.min(4, QR.data * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  for (let pad = 0xec; bits.length < QR.data * 8; pad ^= 0xec ^ 0x11) put(pad, 8);
+  const words = [];
+  for (let i = 0; i < bits.length; i += 8) words.push(bits.slice(i, i + 8).reduce((v, b) => (v << 1) | b, 0));
+  const stream = [...words, ...checkWords(words, QR.check)];
+
+  const dark = Array.from({ length: size }, () => new Array(size).fill(0));
+  const fixed = Array.from({ length: size }, () => new Array(size).fill(false));
+  const set = (x, y, on) => {
+    if (x < 0 || y < 0 || x >= size || y >= size) return;
+    dark[y][x] = on ? 1 : 0;
+    fixed[y][x] = true;
+  };
+  // the timing rows, then the three finders with their light surround, then the alignment mark
+  for (let i = 0; i < size; i += 1) {
+    set(6, i, i % 2 === 0);
+    set(i, 6, i % 2 === 0);
+  }
+  [[3, 3], [size - 4, 3], [3, size - 4]].forEach(([cx, cy]) => {
+    for (let dy = -4; dy <= 4; dy += 1) {
+      for (let dx = -4; dx <= 4; dx += 1) {
+        const ring = Math.max(Math.abs(dx), Math.abs(dy));
+        set(cx + dx, cy + dy, ring !== 2 && ring !== 4);
+      }
+    }
+  });
+  for (let dy = -2; dy <= 2; dy += 1) {
+    for (let dx = -2; dx <= 2; dx += 1) set(QR.align + dx, QR.align + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }
+  // The format: which mask was used, protected by a BCH code and written twice.
+  // Level M is 00, so the five bits it carries are just the mask's number.
+  const format = (mask) => {
+    let rem = mask;
+    for (let i = 0; i < 10; i += 1) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    const code = ((mask << 10) | rem) ^ 0x5412;
+    const bit = (i) => ((code >>> i) & 1) === 1;
+    for (let i = 0; i <= 5; i += 1) set(8, i, bit(i));
+    set(8, 7, bit(6));
+    set(8, 8, bit(7));
+    set(7, 8, bit(8));
+    for (let i = 9; i < 15; i += 1) set(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i += 1) set(size - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i += 1) set(8, size - 15 + i, bit(i));
+    set(8, size - 8, true);
+  };
+  format(0); // to claim its modules before the message is laid in
+
+  // the message zigzags up and down in columns two wide, from the bottom right
+  let at = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5; // the timing column is passed over
+    for (let step = 0; step < size; step += 1) {
+      for (let j = 0; j < 2; j += 1) {
+        const x = right - j;
+        const y = ((right + 1) & 2) === 0 ? size - 1 - step : step;
+        if (!fixed[y][x] && at < stream.length * 8) {
+          dark[y][x] = (stream[at >>> 3] >>> (7 - (at & 7))) & 1;
+          at += 1;
+        }
+      }
+    }
+  }
+  if (at !== stream.length * 8) throw new Error('the message did not fit the code');
+
+  // Eight masks can be laid over the message. Each is tried and scored by
+  // the standard's four penalties (long runs, solid blocks, finder
+  // look-alikes, and an uneven share of dark), and the lowest score is kept.
+  const masks = [
+    (x, y) => (x + y) % 2 === 0,
+    (x, y) => y % 2 === 0,
+    (x) => x % 3 === 0,
+    (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+    (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+    (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0,
+    (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0,
+  ];
+  const flip = (mask) => {
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) if (!fixed[y][x] && masks[mask](x, y)) dark[y][x] ^= 1;
+    }
+  };
+  const penalty = () => {
+    let score = 0;
+    const lines = [];
+    for (let i = 0; i < size; i += 1) lines.push(dark[i].join(''), dark.map((row) => row[i]).join(''));
+    for (const line of lines) {
+      for (const run of line.match(/0{5,}|1{5,}/g) || []) score += run.length - 2;
+      for (let i = 0; i + 11 <= size; i += 1) {
+        const piece = line.slice(i, i + 11);
+        if (piece === '10111010000' || piece === '00001011101') score += 40;
+      }
+    }
+    let total = 0;
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        const m = dark[y][x];
+        total += m;
+        if (x + 1 < size && y + 1 < size && m === dark[y][x + 1] && m === dark[y + 1][x] && m === dark[y + 1][x + 1]) score += 3;
+      }
+    }
+    return score + 10 * Math.floor(Math.abs((total * 100) / (size * size) - 50) / 5);
+  };
+  let best = 0;
+  let least = Infinity;
+  for (let mask = 0; mask < masks.length; mask += 1) {
+    flip(mask);
+    format(mask);
+    const score = penalty();
+    if (score < least) {
+      least = score;
+      best = mask;
+    }
+    flip(mask); // laying a mask on twice takes it off again
+  }
+  flip(best);
+  format(best);
+  return dark;
+}
+
+// A QR code: the modules of a real one, each dark module filled with splats.
+// The hearts of the three finders and of the alignment mark are overprinted:
+// they take both inks, which makes them the darkest thing in the figure.
+//
+// A reader needs dark modules that are evenly dark and that run together where
+// they touch. So the splats are dealt out like cards, the same number to every
+// dark module, and inside a module each one lands in the largest gap the
+// earlier ones left (the R2 sequence). Ink spreads past where it is laid, so
+// the splats keep a little inside the module's edge, and each lays down only
+// enough ink for the module to come out solid: more would swell it.
+function qr(n, { text }, rand) {
+  const out = blank(n);
+  const grid = qrMatrix(text);
+  const size = grid.length;
+  const cells = [];
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) if (grid[y][x]) cells.push([x, y, rand(), rand()]);
+  }
+  const hearts = [[3, 3], [size - 4, 3], [3, size - 4]];
+  const heart = (x, y) => (x === QR.align && y === QR.align) || hearts.some(([cx, cy]) => Math.max(Math.abs(x - cx), Math.abs(y - cy)) <= 1);
+  const inset = 0.1;
+  for (let i = 0; i < n; i += 1) {
+    const [x, y, shiftX, shiftY] = cells[i % cells.length];
+    const turn = Math.floor(i / cells.length) + 1;
+    const u = (turn * 0.7548776662 + shiftX) % 1;
+    const v = (turn * 0.569840291 + shiftY) % 1;
+    const hatch = 0.66 + (rand() - 0.5) * 0.5;
+    out.pos[i * 3] = x + inset + u * (1 - 2 * inset);
+    out.pos[i * 3 + 1] = -(y + inset + v * (1 - 2 * inset));
+    out.pos[i * 3 + 2] = (rand() - 0.5) * 0.4;
+    out.tan[i * 3] = Math.cos(hatch);
+    out.tan[i * 3 + 1] = Math.sin(hatch);
+    out.ink[i] = heart(x, y) ? 0.5 : 0;
+  }
+  out.gain = (13 * cells.length) / n; // the fewer splats a module gets, the more ink each one carries
+  return finish(out, 0.005, true);
+}
+
 // make: the recipe. width: a splat's short radius, in units of the form.
 // gain: how much ink one splat lays down. spin: turns freely; otherwise it
-// faces the reader and sways by this many radians.
+// faces the reader and sways by this many radians. fit: the share of its
+// room a form takes, when it should not fill it.
 const FORMS = {
   name: {
     label: 'name', make: word, seed: 3, width: 0.0021, gain: 0.085, sway: 0.16, params: { text: 'RYAN KAMP' },
@@ -314,9 +480,10 @@ const FORMS = {
     ],
     note: () => 'u and v each run from 0 to 2π. sin, cos, pow, abs, PI and the rest of Math all work.',
   },
-  decisions: { make: decisions, seed: 34, width: 0.0034, gain: 0.26, sway: 0.5, tilt: 0.2, params: { drift: 0.9, bound: 0.9 } },
   loop: { make: loop, seed: 55, width: 0.0034, gain: 0.16, sway: 0.24, params: {} },
   anagram: { make: word, seed: 89, width: 0.0021, gain: 0.085, sway: 0.16, params: { text: 'ANAGRAMS' } },
+  qr: { make: qr, seed: 233, width: 0.009, gain: 0.3, sway: 0.08, fit: 0.8, params: { text: 'https://ryanjosephkamp.github.io/aqrobat/' } },
+  also: { make: word, seed: 144, width: 0.006, gain: 0.12, sway: 0.2, fit: 0.86, params: { text: '&', stroke: 0.03, slip: 0.35 } },
 };
 const SHELF = ['name', 'lorenz', 'klein', 'gyroid', 'yours'];
 
@@ -598,445 +765,6 @@ class Cloud {
   }
 }
 
-/* ---------- The instrument: a decision model to pull on ---------- */
-
-// What the instrument is set to. The cloud's decisions recipe reads it too,
-// so the two views of the model move together.
-const model = { drift: 0.9, bound: 0.9, changed: null };
-
-// Evidence starts at zero and wanders, with a drift toward the right answer.
-// The decision is made when it first touches +bound (right) or -bound (wrong).
-function decide() {
-  const canvas = document.getElementById('ddm');
-  if (!canvas) return;
-  canvas.closest('.lab').hidden = false;
-  const plot = canvas.parentElement;
-  const grip = document.getElementById('ddm-grip');
-  const dial = document.getElementById('ddm-drift');
-  const el = (id) => document.getElementById(id);
-  const ctx = canvas.getContext('2d');
-  // one sheet of streaks for each ink, so that where they cross they overprint
-  const sheets = [0, 1].map(() => document.createElement('canvas'));
-  const pens = sheets.map((sheet) => sheet.getContext('2d'));
-  const css = getComputedStyle(document.documentElement);
-  const tone = (name) => css.getPropertyValue(name).trim();
-  const paper = tone('--paper');
-  const inks = [tone('--teal'), tone('--hot')];
-  const words = [tone('--teal-deep'), tone('--hot-deep')];
-  const dark = tone('--ink');
-  const soft = tone('--ink-2');
-
-  const A_MIN = 0.3;
-  const A_MAX = 1.6;
-  const SPAN = 2.15; // evidence shown runs from -SPAN to +SPAN
-  const T_WIN = 2.5; // seconds of model time across the plot
-  const SPEED = 0.6; // model seconds per real second
-  const PAUSE = 1.5; // the toy's rules: seconds between decisions...
-  const PENALTY = 2; // ...and seconds lost to each wrong answer
-  const BINS = 36;
-  const SUB = 4; // simulation steps per frame
-
-  model.drift = Number(dial.value);
-  let best = model.bound;
-  let curve = [];
-
-  // Closed forms for unit noise: chance of ending on the right line, mean
-  // time to reach either, and the rate of right answers that follows.
-  const pRight = (b, d) => (d < 1e-6 ? 0.5 : 1 / (1 + Math.exp(-2 * d * b)));
-  const meanTime = (b, d) => (d < 1e-6 ? b * b : (b / d) * Math.tanh(d * b));
-  const perMinute = (p, t) => (60 * p) / (t + PAUSE + (1 - p) * PENALTY);
-  const rate = (b, d) => perMinute(pRight(b, d), meanTime(b, d));
-
-  // Right answers a minute at every height the line can take, and the best of them.
-  const survey = () => {
-    curve = [];
-    let top = -Infinity;
-    for (let i = 0; i <= 52; i += 1) {
-      const b = A_MIN + ((A_MAX - A_MIN) * i) / 52;
-      const r = rate(b, model.drift);
-      curve.push([b, r]);
-      if (r > top) {
-        top = r;
-        best = b;
-      }
-    }
-  };
-
-  let spare = null;
-  const gauss = () => {
-    if (spare !== null) {
-      const g = spare;
-      spare = null;
-      return g;
-    }
-    let x = 0;
-    let y = 0;
-    let q = 0;
-    do {
-      x = Math.random() * 2 - 1;
-      y = Math.random() * 2 - 1;
-      q = x * x + y * y;
-    } while (q >= 1 || q === 0);
-    const m = Math.sqrt((-2 * Math.log(q)) / q);
-    spare = y * m;
-    return x * m;
-  };
-
-  const walkers = Array.from({ length: 48 }, (_, i) => ({ x: 0, t: 0, wait: 0.1 + i * 0.04, px: 0, py: 0 }));
-  const hi = new Float32Array(BINS);
-  const lo = new Float32Array(BINS);
-  const hiShown = new Float32Array(BINS);
-  const loShown = new Float32Array(BINS);
-  const sparks = [];
-  let right = 0;
-  let wrong = 0;
-  let spent = 0;
-  const reset = () => {
-    hi.fill(0);
-    lo.fill(0);
-    right = 0;
-    wrong = 0;
-    spent = 0;
-  };
-  const tally = (isRight, t) => {
-    if (isRight) right += 1;
-    else wrong += 1;
-    spent += t;
-    const bin = Math.floor((t / T_WIN) * BINS);
-    if (bin < BINS) (isRight ? hi : lo)[bin] += 1;
-  };
-
-  let w = 0;
-  let h = 0;
-  let dpr = 1;
-  let x0 = 0;
-  let x1 = 0;
-  let cy = 0;
-  let s = 1;
-  const tx = (t) => x0 + (t / T_WIN) * (x1 - x0);
-  const ey = (e) => cy - e * s;
-  const place = () => {
-    // on a narrow plot the handle moves left, clear of the line's label
-    grip.style.left = `${(x0 + (x1 - x0) * (w < 620 ? 0.44 : 0.7)).toFixed(1)}px`;
-    grip.style.top = `${ey(model.bound).toFixed(1)}px`;
-    grip.setAttribute('aria-valuenow', model.bound.toFixed(2));
-  };
-  const resize = () => {
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    w = canvas.clientWidth;
-    h = canvas.clientHeight;
-    [canvas, ...sheets].forEach((c) => {
-      c.width = Math.round(w * dpr);
-      c.height = Math.round(h * dpr);
-    });
-    pens.forEach((pen) => pen.setTransform(dpr, 0, 0, dpr, 0, 0));
-    x0 = Math.max(w * 0.06, 20);
-    x1 = w - Math.max(w * 0.13, 58);
-    cy = h / 2;
-    s = (h / 2 - 12) / SPAN;
-    walkers.forEach((p) => {
-      p.px = tx(p.t);
-      p.py = ey(p.x);
-    });
-    place();
-  };
-
-  // The line is only checked at each step, so a path can slip across and
-  // back unseen. Pulling the tested line in by 0.5826 sd corrects for that.
-  const edgeFor = (sd) => Math.max(model.bound - 0.5826 * sd, 0.05);
-
-  const advance = (dt) => {
-    const a = model.bound;
-    const step = dt / SUB;
-    const sd = Math.sqrt(step);
-    const edge = edgeFor(sd);
-    pens.forEach((pen, j) => {
-      pen.globalCompositeOperation = 'destination-out';
-      pen.globalAlpha = 1;
-      pen.fillStyle = 'rgba(0, 0, 0, 0.07)';
-      pen.fillRect(0, 0, w, h);
-      pen.globalCompositeOperation = 'source-over';
-      pen.strokeStyle = inks[j];
-      pen.lineWidth = 1.4;
-      pen.lineCap = 'round';
-    });
-    for (const p of walkers) {
-      if (p.wait > 0) {
-        p.wait -= dt;
-        if (p.wait > 0) continue;
-        p.x = 0;
-        p.t = 0;
-        p.px = x0;
-        p.py = cy;
-      }
-      let hit = 0;
-      for (let k = 0; k < SUB && !hit; k += 1) {
-        p.x += model.drift * step + sd * gauss();
-        p.t += step;
-        if (p.x >= edge) hit = 1;
-        else if (p.x <= -edge) hit = -1;
-      }
-      const nx = tx(p.t);
-      const ny = hit ? ey(hit * a) : ey(p.x);
-      if (p.px < x1) {
-        // leaning up takes teal, leaning down takes orange, and in between a little of both
-        const lean = p.x > a * 0.35 ? [0] : p.x < -a * 0.35 ? [1] : [0, 1];
-        lean.forEach((j) => {
-          pens[j].globalAlpha = lean.length > 1 ? 0.42 : 0.85;
-          pens[j].beginPath();
-          pens[j].moveTo(p.px, p.py);
-          pens[j].lineTo(Math.min(nx, x1), ny);
-          pens[j].stroke();
-        });
-      }
-      p.px = nx;
-      p.py = ny;
-      if (hit) {
-        if (nx < x1) sparks.push({ x: nx, y: ny, life: 1, ink: hit > 0 ? 0 : 1 });
-        p.wait = 0.1 + Math.random() * 0.3;
-      }
-    }
-  };
-
-  // The counts do not come from the streaks. Counting whichever streaks have
-  // finished so far would leave the slow ones out and read fast. Instead a few
-  // unseen decisions are run to their end every frame, and only those count.
-  const STEP = 1 / 400;
-  const trial = () => {
-    const sd = Math.sqrt(STEP);
-    const edge = edgeFor(sd);
-    let x = 0;
-    let t = 0;
-    while (Math.abs(x) < edge && t < 60) {
-      x += model.drift * STEP + sd * gauss();
-      t += STEP;
-    }
-    tally(x > 0, t);
-  };
-
-  const line = (ax, ay, bx, by) => {
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(bx, by);
-    ctx.stroke();
-  };
-  const dot = (x, y, r) => {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, TAU);
-    ctx.fill();
-  };
-
-  const draw = () => {
-    const a = model.bound;
-    const ease = reduceMotion.matches ? 1 : 0.14;
-    const yu = ey(a);
-    const yl = ey(-a);
-    const room = Math.min(yu - 12, h * 0.22);
-    const bw = (x1 - x0) / BINS;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = paper;
-    ctx.fillRect(0, 0, w, h);
-
-    // when each decision landed: right answers above, wrong ones below
-    let peak = 6;
-    for (let i = 0; i < BINS; i += 1) peak = Math.max(peak, hi[i], lo[i]);
-    for (let i = 0; i < BINS; i += 1) {
-      hiShown[i] += (hi[i] / peak - hiShown[i]) * ease;
-      loShown[i] += (lo[i] / peak - loShown[i]) * ease;
-      const x = x0 + i * bw + 1;
-      ctx.fillStyle = inks[0];
-      ctx.fillRect(x, yu - 2 - hiShown[i] * room, bw - 2, hiShown[i] * room);
-      ctx.fillStyle = inks[1];
-      ctx.fillRect(x, yl + 2, bw - 2, loShown[i] * room);
-    }
-
-    // the streaks go down the way ink does: darker where the two sheets cross
-    ctx.globalCompositeOperation = 'multiply';
-    sheets.forEach((sheet) => ctx.drawImage(sheet, 0, 0, w, h));
-    ctx.globalCompositeOperation = 'source-over';
-
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = dark;
-    ctx.globalAlpha = 0.3;
-    ctx.setLineDash([2, 6]);
-    line(x0, cy, x1, cy);
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = inks[0];
-    line(x0, yu, w, yu);
-    ctx.strokeStyle = inks[1];
-    line(x0, yl, x1, yl);
-    ctx.fillStyle = dark;
-    dot(x0, cy, 4);
-
-    for (let i = sparks.length - 1; i >= 0; i -= 1) {
-      const k = sparks[i];
-      ctx.globalAlpha = k.life;
-      ctx.fillStyle = inks[k.ink];
-      dot(k.x, k.y, 2 + (1 - k.life) * 6);
-      k.life -= 0.06;
-      if (k.life <= 0) sparks.splice(i, 1);
-    }
-    ctx.globalAlpha = 1;
-
-    ctx.font = `600 ${w < 520 ? 11 : 12}px Recursive, ui-sans-serif, system-ui, sans-serif`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'right';
-    ctx.fillStyle = words[0];
-    ctx.fillText('right answer', x1 - 8, yu + 12);
-    ctx.fillStyle = words[1];
-    ctx.fillText('wrong answer', x1 - 8, yl - 11);
-    ctx.fillStyle = soft;
-    ctx.fillText('time →', x1 - 8, h - 11);
-
-    // right margin: right answers a minute, for every height of the line
-    const mx0 = x1 + 12;
-    const mx1 = w - 10;
-    let rMin = Infinity;
-    let rMax = -Infinity;
-    curve.forEach(([, r]) => {
-      rMin = Math.min(rMin, r);
-      rMax = Math.max(rMax, r);
-    });
-    const rx = (r) => mx0 + ((r - rMin) / (rMax - rMin || 1)) * (mx1 - mx0);
-    ctx.beginPath();
-    ctx.moveTo(mx0, ey(A_MIN));
-    curve.forEach(([b, r]) => ctx.lineTo(rx(r), ey(b)));
-    ctx.lineTo(mx0, ey(A_MAX));
-    ctx.closePath();
-    ctx.globalAlpha = 0.09;
-    ctx.fillStyle = dark;
-    ctx.fill();
-    ctx.globalAlpha = 0.75;
-    ctx.beginPath();
-    curve.forEach(([b, r], i) => (i ? ctx.lineTo(rx(r), ey(b)) : ctx.moveTo(rx(r), ey(b))));
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = dark;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(mx1, ey(best), 6, 0, TAU);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = soft;
-    ctx.fillText('best', mx1 + 4, ey(best) - 15);
-    ctx.fillStyle = inks[0];
-    dot(rx(rate(a, model.drift)), yu, 4.5);
-  };
-
-  const out = {
-    acc: el('ddm-acc'), accT: el('ddm-acc-t'),
-    rt: el('ddm-rt'), rtT: el('ddm-rt-t'),
-    rr: el('ddm-rr'), rrT: el('ddm-rr-t'),
-  };
-  const report = () => {
-    const a = model.bound;
-    const v = model.drift;
-    const n = right + wrong;
-    out.accT.textContent = `theory ${(pRight(a, v) * 100).toFixed(1)}%`;
-    out.rtT.textContent = `theory ${meanTime(a, v).toFixed(2)} s`;
-    out.rrT.textContent = `theory ${rate(a, v).toFixed(1)} · peak ${rate(best, v).toFixed(1)}`;
-    if (n < 25) return;
-    const p = right / n;
-    const t = spent / n;
-    out.acc.textContent = `${(p * 100).toFixed(1)}%`;
-    out.rt.textContent = `${t.toFixed(2)} s`;
-    out.rr.textContent = perMinute(p, t).toFixed(1);
-  };
-
-  // Reduced motion: run the decisions all at once and show where they landed.
-  const still = () => {
-    reset();
-    for (let i = 0; i < 1500; i += 1) trial();
-    draw();
-    report();
-  };
-  // A setting moved: start the count again, and tell the cloud.
-  const restart = () => {
-    if (reduceMotion.matches) still();
-    else reset();
-    if (model.changed) model.changed();
-  };
-
-  const setBound = (next) => {
-    const to = clamp(next, A_MIN, A_MAX);
-    if (to === model.bound) return;
-    model.bound = to;
-    place();
-    restart();
-  };
-  const fromPointer = (e) => setBound(Math.abs(e.clientY - canvas.getBoundingClientRect().top - cy) / s);
-  plot.addEventListener('pointerdown', (e) => {
-    if (e.button) return;
-    // a finger on the plot scrolls the page; only the handle moves the line
-    if (e.pointerType === 'touch' && !grip.contains(e.target)) return;
-    e.preventDefault();
-    plot.setPointerCapture(e.pointerId);
-    grip.classList.add('is-held');
-    fromPointer(e);
-    const end = () => {
-      grip.classList.remove('is-held');
-      plot.removeEventListener('pointermove', fromPointer);
-      plot.removeEventListener('pointerup', end);
-      plot.removeEventListener('pointercancel', end);
-    };
-    plot.addEventListener('pointermove', fromPointer);
-    plot.addEventListener('pointerup', end);
-    plot.addEventListener('pointercancel', end);
-  });
-  grip.addEventListener('keydown', (e) => {
-    const nudge = { ArrowUp: 0.05, ArrowRight: 0.05, ArrowDown: -0.05, ArrowLeft: -0.05 }[e.key];
-    if (nudge) setBound(Math.round((model.bound + nudge) * 100) / 100);
-    else if (e.key === 'Home') setBound(A_MIN);
-    else if (e.key === 'End') setBound(A_MAX);
-    else return;
-    e.preventDefault();
-  });
-  dial.addEventListener('input', () => {
-    model.drift = Number(dial.value);
-    survey();
-    restart();
-  });
-
-  let raf = 0;
-  let visible = false;
-  let last = 0;
-  let told = 0;
-  const frame = (now) => {
-    // a frame can be stamped before the moment the loop was started
-    const dt = clamp((now - last) / 1000, 0, 0.05) * SPEED;
-    last = now;
-    if (dt > 0) {
-      advance(dt);
-      for (let i = 0; i < 6; i += 1) trial();
-    }
-    draw();
-    if (now - told > 180) {
-      report();
-      told = now;
-    }
-    if (visible) raf = requestAnimationFrame(frame);
-  };
-  survey();
-  new ResizeObserver(() => {
-    resize();
-    if (reduceMotion.matches) still();
-    else draw();
-  }).observe(canvas);
-  new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-    cancelAnimationFrame(raf);
-    if (visible && !reduceMotion.matches) {
-      last = performance.now();
-      raf = requestAnimationFrame(frame);
-    }
-  }).observe(canvas);
-  resize();
-  report();
-}
-
 /* ---------- The page: which form, where, and who is turning it ---------- */
 
 // Where the form sits for a section, in CSS pixels from the canvas center
@@ -1162,9 +890,11 @@ function start() {
       reprint(false);
     } else if (key === 'anagram') {
       const words = ['ANAGRAMS', 'ARS MAGNA'];
-      let i = 0;
-      go(key, { text: words[0] });
-      if (!reduceMotion.matches) {
+      if (reduceMotion.matches) {
+        go(key, { text: words.join('\n') }); // both at once, and nothing changes by itself
+      } else {
+        let i = 0;
+        go(key, { text: words[0] });
         swap = setInterval(() => {
           i = 1 - i;
           go(key, { text: words[i] });
@@ -1172,15 +902,10 @@ function start() {
       }
     } else if (key === 'name') {
       go(key, { text: 'RYAN KAMP' });
-    } else if (key === 'decisions') {
-      go(key, { drift: model.drift, bound: model.bound });
     } else {
       go(key);
     }
   };
-  // The instrument moved: reprint the decisions, at most once a frame.
-  let stale = false;
-  model.changed = () => { stale = true; };
   const sections = [...document.querySelectorAll('[data-form]')];
   let active = null;
   const spy = new IntersectionObserver((entries) => {
@@ -1248,24 +973,20 @@ function start() {
       slow = 0;
     }
     cloud.resize();
-    if (stale) {
-      stale = false;
-      if (current && current.key === 'decisions') go('decisions', { drift: model.drift, bound: model.bound }, true);
-    }
 
     if (current) {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       const { form, data } = current;
       const place = spot(section, w, h);
-      const scale = Math.min(place.room[0] / 2, (place.room[1] / 2) * data.aspect, 600);
+      const scale = Math.min(place.room[0] / 2, (place.room[1] / 2) * data.aspect, 600) * (form.fit || 1);
       const ease = calm || !view.set ? 1 : 1 - Math.exp(-dt * 3.4);
       view.set = true;
       view.cx += (place.cx - view.cx) * ease;
       view.cy += (place.cy - view.cy) * ease;
       view.scale += (scale - view.scale) * ease;
       view.width += (form.width - view.width) * ease;
-      view.gain += (form.gain - view.gain) * ease;
+      view.gain += ((data.gain || form.gain) - view.gain) * ease; // a recipe may know better than its table entry
 
       const settle = calm ? 1 : 1 - Math.exp(-dt * 2.6);
       if (!drag.on) {
@@ -1314,4 +1035,3 @@ function start() {
 console.log('%c OVERPRINT %c one cloud of splats, two inks. Try the "write your own" recipe.', 'background:#ff5a36;color:#17232b;font-weight:900', 'font-weight:600');
 
 start();
-decide();
