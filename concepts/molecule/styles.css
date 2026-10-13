@@ -255,6 +255,17 @@ h3.chalk {
   width: 100%;
   aspect-ratio: 1 / 0.86;
 }
+/* On a wide screen the first board fits the window: the stage takes what the words and
+   the two rows of the tray leave. */
+@media (min-width: 901px) {
+  .hero .stage-wrap {
+    aspect-ratio: auto;
+    height: clamp(300px, calc(100svh - 420px), 640px);
+  }
+  .hero h1.chalk {
+    font-size: clamp(3.4rem, min(9.5vw, 12.5svh), 8.4rem);
+  }
+}
 .stage {
   position: absolute;
   inset: 0;
@@ -576,7 +587,9 @@ button:disabled {
   color: var(--yellow);
   font-weight: 600;
 }
-#spell-in {
+#spell-in,
+#stock-find,
+#own-code {
   width: 100%;
   max-width: 20em;
   margin-top: 6px;
@@ -618,6 +631,141 @@ button:disabled {
   color: #8c948c;
   font-size: 0.82em;
   max-width: 70em;
+}
+
+/* ---- The stockroom: a board that opens over the hall ---- */
+
+.door {
+  background: #2b2e33;
+  color: var(--chalk);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(239, 236, 226, 0.4);
+}
+.hero.dropping::after {
+  content: "Drop it on the board";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.4rem, 4vw, 2.6rem);
+  font-weight: 700;
+  font-variation-settings: var(--loose);
+  color: var(--yellow);
+  background: rgba(28, 37, 38, 0.86);
+  outline: 4px dashed var(--yellow);
+  outline-offset: -18px;
+  pointer-events: none;
+}
+.stockroom {
+  width: min(1120px, calc(100vw - 20px));
+  max-height: calc(100dvh - 20px);
+  padding: clamp(16px, 3vw, 40px);
+  color: var(--chalk);
+  border: clamp(6px, 0.9vw, 12px) solid var(--wood);
+  border-image: linear-gradient(175deg, #8d6441, var(--wood-dark) 55%, #6d4a2d) 1;
+  background:
+    radial-gradient(60% 40% at 18% 12%, rgba(255, 255, 255, 0.05), transparent 70%),
+    linear-gradient(180deg, var(--slate-hi), var(--slate) 30%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  overscroll-behavior: contain;
+}
+.stockroom::backdrop {
+  background: rgba(6, 10, 10, 0.74);
+}
+.stock-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+}
+.stockroom h2.chalk {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+#stock-find {
+  font-size: 1.3em;
+}
+#stock-list section {
+  margin-top: 1.5em;
+}
+#stock-list h3 {
+  margin: 0 0 0.55em;
+  font-size: 1.12em;
+  color: var(--yellow);
+  font-variation-settings: var(--loose);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.6em, 1fr));
+  gap: 8px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  padding: 0.4em 0.7em;
+  min-height: 56px;
+  font-size: 0.95em;
+  line-height: 1.2;
+  text-align: left;
+}
+.card small {
+  font-size: 0.78em;
+  font-weight: 500;
+  color: #5d584c;
+}
+.card[hidden],
+#stock-list section[hidden] {
+  display: none;
+}
+.own {
+  margin-top: 2em;
+  padding-top: 1.2em;
+  border-top: 2px dashed rgba(239, 236, 226, 0.32);
+}
+.own-ways {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 44px);
+}
+.own .spell-label {
+  margin-top: 0.4em;
+}
+.own-row {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+#own-code {
+  width: 6.5em;
+  font-size: 1.3em;
+  text-transform: uppercase;
+}
+#own-file {
+  display: block;
+  max-width: 100%;
+  margin-top: 10px;
+  font: inherit;
+  color: var(--chalk-dim);
+}
+#own-file::file-selector-button {
+  margin-right: 12px;
+  padding: 0.42em 0.95em;
+  min-height: 44px;
+  font: inherit;
+  font-weight: 600;
+  color: #23201a;
+  background: var(--chalk);
+  border: 0;
+  border-radius: 4px 6px 5px 7px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+#own-status:empty {
+  display: none;
 }
 
 /* ---- Narrower rooms ---- */
@@ -663,7 +811,8 @@ button:disabled {
   .cols,
   .cols.even,
   .pair,
-  .real {
+  .real,
+  .own-ways {
     grid-template-columns: minmax(0, 1fr);
   }
   .eraser {

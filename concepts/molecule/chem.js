@@ -56,11 +56,70 @@ export function chalk(symbol, lift = 0.22) {
   return [m(r), m(g), m(b)];
 }
 
-// van der Waals radii in ångströms (Bondi 1964) and covalent radii (Cordero et al. 2008).
-export const VDW = { H: 1.2, C: 1.7, N: 1.55, O: 1.52, S: 1.8 };
-export const COVALENT = { H: 0.31, C: 0.76, N: 0.71, O: 0.66, S: 1.05 };
-// Standard atomic weights, to two places.
-export const WEIGHT = { H: 1.008, C: 12.011, N: 14.007, O: 15.999, S: 32.06 };
+// van der Waals radii in ångströms: Bondi (1964), and Mantina et al. (2009) for the
+// main-group elements Bondi left out, the same two tables Splashery's molecule viewer uses.
+// An element in neither (iron, cobalt) is drawn at 2.0 Å.
+// prettier-ignore
+export const VDW = {
+  H: 1.2, He: 1.4, C: 1.7, N: 1.55, O: 1.52, F: 1.47, Ne: 1.54, Si: 2.1, P: 1.8, S: 1.8, Cl: 1.75, Ar: 1.88,
+  As: 1.85, Se: 1.9, Br: 1.85, Kr: 2.02, Te: 2.06, I: 1.98, Xe: 2.16, Li: 1.82, Na: 2.27, Mg: 1.73, K: 2.75,
+  Ni: 1.63, Cu: 1.4, Zn: 1.39, Ga: 1.87, Pd: 1.63, Ag: 1.72, Cd: 1.58, In: 1.93, Sn: 2.17, Pt: 1.72, Au: 1.66,
+  Hg: 1.55, Tl: 1.96, Pb: 2.02, U: 1.86, Be: 1.53, B: 1.92, Al: 1.84, Ca: 2.31, Ge: 2.11, Rb: 3.03, Sr: 2.49,
+  Sb: 2.06, Cs: 3.43, Ba: 2.68, Bi: 2.07,
+};
+export const DEFAULT_VDW = 2.0;
+export const vdw = (el) => VDW[el] ?? DEFAULT_VDW;
+
+// Covalent radii (after Cordero et al. 2008), used only to find bonds by distance in files
+// that list none.
+// prettier-ignore
+export const COVALENT = {
+  H: 0.31, B: 0.84, C: 0.76, N: 0.71, O: 0.66, F: 0.57, Si: 1.11, P: 1.07, S: 1.05, Cl: 1.02, Se: 1.2,
+  Br: 1.2, I: 1.39,
+};
+// Metals take no bonds by distance: a file's own bond list is the only word on them.
+export const METALS = new Set("Li Na K Rb Cs Be Mg Ca Sr Ba Al Sc Ti V Cr Mn Fe Co Ni Cu Zn Mo Ag Cd Pt Au Hg Pb".split(" "));
+
+// Standard atomic weights, abridged.
+// prettier-ignore
+export const WEIGHT = {
+  H: 1.008, Li: 6.94, B: 10.81, C: 12.011, N: 14.007, O: 15.999, F: 18.998, Na: 22.99, Mg: 24.305, Al: 26.982,
+  Si: 28.085, P: 30.974, S: 32.06, Cl: 35.45, K: 39.098, Ca: 40.078, Mn: 54.938, Fe: 55.845, Co: 58.933,
+  Ni: 58.693, Cu: 63.546, Zn: 65.38, Se: 78.971, Br: 79.904, I: 126.904, Pt: 195.084,
+};
+
+// Bonds by distance: two atoms closer than their covalent radii plus 0.4 Å. (At 0.45 the two
+// phosphorus atoms either side of a bridging oxygen in ATP count as bonded; tools/verify.mjs
+// holds this rule to the bond lists of every shelf file.) A grid of cells keeps it quick
+// for a protein. Returns [i, j, 1] with i < j.
+export function bondsByDistance(atoms) {
+  const cell = 2.7;
+  const grid = new Map();
+  const key = (p) => `${Math.floor(p[0] / cell)},${Math.floor(p[1] / cell)},${Math.floor(p[2] / cell)}`;
+  atoms.forEach((a, i) => {
+    const k = key(a.p);
+    if (!grid.has(k)) grid.set(k, []);
+    grid.get(k).push(i);
+  });
+  const bonds = [];
+  atoms.forEach((a, i) => {
+    const ra = COVALENT[a.el];
+    if (ra === undefined || METALS.has(a.el)) return;
+    const [cx, cy, cz] = a.p.map((v) => Math.floor(v / cell));
+    for (let x = cx - 1; x <= cx + 1; x++)
+      for (let y = cy - 1; y <= cy + 1; y++)
+        for (let z = cz - 1; z <= cz + 1; z++)
+          for (const j of grid.get(`${x},${y},${z}`) ?? []) {
+            if (j <= i) continue;
+            const b = atoms[j];
+            const rb = COVALENT[b.el];
+            if (rb === undefined || METALS.has(b.el) || (a.el === "H" && b.el === "H")) continue;
+            const d = distance(a.p, b.p);
+            if (d > 0.4 && d < ra + rb + 0.4) bonds.push([i, j, 1]);
+          }
+  });
+  return bonds;
+}
 
 // ---- Measuring ------------------------------------------------------------------------
 
@@ -287,4 +346,118 @@ export function sampleOrbital(n, l, m, count, seed = 1) {
     extent = Math.max(extent, r);
   }
   return { points, extent, total: (total * rmax) / steps };
+}
+
+// ---- Poses ---------------------------------------------------------------------------------
+
+// The principal axes of a set of points: the rows of a rotation that lays the longest
+// spread along x, the next along y and the thinnest along z (toward the room), so a flat
+// molecule lies flat on the board. Jacobi rotations on the 3 x 3 covariance.
+export function flatPose(points) {
+  const n = points.length || 1;
+  const c = [0, 1, 2].map((k) => points.reduce((s, p) => s + p[k], 0) / n);
+  const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; // prettier-ignore
+  for (const p of points)
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) A[i][j] += ((p[i] - c[i]) * (p[j] - c[j])) / n;
+  const V = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]; // prettier-ignore
+  for (let sweep = 0; sweep < 24; sweep++) {
+    for (const [p, q] of [[0, 1], [0, 2], [1, 2]]) { // prettier-ignore
+      if (Math.abs(A[p][q]) < 1e-12) continue;
+      const th = 0.5 * Math.atan2(2 * A[p][q], A[q][q] - A[p][p]);
+      const [co, si] = [Math.cos(th), Math.sin(th)];
+      for (let k = 0; k < 3; k++) {
+        const [akp, akq] = [A[k][p], A[k][q]];
+        A[k][p] = co * akp - si * akq;
+        A[k][q] = si * akp + co * akq;
+      }
+      for (let k = 0; k < 3; k++) {
+        const [apk, aqk] = [A[p][k], A[q][k]];
+        A[p][k] = co * apk - si * aqk;
+        A[q][k] = si * apk + co * aqk;
+      }
+      for (let k = 0; k < 3; k++) {
+        const [vkp, vkq] = [V[k][p], V[k][q]];
+        V[k][p] = co * vkp - si * vkq;
+        V[k][q] = si * vkp + co * vkq;
+      }
+    }
+  }
+  const order = [0, 1, 2].sort((i, j) => A[j][j] - A[i][i]);
+  const x = order.map(() => 0).map((_, k) => V[k][order[0]]);
+  const y = [0, 1, 2].map((k) => V[k][order[1]]);
+  const z = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
+  return { rot: [...x, ...y, ...z], spread: order.map((i) => Math.sqrt(Math.max(0, A[i][i]))) };
+}
+
+// Rotation matrices (row-major, 9 numbers) to unit quaternions and back, and the arc between two.
+export function quatFromRot(m) {
+  const t = m[0] + m[4] + m[8];
+  let q;
+  if (t > 0) {
+    const s = Math.sqrt(t + 1) * 2;
+    q = [(m[7] - m[5]) / s, (m[2] - m[6]) / s, (m[3] - m[1]) / s, s / 4];
+  } else if (m[0] > m[4] && m[0] > m[8]) {
+    const s = Math.sqrt(1 + m[0] - m[4] - m[8]) * 2;
+    q = [s / 4, (m[1] + m[3]) / s, (m[2] + m[6]) / s, (m[7] - m[5]) / s];
+  } else if (m[4] > m[8]) {
+    const s = Math.sqrt(1 + m[4] - m[0] - m[8]) * 2;
+    q = [(m[1] + m[3]) / s, s / 4, (m[5] + m[7]) / s, (m[2] - m[6]) / s];
+  } else {
+    const s = Math.sqrt(1 + m[8] - m[0] - m[4]) * 2;
+    q = [(m[2] + m[6]) / s, (m[5] + m[7]) / s, s / 4, (m[3] - m[1]) / s];
+  }
+  return q;
+}
+export function rotFromQuat([x, y, z, w]) {
+  return [
+    1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w),
+    2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w),
+    2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y),
+  ]; // prettier-ignore
+}
+export function slerp(a, b, t) {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+  const s = d < 0 ? -1 : 1;
+  d = Math.min(1, Math.abs(d));
+  const th = Math.acos(d);
+  const [ka, kb] = th < 1e-5 ? [1 - t, t] : [Math.sin((1 - t) * th) / Math.sin(th), Math.sin(t * th) / Math.sin(th)];
+  const q = a.map((v, i) => ka * v + kb * s * b[i]);
+  const n = Math.hypot(...q) || 1;
+  return q.map((v) => v / n);
+}
+
+// ---- The skeletal formula ---------------------------------------------------------------------
+
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+export const sub = (n) => String(n).replace(/\d/g, (d) => SUB[d]);
+
+// How a chemist writes each atom of a small molecule. A carbon is a corner with nothing
+// written; any other element is its symbol with its hydrogens beside it; a hydrogen is
+// folded into the atom it sits on. A molecule of three heavy atoms or fewer is written out
+// in full, carbons and all. For each atom: { show, text, h, q, heavy, lone }.
+export function skeleton(atoms, bonds) {
+  const near = atoms.map(() => []);
+  for (const [i, j] of bonds) (near[i].push(j), near[j].push(i));
+  const full = atoms.filter((a) => a.el !== "H").length <= 3;
+  // Charges are written only where the file accounts for all of them. The dictionary leaves
+  // a metal's own charge blank (heme's iron, cisplatin's platinum) while charging the atoms
+  // around it, and half of that story would mislead.
+  const charged = !atoms.some((a) => METALS.has(a.el));
+  return atoms.map((a, i) => {
+    const heavy = near[i].filter((j) => atoms[j].el !== "H");
+    const h = near[i].length - heavy.length;
+    if (a.el === "H") {
+      // Written only when it sits on no heavier atom: H–H, or a hydrogen on its own.
+      const show = heavy.length === 0;
+      return { show, text: show ? "H" : "", h: 0, q: "", heavy: near[i] };
+    }
+    const c = charged ? a.charge || 0 : 0;
+    const q = c ? (Math.abs(c) > 1 ? Math.abs(c) : "") + (c > 0 ? "+" : "−") : "";
+    const hs = h ? "H" + (h > 1 ? sub(h) : "") : "";
+    if (!heavy.length) {
+      const first = ["C", "N", "P", "Si", "B"].includes(a.el);
+      return { show: true, text: a.el, lone: first ? a.el + hs : hs + a.el, h, q, heavy };
+    }
+    return { show: true, text: a.el !== "C" || c !== 0 || full ? a.el : "", h, q, heavy };
+  });
 }

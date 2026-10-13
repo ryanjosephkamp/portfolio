@@ -66,18 +66,19 @@
       <div class="tray" role="group" aria-label="Molecule controls">
         <div class="pick" role="group" aria-label="Molecule">
           <span class="tray-label">On the board</span>
-          <button type="button" data-mol="caffeine" aria-pressed="true">Caffeine</button>
-          <button type="button" data-mol="dopamine" aria-pressed="false">Dopamine</button>
-          <button type="button" data-mol="serotonin" aria-pressed="false">Serotonin</button>
-          <button type="button" data-mol="crambin" aria-pressed="false">Crambin</button>
+          <button type="button" data-mol="CFF" aria-pressed="true">Caffeine</button>
+          <button type="button" data-mol="LDP" aria-pressed="false">Dopamine</button>
+          <button type="button" data-mol="SRO" aria-pressed="false">Serotonin</button>
+          <button type="button" data-mol="1CRN" aria-pressed="false">Crambin</button>
+          <button type="button" id="hero-extra" aria-pressed="true" hidden></button>
+          <button type="button" class="door" data-open-stockroom hidden>The stockroom: <span data-stock-count>about 150</span> more</button>
+          <button type="button" class="door" data-open-stockroom="own" hidden>Your own</button>
         </div>
         <div class="pick" role="group" aria-label="Drawn as">
           <span class="tray-label">Drawn as</span>
           <button type="button" data-mode="sticks" aria-pressed="true">Balls and sticks</button>
           <button type="button" data-mode="fill" aria-pressed="false">Space-filling</button>
-          <button type="button" data-mode="cartoon" aria-pressed="false" disabled title="A cartoon needs a chain: put crambin on the board">
-            Cartoon
-          </button>
+          <button type="button" data-mode="short" aria-pressed="false">Skeletal formula</button>
         </div>
         <button type="button" class="eraser" id="hero-erase" aria-label="Erase the measurement"><span aria-hidden="true"></span>Erase</button>
       </div>
@@ -433,13 +434,58 @@
 
     <footer class="foot">
       <p>
-        Coordinates: the Protein Data Bank's chemical components CFF, LDP and SRO (ideal coordinates) and entry 1CRN,
-        public domain data from the wwPDB. Atom colors are the CPK colors; atom sizes are Bondi's van der Waals radii.
+        Coordinates: chemical components from the Protein Data Bank's dictionary, at their ideal coordinates, and
+        eleven PDB entries, all public domain data from the wwPDB, copied here unchanged. Atom colors are the CPK
+        colors; atom sizes are van der Waals radii from Bondi and from Mantina and colleagues.
         Lattice constants are the ones Splashery's unit cells use. Set in Shantell Sans, under the SIL Open Font
         License.
       </p>
       <p>Ryan Kamp · Cincinnati, Ohio · <a href="#top">Back to the first board</a></p>
     </footer>
+
+    <dialog id="stockroom" class="stockroom" aria-labelledby="stock-h">
+      <div class="stock-top">
+        <div>
+          <p class="eyebrow">Behind the lecture hall</p>
+          <h2 class="chalk" id="stock-h">The stockroom</h2>
+        </div>
+        <form method="dialog"><button class="stock-close">Close</button></form>
+      </div>
+      <p class="meta">
+        Every small molecule here is a chemical component from the Protein Data Bank, at its ideal coordinates. Every
+        protein and nucleic acid is a PDB entry. Pick one and it goes on the first board.
+      </p>
+      <label class="spell-label" for="stock-find">Find one by name, formula or code</label>
+      <input id="stock-find" type="search" autocomplete="off" spellcheck="false" placeholder="aspirin" />
+      <p id="stock-none" class="meta" hidden>Nothing on the shelf by that name. A Protein Data Bank code, below, may find it.</p>
+      <div id="stock-list"></div>
+
+      <section class="own" aria-labelledby="own-h">
+        <h3 class="chalk" id="own-h">Bring your own</h3>
+        <div class="own-ways">
+          <form id="own-form">
+            <label class="spell-label" for="own-code">A Protein Data Bank code</label>
+            <div class="own-row">
+              <input id="own-code" type="text" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="4HHB" />
+              <button type="submit">Fetch it</button>
+            </div>
+            <p class="meta">
+              Four characters name an entry: 4HHB is human hemoglobin. Up to three name a chemical component: GTP.
+              This asks rcsb.org for that one file.
+            </p>
+          </form>
+          <div>
+            <label class="spell-label" for="own-file">A file of your own</label>
+            <input id="own-file" type="file" accept=".pdb,.ent,.cif,.mmcif,.sdf,.sd,.mol,.xyz" />
+            <p class="meta">
+              PDB, mmCIF, SDF, MOL or XYZ. It is read here, on your device, and sent nowhere. You can also drop a file
+              on the first board.
+            </p>
+          </div>
+        </div>
+        <p id="own-status" class="readout" role="status" aria-live="polite"></p>
+      </section>
+    </dialog>
 
     <script type="module" src="main.js"></script>
   </body>

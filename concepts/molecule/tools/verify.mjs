@@ -1,9 +1,10 @@
-// Checks everything the page computes, each a second way.
+// Checks everything the page computes or reads, each a second way.
 // Run: node concepts/molecule/tools/verify.mjs   (prints one line per check, exits 1 on a failure)
 
 import { readFileSync } from "node:fs";
 import * as chem from "../chem.js";
-import { MOLECULES } from "../data.js";
+import { parse } from "../formats.js";
+import { SHELF, ENTRIES, FIRST } from "../data.js";
 
 let failed = 0;
 const check = (name, ok, detail = "") => {
@@ -11,20 +12,25 @@ const check = (name, ok, detail = "") => {
   console.log(`${ok ? "ok  " : "FAIL"} ${name}${detail ? "  " + detail : ""}`);
 };
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
+const here = (rel) => new URL(rel, import.meta.url);
+const text = (rel) => readFileSync(here(rel), "utf8");
+const record = JSON.parse(text("./shelf.json"));
+const dictionary = new Map(record.groups.flatMap((g) => g.items).map((it) => [it.id, it]));
+const small = SHELF.flatMap((g) => g.items);
 
-// 1. Spelling in element symbols: the page's search against brute force, which builds
-//    every run of symbols up to the word's length and keeps the ones that read as the word.
+// ---- 1. Spelling in element symbols: the page's search against brute force, which builds
+//         every run of symbols up to the word's length and keeps the ones that read as the word.
 const symbols = chem.ELEMENTS.map(([s]) => s);
 check("118 elements, no symbol twice", symbols.length === 118 && new Set(symbols).size === 118);
 function brute(word) {
   const w = word.toLowerCase();
   const out = [];
-  const grow = (run, text) => {
-    if (text === w) out.push(run);
-    if (text.length >= w.length) return;
+  const grow = (run, t) => {
+    if (t === w) out.push(run);
+    if (t.length >= w.length) return;
     for (const s of symbols) {
-      const t = text + s.toLowerCase();
-      if (w.startsWith(t)) grow([...run, s], t);
+      const next = t + s.toLowerCase();
+      if (w.startsWith(next)) grow([...run, s], next);
     }
   };
   grow([], "");
@@ -32,53 +38,91 @@ function brute(word) {
 }
 const WORDS = "ryan kamp joseph splashery grooph reword nerd resmon link meteor english openlist ars magna aqrobat amordle molecule caffeine dopamine serotonin crambin chalk slate cincinnati".split(" "); // prettier-ignore
 let same = true;
-const spelled = [];
-for (const w of WORDS) {
+for (const w of [...WORDS, ...small.map((it) => it.name.replace(/[^a-z]/gi, "")).filter((n) => n.length <= 16)]) {
   const a = chem.spellings(w).map((s) => s.join(" ")).sort(); // prettier-ignore
   const b = brute(w).map((s) => s.join(" ")).sort(); // prettier-ignore
   if (a.join("|") !== b.join("|")) same = false;
-  if (a.length) spelled.push(`${w} = ${a.join(" or ")}`);
 }
-check(`spellings match brute force for ${WORDS.length} words`, same);
-console.log("     " + spelled.join("\n     "));
+check("spellings match brute force for the page's words and the shelf's names", same);
 const one = (w, s) => {
   const got = chem.spellings(w);
   return got.length === 1 && got[0].join(" ") === s;
 };
 check("KAMP is K Am P, the only way", one("kamp", "K Am P"));
 check("SPLASHERY is S P La S H Er Y, the only way", one("splashery", "S P La S H Er Y"));
+check("CAFFEINE is Ca F Fe I Ne, the only way", one("caffeine", "Ca F Fe I Ne"));
 check("RESMON has two ways: Re S Mo N and Re Sm O N", chem.spellings("resmon").map((s) => s.join(" ")).sort().join("|") === "Re S Mo N|Re Sm O N"); // prettier-ignore
 check("RYAN has no spelling and stops at its first letter", chem.spellings("ryan").length === 0 && chem.stuckAt("ryan") === 0); // prettier-ignore
 
-// 2. Measuring: every pair of atoms in every molecule, against the same distance worked
-//    out from the downloaded file's own text (a different parser, uncentered coordinates).
-const src = (name) => readFileSync(new URL(`./src/${name}`, import.meta.url), "utf8").split(/\r?\n/);
-function rawSdf(name) {
-  const lines = src(name);
-  const n = parseInt(lines[3].slice(0, 3), 10);
-  return lines.slice(4, 4 + n).map((l) => [l.slice(0, 10), l.slice(10, 20), l.slice(20, 30)].map(Number));
-}
-const rawPdb = (name) =>
-  src(name)
-    .filter((l) => /^ATOM/.test(l) && (l[16] === " " || l[16] === "A"))
-    .map((l) => [l.slice(30, 38), l.slice(38, 46), l.slice(46, 54)].map(Number));
-const RAW = { caffeine: rawSdf("CFF.sdf"), dopamine: rawSdf("LDP.sdf"), serotonin: rawSdf("SRO.sdf"), crambin: rawPdb("1CRN.pdb") }; // prettier-ignore
-for (const [key, m] of Object.entries(MOLECULES)) {
-  const raw = RAW[key];
-  let worst = 0;
-  let pairs = 0;
-  for (let i = 0; i < raw.length; i++)
-    for (let j = i + 1; j < raw.length; j++) {
-      const d1 = chem.distance(m.atoms[i].slice(1), m.atoms[j].slice(1));
-      const d2 = Math.sqrt((raw[i][0] - raw[j][0]) ** 2 + (raw[i][1] - raw[j][1]) ** 2 + (raw[i][2] - raw[j][2]) ** 2);
+// ---- 2. The shelf's small molecules: every file through the page's reader, against the
+//         file read a second way and against what the PDB's dictionary says of it.
+const hill = (els) => chem.formula(els).parts.map(([e, n]) => e + (n > 1 ? n : "")).join(" "); // prettier-ignore
+const pairSet = (bonds) => new Set(bonds.map(([a, b]) => (a < b ? `${a},${b}` : `${b},${a}`)));
+let worst = 0;
+let pairs = 0;
+let massWorst = 0;
+const wrong = { formula: [], mass: [], bonds: [], hydrogens: [], charge: [], pose: [], stacked: [] };
+let metalFiles = 0;
+for (const it of small) {
+  const raw = text(`../assets/molecules/${it.id}.sdf`);
+  const m = parse(raw, `${it.id}.sdf`);
+  // The same atoms by another route: every number on the atom lines, split on spaces.
+  const lines = raw.split(/\r?\n/);
+  const n = parseInt(lines[3].trim().split(/\s+/)[0].slice(0, 3), 10);
+  const plain = lines.slice(4, 4 + m.atoms.length).map((l) => l.trim().split(/\s+/).slice(0, 3).map(Number));
+  if (plain.length !== m.atoms.length || (n !== m.atoms.length && String(n).length < 3)) wrong.formula.push(`${it.id} (atom count)`);
+  for (let i = 0; i < plain.length; i++)
+    for (let j = i + 1; j < plain.length; j++) {
+      const d1 = chem.distance(m.atoms[i].p, m.atoms[j].p);
+      const d2 = Math.sqrt((plain[i][0] - plain[j][0]) ** 2 + (plain[i][1] - plain[j][1]) ** 2 + (plain[i][2] - plain[j][2]) ** 2);
       worst = Math.max(worst, Math.abs(d1 - d2));
       pairs++;
     }
-  check(`${key}: ${pairs} distances agree with the source file`, raw.length === m.atoms.length && worst < 0.003, `worst ${worst.toFixed(4)} Å`); // prettier-ignore
+  // No two atoms on top of each other: the dictionary writes every atom at the origin when it
+  // has no ideal coordinates, and such a file must not be on the shelf.
+  let closest = Infinity;
+  for (let i = 0; i < m.atoms.length; i++) for (let j = i + 1; j < m.atoms.length; j++) closest = Math.min(closest, chem.distance(m.atoms[i].p, m.atoms[j].p)); // prettier-ignore
+  if (closest < 0.6) wrong.stacked.push(it.id);
+  const dict = dictionary.get(it.id);
+  const f = chem.formula(m.atoms.map((a) => a.el));
+  if (hill(m.atoms.map((a) => a.el)) !== dict.formula) wrong.formula.push(it.id);
+  massWorst = Math.max(massWorst, Math.abs(f.mass - dict.weight));
+  // The dictionary's weights and this page's differ in the fifth figure; over the 181 atoms
+  // of cyanocobalamin that comes to 0.023.
+  if (!near(f.mass, dict.weight, Math.max(0.02, dict.weight * 2.5e-5))) wrong.mass.push(`${it.id} ${f.mass.toFixed(3)} vs ${dict.weight}`);
+  // Bonds found by distance alone must be the bonds the file lists (a metal's are the file's to say).
+  const metal = m.atoms.some((a) => chem.METALS.has(a.el));
+  if (metal) metalFiles++;
+  else {
+    const a = pairSet(m.bonds);
+    const b = pairSet(chem.bondsByDistance(m.atoms));
+    if (a.size !== b.size || [...a].some((k) => !b.has(k))) wrong.bonds.push(it.id);
+    if (m.atoms.reduce((s, x) => s + (x.charge || 0), 0) !== dict.charge) wrong.charge.push(it.id);
+  }
+  // The skeletal formula: every hydrogen is written exactly once, on an atom or on its own.
+  const sk = chem.skeleton(m.atoms, m.bonds);
+  const written = sk.reduce((s, x, i) => s + (m.atoms[i].el === "H" ? (x.show ? 1 : 0) : x.h), 0);
+  const shown = sk.filter((x) => x.show).length;
+  const heavy = m.atoms.filter((x) => x.el !== "H").length;
+  if (written !== m.atoms.filter((x) => x.el === "H").length || shown < heavy) wrong.hydrogens.push(it.id);
+  // The flat pose is a proper rotation, with the thinnest spread toward the room.
+  const { rot: r, spread } = chem.flatPose(m.atoms.map((x) => x.p));
+  const det = r[0] * (r[4] * r[8] - r[5] * r[7]) - r[1] * (r[3] * r[8] - r[5] * r[6]) + r[2] * (r[3] * r[7] - r[4] * r[6]);
+  if (!near(det, 1, 1e-9) || spread[0] + 1e-9 < spread[1] || spread[1] + 1e-9 < spread[2]) wrong.pose.push(it.id);
 }
+const N = small.length;
+check(`${N} small molecules: ${pairs.toLocaleString("en")} distances agree with a second reading of each file`, worst < 1e-9, `worst ${worst.toExponential(1)} Å`); // prettier-ignore
+check(`${N} files hold real coordinates: no two atoms within 0.6 Å`, !wrong.stacked.length, wrong.stacked.join(" "));
+check(`${N} formulas match the dictionary's`, !wrong.formula.length, wrong.formula.join(" "));
+check(`${N} molar masses within 0.02 g/mol of the dictionary's (25 parts in a million for the largest)`, !wrong.mass.length, wrong.mass.join("; ") || `worst ${massWorst.toFixed(4)}`); // prettier-ignore
+check(`${N - metalFiles} metal-free molecules: bonds found by distance are exactly the bonds each file lists`, !wrong.bonds.length, wrong.bonds.join(" ")); // prettier-ignore
+check(`${N - metalFiles} metal-free molecules: the charges add up to the dictionary's`, !wrong.charge.length, wrong.charge.join(" "));
+check(`${N} skeletal formulas write every hydrogen exactly once`, !wrong.hydrogens.length, wrong.hydrogens.join(" "));
+check(`${N} flat poses are proper rotations, thinnest side toward the room`, !wrong.pose.length, wrong.pose.join(" "));
 
-// 3. Angles: caffeine is flat, so the angles inside its five-ring must add to 540° and
-//    inside its six-ring to 720°. Rings are found from the bonds, not typed in.
+// ---- 3. Caffeine, by hand: its formula, its mass, and angles that must add up because it is flat.
+const caffeine = parse(FIRST.text, "first.sdf");
+check("the first molecule is caffeine's own file, unchanged", FIRST.text === text("../assets/molecules/CFF.sdf"));
 function rings(m, size) {
   const adj = m.atoms.map(() => []);
   for (const [a, b] of m.bonds) (adj[a].push(b), adj[b].push(a));
@@ -93,18 +137,63 @@ function rings(m, size) {
   m.atoms.forEach((_, i) => walk([i]));
   return [...found.values()];
 }
-const P = (m, i) => m.atoms[i].slice(1);
 for (const [size, sum] of [[5, 540], [6, 720]]) { // prettier-ignore
-  const rs = rings(MOLECULES.caffeine, size);
-  const total = rs[0].reduce((s, b, k) => s + chem.angle(P(MOLECULES.caffeine, rs[0][(k + size - 1) % size]), P(MOLECULES.caffeine, b), P(MOLECULES.caffeine, rs[0][(k + 1) % size])), 0); // prettier-ignore
+  const rs = rings(caffeine, size);
+  const P = (i) => caffeine.atoms[i].p;
+  const total = rs[0].reduce((s, b, k) => s + chem.angle(P(rs[0][(k + size - 1) % size]), P(b), P(rs[0][(k + 1) % size])), 0);
   check(`caffeine: one ${size}-ring, its angles add to ${sum}°`, rs.length === 1 && near(total, sum, 0.05), total.toFixed(3));
 }
-const f = chem.formula(MOLECULES.caffeine.atoms.map((a) => a[0]));
-check("caffeine is C8 H10 N4 O2, 194.19 g/mol", f.parts.map((p) => p.join("")).join(" ") === "C8 H10 N4 O2" && near(f.mass, 194.19, 0.01), f.mass.toFixed(3)); // prettier-ignore
-check("crambin: 327 atoms and a trace of 46 residues", MOLECULES.crambin.atoms.length === 327 && MOLECULES.crambin.trace.length === 46); // prettier-ignore
+const cf = chem.formula(caffeine.atoms.map((a) => a.el));
+check("caffeine is C8 H10 N4 O2, 194.19 g/mol", hill(caffeine.atoms.map((a) => a.el)) === "C8 H10 N4 O2" && near(cf.mass, 194.19, 0.01), cf.mass.toFixed(3)); // prettier-ignore
+const flat = chem.flatPose(caffeine.atoms.filter((a) => a.el !== "H").map((a) => a.p));
+check("caffeine's heavy atoms lie flat: no spread toward the room", flat.spread[2] < 0.01, `${flat.spread[2].toFixed(4)} Å`);
+const csk = chem.skeleton(caffeine.atoms, caffeine.bonds);
+check("caffeine's skeletal formula writes four N and two O, and no carbon", csk.filter((s) => s.show && s.text).map((s) => s.text).sort().join("") === "NNNNOO"); // prettier-ignore
 
-// 4. Unit cells: every atom inside the cell has the right number of nearest neighbors at
-//    the distance the lattice constant gives, counted over a 3 x 3 x 3 block built here.
+// ---- 4. The entries: the PDB reader against a second count of each file, and the mmCIF
+//         reader against the PDB reader on the same structure.
+for (const e of ENTRIES) {
+  const raw = text(`../assets/molecules/${e.id}.pdb`);
+  const m = parse(raw, `${e.id}.pdb`);
+  let count = 0;
+  let waters = 0;
+  let alt = null;
+  for (const l of raw.split("\n")) {
+    if (l.startsWith("ENDMDL")) break;
+    if (!/^(ATOM  |HETATM)/.test(l)) continue;
+    if (/^(HOH|DOD|WAT)$/.test(l.slice(17, 20).trim())) waters++;
+    else if (l[16] === " " || (alt ??= l[16]) === l[16]) count++;
+  }
+  const traced = m.traces.reduce((s, t) => s + t.length, 0);
+  check(`${e.id} ${e.name}: ${m.atoms.length} atoms, ${waters} waters left out, ${traced} residues traced in ${m.traces.length} stretch${m.traces.length === 1 ? "" : "es"}`, m.atoms.length === count && m.waters === waters && m.atoms.length === e.atoms && traced > 0); // prettier-ignore
+}
+const crnPdb = parse(text("../assets/molecules/1CRN.pdb"), "1CRN.pdb");
+const crnCif = parse(text("./fixtures/1CRN.cif"), "1CRN.cif");
+let cifWorst = 0;
+crnPdb.atoms.forEach((a, i) => (cifWorst = Math.max(cifWorst, chem.distance(a.p, crnCif.atoms[i]?.p ?? [9e9, 0, 0]))));
+const ssOf = (m) => m.traces.map((t) => t.map((p) => p.ss).join("")).join("/");
+check("crambin as mmCIF and as PDB: the same 327 atoms, bonds, and helices and strands", crnCif.atoms.length === 327 && cifWorst < 0.0011 && crnCif.bonds.length === crnPdb.bonds.length && ssOf(crnCif) === ssOf(crnPdb), `worst ${cifWorst.toFixed(4)} Å, ${ssOf(crnPdb)}`); // prettier-ignore
+check("crambin: 46 residues, two helices and two strands", /^s+c+h+c+h+c*s+c+$/.test(ssOf(crnPdb)) && ssOf(crnPdb).length === 46);
+const cffCif = parse(text("./fixtures/CFF.cif"), "CFF.cif");
+let compWorst = 0;
+caffeine.atoms.forEach((a, i) => (compWorst = Math.max(compWorst, chem.distance(a.p, cffCif.atoms[i].p))));
+const sameBonds = (a, b) => a.size === b.size && [...a].every((k) => b.has(k));
+check("caffeine as the dictionary's own mmCIF and as SDF: the same atoms and the same bonds", compWorst < 0.0011 && sameBonds(pairSet(cffCif.bonds), pairSet(caffeine.bonds)) && cffCif.title === "CAFFEINE"); // prettier-ignore
+const asXyz = `${caffeine.atoms.length}\ncaffeine\n${caffeine.atoms.map((a) => `${a.el} ${a.p.join(" ")}`).join("\n")}\n`;
+const fromXyz = parse(asXyz, "caffeine.xyz");
+check("caffeine written out as XYZ and read back: the same atoms, and the same bonds found by distance", fromXyz.atoms.every((a, i) => chem.distance(a.p, caffeine.atoms[i].p) < 1e-9) && sameBonds(pairSet(fromXyz.bonds), pairSet(caffeine.bonds))); // prettier-ignore
+let refused = 0;
+for (const bad of ["", "hello\nworld\n", "3\nwater\nO 0 0 0\n"]) {
+  try {
+    parse(bad, "x.txt");
+  } catch {
+    refused++;
+  }
+}
+check("an empty file, a text file and a cut-short XYZ file are each refused with a message", refused === 3);
+
+// ---- 5. Unit cells: every atom has the right number of nearest neighbors at the distance
+//         the lattice constant gives, counted over a 3 x 3 x 3 block built here.
 for (const key of Object.keys(chem.CRYSTALS)) {
   const cell = chem.unitCell(key);
   const block = [];
@@ -127,8 +216,8 @@ for (const key of Object.keys(chem.CRYSTALS)) {
   check(`${key}: ${cell.atoms.length} atoms on the cell, each with ${cell.neighbors} neighbors at ${cell.d.toFixed(4)} Å`, ok && near(min, cell.d, 1e-6)); // prettier-ignore
 }
 
-// 5. Hydrogen: every R_nl for n = 1..4 integrates to 1 and has n - l - 1 nodes; every
-//    harmonic integrates to 1 over the sphere; a sampled 2p cloud has the right mean radius.
+// ---- 6. Hydrogen: every R_nl for n = 1..4 integrates to 1 and has n - l - 1 nodes; every
+//         harmonic integrates to 1 over the sphere; a sampled 2p cloud has the right mean radius.
 let radialOk = true;
 for (let n = 1; n <= 4; n++)
   for (let l = 0; l < n; l++) {
@@ -149,13 +238,13 @@ let harmonicOk = true;
 for (let l = 0; l <= 3; l++)
   for (let m = -l; m <= l; m++) {
     let sum = 0;
-    const N = 400;
-    for (let i = 0; i < N; i++)
-      for (let j = 0; j < 2 * N; j++) {
-        const th = ((i + 0.5) / N) * Math.PI;
-        const ph = ((j + 0.5) / (2 * N)) * 2 * Math.PI;
+    const K = 400;
+    for (let i = 0; i < K; i++)
+      for (let j = 0; j < 2 * K; j++) {
+        const th = ((i + 0.5) / K) * Math.PI;
+        const ph = ((j + 0.5) / (2 * K)) * 2 * Math.PI;
         const y = chem.harmonic(l, m, Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th));
-        sum += y * y * Math.sin(th) * (Math.PI / N) ** 2;
+        sum += y * y * Math.sin(th) * (Math.PI / K) ** 2;
       }
     if (!near(sum, 1, 1e-3)) harmonicOk = false;
   }
