@@ -10,14 +10,14 @@ concept's pull request changes only its own folder and states its row in its des
 | --- | --- | --- | --- | --- | --- |
 | `v1` (repo root) | Words and tools | Drenched blue, white tiles, one lime accent | His name as letter tiles that rearrange into its real anagrams | `main` (merged) | 4173 |
 | `one-splat` | Computer graphics | A dark instrument; the only color is orange light | His name drawn with Gaussian splats, on a dial from 1 to 16,384 | `concept/one-splat` | 4174 |
-| `specimen` | Scientific visualization | A daylight lab bench and a microscope slide | A neuron of 4,096 splats that you focus and fire | `concept/specimen` | 4175 |
+| `specimen` | Scientific visualization | A daylight lab bench and a microscope slide | A neuron of 32,768 splats that you focus, label, stain and fire | `concept/specimen` | 4175 |
 | `toybox` | Digital media | A loud, saturated toy shop | His name as a splat toy to spin, poke, paint and drop | `concept/toybox` | 4176 |
 | `workshop` | Software engineering | A paper drafting table, graphite and one red pencil | A drafting sheet: pick one of four toys from Splashery's kit and one of five loop graphs from grooph, and the build stops where the graph says, sometimes at the visitor | `concept/workshop` | 4177 |
 | `overprint` | Media arts | A two-ink print on paper, slightly off register | One cloud of splats that re-forms for every section | `concept/overprint` | 4178 |
 | `molecule` | Molecular visualization | A chemistry lecture hall: slate blackboard, chalk, CPK colors for the atoms | A chalk caffeine molecule you turn in your hand and measure, atom to atom | `concept/molecule` | 4181 |
 | `resonance` | Sound and audio-visual media | A metal plate the visitor picks (brass, copper, steel, titanium or bronze), drenched in that metal, with its sand, a violin bow, and the metal's own tarnish as the one accent | A plate you bow: sand runs to the still lines of the note, one of its 24 figures | `concept/resonance` | 4183 |
 | `slice` | Volume and medical imaging | A radiology light box: blue-black film on a backlit white wall, one fuchsia wax pencil | Two real CT scans, a walnut and a young gar's head, to cut on three planes, window, and turn as a shaded cutaway | `concept/slice` | 4184 |
-| `atlas` | Scale, astronomy and Earth | An engraved star atlas: deep indigo, fine white line work, a little gold | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today | `concept/atlas` | 4185 |
+| `atlas` | Scale, astronomy and Earth | An engraved star atlas in four editions: indigo and gilt (the default), plain black ink on laid paper, hand-colored, and a field edition in white on black | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today and a true outline at every stop | `concept/atlas` | 4185 |
 
 ## Dropped
 
