@@ -6,9 +6,10 @@
 //   format, title,
 //   atoms:  [{ el, p: [x, y, z], name?, res?, seq?, chain?, het?, charge? }],
 //   bonds:  [[i, j, order]],
-//   traces: [[{ i, ss }]]   one list per unbroken stretch of chain: the alpha carbons of a
-//                           protein ("h" helix, "s" strand, "c" coil) or the C4' atoms of a
-//                           nucleic acid ("n"),
+//   traces: [[{ i, ss, rung? }]]   one list per unbroken stretch of chain: the alpha carbons
+//                           of a protein ("h" helix, "s" strand, "c" coil) or the C4' atoms
+//                           of a nucleic acid ("n"), where rung is the atom of the base that
+//                           faces its partner (N1 of a purine, N3 of a pyrimidine),
 //   waters, chains, residues
 // }
 
@@ -89,6 +90,14 @@ function chainModel(rows, ss, pairs, title, waters) {
   const residues = new Set();
   const chains = new Set();
   const inChain = new Set();
+  // The ring nitrogens of each residue, to find which atom of a base faces its partner.
+  const ringN = new Map();
+  rows.forEach((a, i) => {
+    if (a.name !== "N1" && a.name !== "N3" && a.name !== "N9") return;
+    const k = `${a.chain}:${a.seq}:${a.res}`;
+    if (!ringN.has(k)) ringN.set(k, {});
+    ringN.get(k)[a.name] = i;
+  });
   const close = () => {
     if (run.length > 1) {
       traces.push(run);
@@ -102,6 +111,11 @@ function chainModel(rows, ss, pairs, title, waters) {
     const nucleic = a.name === "C4'" || a.name === "C4*";
     if (!nucleic && !(a.name === "CA" && a.el === "C")) return;
     const point = { i, ss: nucleic ? "n" : (ss.get(`${a.chain}:${a.seq}`) ?? "c") };
+    if (nucleic) {
+      const n = ringN.get(`${a.chain}:${a.seq}:${a.res}`) ?? {};
+      const rung = n.N9 !== undefined ? n.N1 : n.N3;
+      if (rung !== undefined) point.rung = rung;
+    }
     if (last && (last.chain !== a.chain || last.nucleic !== nucleic || distance(last.p, a.p) > (nucleic ? 7.8 : 4.4))) close();
     run.push(point);
     last = { chain: a.chain, nucleic, p: a.p };

@@ -635,6 +635,12 @@ button:disabled {
 
 /* ---- The stockroom: a board that opens over the hall ---- */
 
+#hero-extra {
+  max-width: 11em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .door {
   background: #2b2e33;
   color: var(--chalk);
@@ -856,6 +862,12 @@ button:disabled {
   }
   .tray {
     gap: 10px 14px;
+  }
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .card {
+    overflow-wrap: anywhere;
   }
   .tray-label {
     flex-basis: 100%;

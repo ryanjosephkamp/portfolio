@@ -174,6 +174,12 @@ crnPdb.atoms.forEach((a, i) => (cifWorst = Math.max(cifWorst, chem.distance(a.p,
 const ssOf = (m) => m.traces.map((t) => t.map((p) => p.ss).join("")).join("/");
 check("crambin as mmCIF and as PDB: the same 327 atoms, bonds, and helices and strands", crnCif.atoms.length === 327 && cifWorst < 0.0011 && crnCif.bonds.length === crnPdb.bonds.length && ssOf(crnCif) === ssOf(crnPdb), `worst ${cifWorst.toFixed(4)} Å, ${ssOf(crnPdb)}`); // prettier-ignore
 check("crambin: 46 residues, two helices and two strands", /^s+c+h+c+h+c*s+c+$/.test(ssOf(crnPdb)) && ssOf(crnPdb).length === 46);
+// A cartoon's rungs: in the B-DNA entry each base's rung must end on the atom that faces
+// its partner, so across every pair the two ends sit a hydrogen bond apart.
+const dna = parse(text("../assets/molecules/1BNA.pdb"), "1BNA.pdb");
+const [strandA, strandB] = dna.traces;
+const across = strandA.map((pt, k) => chem.distance(dna.atoms[pt.rung].p, dna.atoms[strandB[strandB.length - 1 - k].rung].p));
+check("B-DNA: twelve pairs, and across each the two rungs end 2.6 to 3.2 Å apart", dna.traces.length === 2 && across.length === 12 && across.every((d) => d > 2.6 && d < 3.2), across.map((d) => d.toFixed(2)).join(" ")); // prettier-ignore
 const cffCif = parse(text("./fixtures/CFF.cif"), "CFF.cif");
 let compWorst = 0;
 caffeine.atoms.forEach((a, i) => (compWorst = Math.max(compWorst, chem.distance(a.p, cffCif.atoms[i].p))));

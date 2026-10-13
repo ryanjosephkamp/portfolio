@@ -65,7 +65,7 @@ function stamp(el, level) {
 }
 
 // The chalks of a chain: helix, strand, coil, and the backbone of a nucleic acid.
-const SS = { h: [[255, 122, 138], 1.15], s: [[255, 228, 92], 1.0], c: [[239, 236, 226], 0.34], n: [[126, 178, 255], 0.8] };
+const SS = { h: [[255, 122, 138], 1.15], s: [[255, 228, 92], 1.0], c: [[239, 236, 226], 0.34], n: [[126, 178, 255], 0.8], r: [[239, 236, 226], 0.3] }; // "r": a base's rung
 
 // ---- A stage: one canvas, one thing to hold --------------------------------------------
 
@@ -299,6 +299,10 @@ class Stage {
           const [p, q] = [at(rb[i].p), at(rb[i + 1].p)];
           items.push({ z: (p[2] + q[2]) / 2, from: p, to: q, ss: rb[i].ss });
         }
+      for (const [a, b] of scene.rungs) {
+        const [p, q] = [at(a), at(b)];
+        items.push({ z: (p[2] + q[2]) / 2, from: p, to: q, ss: "r" });
+      }
     }
     items.sort((a, b) => a.z - b.z);
     for (const it of items) {
@@ -693,6 +697,8 @@ function sceneFrom(model) {
   if (kind === "chain") {
     scene.ribbons = model.traces.map((t) => ribbon(t.map((pt) => ({ p: atoms[pt.i].p, ss: pt.ss }))));
     scene.traced = new Set(model.traces.flat().map((pt) => pt.i));
+    // A rung for every base of a nucleic acid: from the backbone to the atom that faces its partner.
+    scene.rungs = model.traces.flat().filter((pt) => pt.rung !== undefined).map((pt) => [atoms[pt.i].p, atoms[pt.rung].p]); // prettier-ignore
   } else scene.sk = chem.skeleton(atoms, model.bonds);
   return scene;
 }
@@ -746,7 +752,7 @@ if (heroCanvas) {
     now = { ...about, kind: scene.kind };
     if (scene.kind === "chain") {
       const has = new Set(model.traces.flat().map((pt) => pt.ss));
-      const said = [has.has("h") && "helices in pink chalk", has.has("s") && "strands in yellow", has.has("n") && "the backbone in blue"].filter(Boolean);
+      const said = [has.has("h") && "helices in pink chalk", has.has("s") && "strands in yellow", has.has("n") && "the backbone in blue with a rung for every base"].filter(Boolean);
       now.chalks = said.length ? said.join(", ") : "one line along the chain";
     }
     const firstTime = !hero.scene.atoms.length;
@@ -891,12 +897,13 @@ if (heroCanvas) {
     const find = $("#stock-find");
     const status = $("#own-status");
     const count = SHELF.reduce((s, g) => s + g.items.length, 0) + ENTRIES.length;
-    const card = (id, name, small) => {
+    // words: what the search box matches, the formula with plain digits among them.
+    const card = (id, name, small, words = "") => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "card";
       b.dataset.take = id;
-      b.dataset.words = `${name} ${id} ${small}`.toLowerCase();
+      b.dataset.words = `${name} ${id} ${small} ${words}`.toLowerCase();
       b.append(name);
       const s = document.createElement("small");
       s.textContent = small;
@@ -914,7 +921,7 @@ if (heroCanvas) {
       list.append(sec);
     };
     const hill = (f) => f.replace(/(\d+)/g, (d) => chem.sub(d)).replace(/\s+/g, "");
-    for (const g of SHELF) section(g.group, g.items.map((it) => card(it.id, it.name, hill(it.formula)))); // prettier-ignore
+    for (const g of SHELF) section(g.group, g.items.map((it) => card(it.id, it.name, hill(it.formula), it.formula.replace(/\s+/g, "")))); // prettier-ignore
     section("Proteins and nucleic acids", ENTRIES.map((e) => card(e.id, e.name, `${e.id} · ${e.atoms.toLocaleString("en")} atoms`))); // prettier-ignore
     $$("[data-stock-count]").forEach((el) => (el.textContent = `about ${Math.round(count / 10) * 10}`));
     $$("[data-open-stockroom]").forEach((b) => (b.hidden = false));
