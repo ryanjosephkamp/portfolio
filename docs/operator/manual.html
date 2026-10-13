@@ -147,7 +147,7 @@
 <main class="wrap">
   <section id="now">
     <h2>Where things stand</h2>
-    <p class="lede"><b>Update, October 13, afternoon:</b> the refine round is done for eight concepts, and all eight passed the recheck. Staging holds every refined branch plus the new Anagram Tiles caption. The <a href="https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt">Portfolio Walkthrough</a> is rebuilt for round two: ten cards that say what changed, what to try and what is yours to decide. One Splat's refine and Arcade's build are still yours to launch. Nothing is merged.</p>
+    <p class="lede"><b>Update, October 13, evening:</b> your second walkthrough is read. Workshop is your favorite and the one you want as the main portfolio. Specimen, Molecule, Resonance, Slice and Atlas are keepers. Overprint and Toy Box each have one more small pass running, and Resonance is switching its default plate to copper. One Splat's refine and Arcade's build, which you launched, are running. Nothing is merged. Both rounds of your notes are in <code>docs/operator/walkthrough-notes.md</code>.</p>
 
     <div class="stack">
       <h3>What was just completed</h3>
@@ -168,7 +168,7 @@
 
     <div class="stack">
       <h3>What comes next</h3>
-      <p>Your second walkthrough. From your new notes we either refine again or wrap up: you name the pull requests to merge, pick the favorites, and I prepare the publish step for your personal site with "Publish my favorites".</p>
+      <p>Five lanes report back: Overprint, Toy Box, Resonance, One Splat and Arcade. I recheck each one and rebuild staging. Then you name the pull requests to merge, and I prepare the publish step for your personal site with Workshop in the lead.</p>
     </div>
 
     <div class="stack">
@@ -198,7 +198,8 @@ flowchart LR
             <tr><td><b>Six more</b></td><td>Molecule, Resonance, Slice, Atlas. Ripple and Query were built and then dropped.</td><td><span class="chip done">Built</span></td></tr>
             <tr><td><b>Walkthrough</b></td><td>You looked at all twelve on staging and wrote notes</td><td><span class="chip done">Done</span></td></tr>
             <tr><td><b>Refine</b></td><td>Eight concepts refined from your notes. One Splat's refine and Arcade's build are not launched.</td><td><span class="chip done">Eight done</span></td></tr>
-            <tr><td><b>Second walkthrough</b></td><td>You look at the ten on staging again and write round-two notes</td><td><span class="chip wait">Yours now</span></td></tr>
+            <tr><td><b>Second walkthrough</b></td><td>Favorite: Workshop. Keep: Specimen, Molecule, Resonance, Slice, Atlas. Rework: Toy Box, Overprint. Not marked: Anagram Tiles, One Splat.</td><td><span class="chip done">Done</span></td></tr>
+            <tr><td><b>Second refine</b></td><td>Overprint, Toy Box and Resonance from your round-two notes; One Splat's first refine; Arcade's build</td><td><span class="chip wait">Running</span></td></tr>
             <tr><td><b>Publish</b></td><td>Your favorites under a Portfolio section of your personal site. Provisional: where exactly is decided then.</td><td><span class="chip">Later</span></td></tr>
           </tbody>
         </table>
@@ -208,24 +209,20 @@ flowchart LR
     <div class="stack">
       <h3>What you need to do, and what I would choose</h3>
       <ol class="steps">
-        <li><b>Walk through round two.</b><span class="rec"><strong>Open the <a href="https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt">walkthrough page</a>.</strong> Each card lists what changed and what to try, and takes a new verdict and notes.</span></li>
-        <li><b>Launch One Splat's refine.</b><span class="rec"><strong>Paste its prompt into a new session.</strong> It has no session of its own. Its worktree is <code>.claude/worktrees/one-splat</code>. The prompt is in the operator chat of October 13.</span></li>
-        <li><b>Launch Arcade.</b><span class="rec"><strong>Its prompt is in the launch pack below.</strong> A new session with its own worktree, Opus at Xhigh, about 45 minutes.</span></li>
-        <li><b>Resonance's default plate.</b><span class="rec"><strong>Copper.</strong> It is the lane's pick: warm, not yellow, and unlike any other concept. Steel is the runner-up. It is still brass until you say.</span></li>
-        <li><b>Smaller calls, one per card.</b><span class="rec"><strong>Answer them in your notes.</strong> Slice: a third scan or two. Overprint: fit the QR code above the text on a phone. Atlas: five drawn sizes differ from Splashery's stop labels. Specimen: read the science captions. Molecule: the stockroom's group headings. Anagram Tiles: which of three caption lines.</span></li>
-        <li><b>Merges.</b><span class="rec"><strong>Name each pull request when you want it merged.</strong> Eight concept pull requests have passed the recheck. <a href="https://github.com/ryanjosephkamp/portfolio/pull/14">#14</a> holds the registry, the working index, this manual's source and your notes. <a href="https://github.com/ryanjosephkamp/portfolio/pull/13">#13</a> is the caption.</span></li>
+        <li><b>Merges.</b><span class="rec"><strong>Name each pull request when you want it merged.</strong> Ready now: Specimen <a href="https://github.com/ryanjosephkamp/portfolio/pull/1">#1</a>, Workshop <a href="https://github.com/ryanjosephkamp/portfolio/pull/2">#2</a>, Molecule <a href="https://github.com/ryanjosephkamp/portfolio/pull/7">#7</a>, Atlas <a href="https://github.com/ryanjosephkamp/portfolio/pull/9">#9</a>, Slice <a href="https://github.com/ryanjosephkamp/portfolio/pull/10">#10</a>. After their passes: Toy Box <a href="https://github.com/ryanjosephkamp/portfolio/pull/3">#3</a>, One Splat <a href="https://github.com/ryanjosephkamp/portfolio/pull/4">#4</a>, Overprint <a href="https://github.com/ryanjosephkamp/portfolio/pull/6">#6</a>, Resonance <a href="https://github.com/ryanjosephkamp/portfolio/pull/8">#8</a>. Operator files: <a href="https://github.com/ryanjosephkamp/portfolio/pull/14">#14</a>.</span></li>
+        <li><b>Workshop as the main portfolio.</b><span class="rec"><strong>Decide what that means when we publish.</strong> Either it leads an index of your favorites, or it is the page at the portfolio address with the others one link behind it. I would do the second: it is what "main" means to a visitor.</span></li>
+        <li><b>Two stop labels in Splashery.</b><span class="rec"><strong>Hand its operator session the prompt from the operator chat of October 13.</strong> The National Mall label is about a tenth short of the distance between the two buildings, and "16 km across" for Washington, D.C. is the side of its square, not its span. The other three labels are within their "about".</span></li>
+        <li><b>Anagram Tiles and One Splat.</b><span class="rec"><strong>Neither was marked in round two.</strong> The caption in <a href="https://github.com/ryanjosephkamp/portfolio/pull/13">#13</a> still needs a yes or another line, and One Splat is worth a look once its refine lands.</span></li>
         <li><b>British spellings in Splashery.</b><span class="rec"><strong>Do it in a Splashery session, app and README together.</strong> The README has 24 (colour and colours 16 times, maths, synthesised, haemoglobin, recolour), and at least one is a quotation of what the app itself displays, so fixing the README alone would misquote the app. A prompt for that session is in the launch pack.</span></li><!-- us-spelling: keep -->
         <li><b>The English OpenList expansion.</b><span class="rec"><strong>Tell me when it lands.</strong> One prompt, "Change a fact or link everywhere", updates the facts and every page.</span></li>
       </ol>
     </div>
 
     <div class="prompt">
-      <header><span>The prompt to send next, to this operator session, after your second walkthrough</span><button type="button" data-copy="next">Copy</button></header>
-      <pre id="next">My second walkthrough is done. Read my round-two notes from the walkthrough page (collection review, documents r2-&lt;slug&gt;).
+      <header><span>The prompt to send next, to this operator session, when the lanes have replied</span><button type="button" data-copy="next">Copy</button></header>
+      <pre id="next">The lanes have replied. Recheck Overprint, Toy Box, Resonance, One Splat and Arcade as pushed (spelling, the ten projects in order, changes only inside each folder), add Arcade to the registry, and rebuild staging.
 
-For each concept I marked Rework, write one refine prompt from my notes and send it to that concept's own session, after checking it is idle and its worktree clean. For each I marked Favorite or Keep with no changes asked, tell me its pull request is ready to merge. For anything I marked Drop, ask me first.
-
-Then tell me what is left before we publish my favorites to my personal site. Merge nothing until I name the pull request.</pre>
+Then prepare the publish step for my personal site with "Publish my favorites": Workshop is the main portfolio, and these come with it: (name them). Merge nothing until I name the pull request.</pre>
     </div>
     <p class="runwith"><b>Mode:</b> execution. The work is specified. <b>Effort:</b> High for this operator session (small, careful edits and checking other sessions' work). Refine lanes at High. Arcade's build at Xhigh: it is design work.</p>
   </section>
