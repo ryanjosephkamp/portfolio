@@ -6,6 +6,8 @@ import { Z_MIN, Z_MAX, LY, AU, C, UNITS, scaleBar, lightTime, fmtLen } from '../
 import * as A from '../assets/astro.js';
 import { STARS, LINES, HELENS, COAST } from '../assets/data.js';
 import { surface, swing, dot, cross } from '../earth.js';
+import { GROUND } from '../assets/ground.js';
+import { SMALL } from '../assets/small.js';
 
 let failed = 0;
 const check = (name, ok, detail = '') => {
@@ -165,6 +167,78 @@ const num = (s) => Number(s.replace(/,/g, ''));
   check('the camera keeps a square, right-handed frame at 1,001 steps of its swing', bad === 0);
   const pts = COAST.world.concat(COAST.region).flat();
   check('every coast point is a real longitude and latitude', pts.length % 2 === 0 && pts.every((x, i) => Number.isFinite(x) && (i % 2 ? Math.abs(x) <= 90 : Math.abs(x) <= 180)), `${pts.length / 2} points`);
+}
+
+// 8. The outlines from Washington inward (tools/trace.py): every one sits inside the frame of
+//    its source, and every size the page states is the size of what is drawn.
+{
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const stated = Object.fromEntries([...html.matchAll(/data-d="([^"]+)" data-layer="([^"]+)"/g)].map((m) => [m[2], Number(m[1])]));
+  const pts = (layer, groups) => (groups || Object.keys(layer.lines)).flatMap((g) => layer.lines[g].flatMap((run) => run.reduce((a, v, i) => (i % 2 ? a : [...a, [v * layer.unit, run[i + 1] * layer.unit]]), [])));
+  const box = (p) => [Math.min(...p.map((q) => q[0])), Math.min(...p.map((q) => q[1])), Math.max(...p.map((q) => q[0])), Math.max(...p.map((q) => q[1]))];
+  const len = (m) => Math.hypot(m[2] - m[0], m[3] - m[1]);
+  const near = (a, b, tol) => Math.abs(a / b - 1) <= tol;
+  const layers = [GROUND.city, GROUND.mall, GROUND.garden, SMALL.bed, SMALL.leaf, SMALL.cells, SMALL.chloroplast, SMALL.ribosome];
+  const runs = layers.flatMap((l) => Object.values(l.lines).flat());
+  check('every outline is whole units, two to a point', runs.every((r) => r.length >= 4 && r.length % 2 === 0 && r.every(Number.isInteger)), `${runs.length.toLocaleString('en-US')} runs, ${(runs.reduce((a, r) => a + r.length, 0) / 2).toLocaleString('en-US')} points`);
+
+  // Washington: the square's two whole sides, corner to corner.
+  const dc = pts(GROUND.city, ['boundary']);
+  const north = dc.reduce((a, q) => (q[1] > a[1] ? q : a));
+  const east = dc.reduce((a, q) => (q[0] > a[0] ? q : a));
+  const south = dc.reduce((a, q) => (q[1] < a[1] ? q : a));
+  const sides = [Math.hypot(north[0] - east[0], north[1] - east[1]), Math.hypot(east[0] - south[0], east[1] - south[1])];
+  check("the District's sides are about 16 km", sides.every((v) => v > 15700 && v < 16300), sides.map((v) => (v / 1000).toFixed(2)).join(' and ') + ' km');
+
+  // The Mall: the measure runs between the two footprints the labels name.
+  const at = (name) => GROUND.mall.labels.find((l) => l[2] === name);
+  const m = GROUND.mall.measure;
+  const ends = Math.hypot(m[0] - at('Lincoln Memorial')[0], m[1] - at('Lincoln Memorial')[1]) < 1 && Math.hypot(m[2] - at('the Capitol')[0], m[3] - at('the Capitol')[1]) < 1;
+  check('the Mall is measured from the Lincoln Memorial to the Capitol', ends && near(len(m), GROUND.facts.capitolToLincolnKm * 1000, 0.002) && near(len(m), stated.mall, 0.002), `${len(m).toFixed(0)} m`);
+
+  // The garden: its outline's span, with the zoom's target inside it.
+  const hb = box(pts(GROUND.garden, ['haupt']));
+  check('the Haupt Garden is as long as stated, and the target is in it', near(hb[2] - hb[0], stated.garden, 0.01) && hb[0] < 0 && hb[2] > 0 && hb[1] < 0 && hb[3] > 0, `${(hb[2] - hb[0]).toFixed(1)} m by ${(hb[3] - hb[1]).toFixed(1)} m`);
+
+  // The bed: 2 m long, as Splashery scales the capture.
+  check('the garden bed is 2 m long', near(len(SMALL.bed.measure), 2, 0.001) && near(len(SMALL.bed.measure), stated.bed, 0.001), `${len(SMALL.bed.measure).toFixed(3)} m`);
+
+  // The pictures: every traced point lies inside the picture it was traced from.
+  const frame = (layer, width, cx, cy, w, h, slack) => {
+    const b = box(pts(layer));
+    const height = (width * h) / w;
+    return b[0] >= -cx * width - slack && b[2] <= (1 - cx) * width + slack && b[1] >= -(1 - cy) * height - slack && b[3] <= cy * height + slack;
+  };
+  check('the leaf stays inside its photograph, 13.5 cm wide', frame(SMALL.leaf, 0.135, 0.322, 0.52, 1024, 768, 2e-4) && near(len(SMALL.leaf.measure), SMALL.facts.leaf.bladeSpanM, 0.01) && near(len(SMALL.leaf.measure), stated.leaf, 0.02), `blade ${(len(SMALL.leaf.measure) * 100).toFixed(2)} cm`);
+  check('the cells stay inside their picture, 200 µm wide', frame(SMALL.cells, 200e-6, 0.4795, 0.4445, 3047, 2531, 3e-7));
+  check('the chloroplast stays inside its micrograph, 4.5 µm wide', frame(SMALL.chloroplast, 4.5e-6, 0.6, 0.5, 2400, 1800, 2e-8));
+
+  // The chloroplasts in the cells: each ring's area as a circle's width, every ring counted.
+  const rings = SMALL.cells.lines.plastids.map((run) => {
+    let a = 0;
+    for (let i = 0; i < run.length; i += 2) {
+      const j = (i + 2) % run.length;
+      a += run[i] * run[j + 1] - run[j] * run[i + 1];
+    }
+    return 2 * Math.sqrt(Math.abs(a / 2) / Math.PI) * SMALL.cells.unit;
+  }).sort((p, q) => p - q);
+  const median = rings[rings.length >> 1];
+  check(`the median of ${rings.length} chloroplast rings is the size the plate states`, rings.length === SMALL.facts.cells.plastids && near(median, SMALL.facts.cells.plastidMedianM, 0.001), `${(median * 1e6).toFixed(2)} µm`);
+
+  // The chloroplast: its length is the two points of its outline farthest apart.
+  const body = SMALL.chloroplast.lines.envelope.map((run) => pts({ unit: SMALL.chloroplast.unit, lines: { a: [run] } })).find((p) => {
+    const b = box(p);
+    return b[0] < 0 && b[2] > 0 && b[1] < 0 && b[3] > 0;
+  });
+  let far = 0;
+  for (const p of body) for (const q of body) far = Math.max(far, Math.hypot(p[0] - q[0], p[1] - q[1]));
+  check('the chloroplast is as long as stated', near(far, SMALL.facts.chloroplast.lengthM, 0.03) && near(len(SMALL.chloroplast.measure), SMALL.facts.chloroplast.lengthM, 0.002) && near(far, stated.chloroplast, 0.03), `${(far * 1e6).toFixed(2)} µm`);
+
+  // The ribosome: the outline's width, and every chain of the model inside it.
+  const ob = box(pts(SMALL.ribosome, ['outline']));
+  const cb = box(pts(SMALL.ribosome, ['rna', 'protein']));
+  const inside = cb[0] > ob[0] - 1e-9 && cb[2] < ob[2] + 1e-9 && cb[1] > ob[1] - 1e-9 && cb[3] < ob[3] + 1e-9;
+  check('the ribosome is as wide as stated, with its 52 chains inside the outline', near(ob[2] - ob[0], SMALL.facts.ribosome.acrossM[0], 0.03) && near(ob[2] - ob[0], stated.ribosome, 0.04) && inside && SMALL.ribosome.lines.rna.length + SMALL.ribosome.lines.protein.length === 52, `${((ob[2] - ob[0]) * 1e9).toFixed(1)} nm by ${((ob[3] - ob[1]) * 1e9).toFixed(1)} nm`);
 }
 
 console.log(failed ? `${failed} check(s) failed` : 'all checks pass');

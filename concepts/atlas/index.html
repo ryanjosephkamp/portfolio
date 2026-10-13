@@ -9,6 +9,13 @@
       content="Ryan Kamp's portfolio as an engraved star atlas: one plate that zooms from the Milky Way to a ribosome, with the planets where they are today."
     />
     <meta name="theme-color" content="#0d1040" />
+    <script>
+      // The edition chosen on an earlier visit, set before the first paint.
+      try {
+        var kept = localStorage.getItem('atlas:scheme');
+        if (kept && kept !== 'gilt') document.documentElement.dataset.scheme = kept;
+      } catch (e) {}
+    </script>
     <link rel="preload" href="assets/fonts/im-fell-english-roman.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -23,6 +30,21 @@
         <a href="#interests">Interests</a>
         <a href="#links">Links</a>
       </nav>
+      <div class="editions" id="editions" role="group" aria-label="Edition: how the atlas is printed" hidden>
+        <span class="editions-label"><i>Printed as</i> <span id="edition-name">Indigo and gilt</span></span>
+        <button type="button" data-scheme="gilt" data-name="Indigo and gilt" aria-pressed="true" title="Indigo and gilt: white line on an indigo ground, heightened with gold">
+          <span class="swatch s-gilt" aria-hidden="true"></span><span class="visually-hidden">Indigo and gilt</span>
+        </button>
+        <button type="button" data-scheme="plain" data-name="Plain" aria-pressed="false" title="Plain: black ink on laid paper">
+          <span class="swatch s-plain" aria-hidden="true"></span><span class="visually-hidden">Plain: black ink on laid paper</span>
+        </button>
+        <button type="button" data-scheme="colored" data-name="Hand-colored" aria-pressed="false" title="Hand-colored: black ink on laid paper, each sheet washed in its own color">
+          <span class="swatch s-colored" aria-hidden="true"></span><span class="visually-hidden">Hand-colored: black ink on laid paper, each sheet washed in its own color</span>
+        </button>
+        <button type="button" data-scheme="field" data-name="Field edition" aria-pressed="false" title="Field edition: white line on black">
+          <span class="swatch s-field" aria-hidden="true"></span><span class="visually-hidden">Field edition: white line on black</span>
+        </button>
+      </div>
     </header>
 
     <main>
@@ -63,6 +85,7 @@
               <span id="plate-size">The plate is about 84 AU across.</span>
               <span id="plate-light">Light crosses it in 11 h 40 min.</span>
             </p>
+            <p class="stop-source" id="plate-source"></p>
           </div>
 
           <div class="rule">
@@ -106,23 +129,41 @@
               half is night.
             </li>
             <li data-z="5.7" data-d="3.22e5"><b>The Chesapeake Bay</b>, about 320 km long, and the Mid-Atlantic coast.</li>
-            <li data-z="4.4" data-d="1.6e4"><b>Washington, D.C.</b>, about 16 km across.</li>
-            <li data-z="3.7" data-d="3.2e3">
-              <b>The National Mall</b>, about 3.2 km from the Capitol to the Lincoln Memorial.
+            <li data-z="4.5" data-d="2.27e4" data-layer="city" data-source="The District's boundary, its rivers and its motorways, from OpenStreetMap.">
+              <b>Washington, D.C.</b>, on the Potomac: a square whose sides are about 16 km, less the corner across
+              the river.
             </li>
-            <li data-z="2.3" data-d="130">
-              <b>The Enid A. Haupt Garden</b> beside the Smithsonian Castle, about 130 m across.
+            <li data-z="3.7" data-d="3.58e3" data-layer="mall" data-source="Water, streets and the larger buildings, from OpenStreetMap.">
+              <b>The National Mall</b>: 3.6 km from the Lincoln Memorial to the Capitol, center to center.
             </li>
-            <li data-z="0.5" data-d="2"><b>A garden bed</b> with a young full-moon maple, about 2 m long.</li>
-            <li data-z="-0.85" data-d="0.09"><b>One maple leaf</b>, about 9 cm across.</li>
-            <li data-z="-3.5" data-d="2e-4"><b>Cells inside the leaf</b>. Splashery's picture of them is 200 µm wide.</li>
-            <li data-z="-5.3" data-d="3.5e-6"><b>A chloroplast</b>, where a leaf turns light into food, about 3.5 µm long.</li>
-            <li data-z="-7.55" data-d="2e-8"><b>A ribosome</b>, the machine that builds proteins, about 20 nm across.</li>
+            <li data-z="2.3" data-d="168" data-layer="garden" data-source="Every footprint, path, hedge, bed and tree, from OpenStreetMap.">
+              <b>The Enid A. Haupt Garden</b> beside the Smithsonian Castle, about 170 m long and 100 m deep, with
+              its parterre, its paths and its trees.
+            </li>
+            <li data-z="0.5" data-d="2" data-layer="bed" data-source="Contour lines of height, one every 10 cm, from the 3D capture Splashery uses. It was made elsewhere.">
+              <b>A garden bed</b> with a young full-moon maple, about 2 m long, drawn as contour lines of its height.
+            </li>
+            <li data-z="-0.8" data-d="0.09" data-layer="leaf" data-source="Traced from the photograph Splashery uses, by susteph.">
+              <b>One maple leaf</b>, about 9 cm across, its edge and its veins traced from a photograph.
+            </li>
+            <li data-z="-3.5" data-d="2e-4" data-layer="cells" data-source="Traced from a confocal picture by Fernán Federici: cells of Arabidopsis thaliana.">
+              <b>Cells inside a leaf</b>. The picture is 200 µm wide, and each small ring is a chloroplast.
+            </li>
+            <li data-z="-5.3" data-d="3.8e-6" data-layer="chloroplast" data-source="Traced from an electron micrograph by Kevin Mackenzie: a chloroplast in a bean leaf.">
+              <b>A chloroplast</b>, where a leaf turns light into food, about 3.8 µm long in this trace, with the
+              membranes inside it.
+            </li>
+            <li data-z="-7.45" data-d="2.2e-8" data-layer="ribosome" data-source="The outline of cryo-EM map EMD-48329 at its recommended level, and the backbone of its model, PDB 9MKK.">
+              <b>A ribosome</b>, the machine that builds proteins, about 22 nm across: the outline of its cryo-EM
+              map, with its chains of RNA and protein inside.
+            </li>
           </ol>
           <p class="fine">
             Down to the Earth, every plate looks from the north of the ecliptic. Closing in on Washington, the view
-            swings round to look straight down on the garden, north up. From the city inward, Splashery shows a
-            real picture at every scale; this plate keeps only the measure.
+            swings round to look straight down on the garden, north up. From the city inward, every outline is the
+            true shape of the thing at its true size: the city from OpenStreetMap, and the rest traced from the
+            capture, the pictures and the cryo-EM map that Splashery shows at each scale. The leaf, the cells, the
+            chloroplast and the ribosome each come from a different plant or cell, as they do in Splashery.
           </p>
         </div>
       </section>
@@ -505,7 +546,19 @@
         Stars: the HYG database v4.1 by David Nash, CC BY-SA 4.0. Constellation lines: the Stellarium team's Western
         sky culture, CC BY-SA. Planets: E. M. Standish's Keplerian elements for approximate positions (JPL). The
         Moon: the low-precision series of the Astronomical Almanac. Mount St. Helens: the USGS pre-1980 DEM and
-        USGS 3DEP, public domain. Coastlines: Natural Earth, public domain. The data files and the astronomy module are Splashery's own. Set in IM Fell
+        USGS 3DEP, public domain. Coastlines: Natural Earth, public domain. Washington, from the
+        city to the garden: ©
+        <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Open Database License.
+        The garden bed: <a href="https://superspl.at/scene/f233b115">Golden Fullmoon Maple</a>, a 3D capture by
+        Joshua Trapani, CC BY 4.0. The leaf:
+        <a href="https://www.flickr.com/photos/28012136@N08/2649442904">Golden Full Moon Maple</a> by susteph,
+        CC BY 2.0. The cells:
+        <a href="https://wellcomecollection.org/works/gwmfux6b">Arabidopsis thaliana plant cells containing chloroplasts</a>
+        by Fernán Federici, CC BY 4.0. The chloroplast:
+        <a href="https://wellcomecollection.org/works/bx3dctp2">Chloroplast in a bean leaf, TEM</a> by Kevin
+        Mackenzie, University of Aberdeen, CC BY 4.0. The ribosome: cryo-EM map
+        <a href="https://www.ebi.ac.uk/emdb/EMD-48329">EMD-48329</a> and its model, PDB 9MKK (Majumdar and others,
+        2025). Each of these is traced here as line work, at its true size. The data files and the astronomy module are Splashery's own. Set in IM Fell
         English, Igino Marini's revival of the Fell types, under the SIL Open Font License.
       </p>
       <p><a href="../../">The other concepts</a></p>

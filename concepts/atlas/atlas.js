@@ -1,25 +1,53 @@
 // Atlas: the plate (one zoom across twenty-nine powers of ten), the sky over
 // Cincinnati, and Mount St. Helens in contour lines. The astronomy is
-// Splashery's own module (assets/astro.js); the measures are in scale.js.
+// Splashery's own module (assets/astro.js); the measures are in scale.js. The
+// outlines from Washington inward (assets/ground.js, assets/small.js) are made
+// by tools/trace.py and arrive after the first paint.
 
 import { STARS, LINES, HELENS, COAST } from './assets/data.js';
 import * as A from './assets/astro.js';
 import { LY, AU, Z_MIN, Z_MAX, scaleBar, lightTime, fmtLen, ramp, band } from './scale.js';
 import { surface, swing, dot, unit } from './earth.js';
 
-const INK = '#0d1040';
-const LINE = '#eef0ff';
-const GOLD = '#e8bd5a';
 const SERIF = '"IM Fell English", "Iowan Old Style", Georgia, serif';
 const TAU = Math.PI * 2;
 const D2R = Math.PI / 180;
 const still = matchMedia('(prefers-reduced-motion: reduce)');
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
-const white = (a) => `rgba(238,240,255,${a})`;
-const gold = (a) => `rgba(232,189,90,${a})`;
 
+// The colors come from the page's CSS, so the atlas can be printed more than one way
+// (styles.css, "Editions"). Every draw takes them from its own canvas first: `white` is the
+// line color and `gold` the accent, whatever they are in the edition on show.
+let INK = '#0d1040';
+let WELL = '#0a0c33';
+let LINE = '#eef0ff';
+let GOLD = '#e8bd5a';
+let white = (a) => `rgba(238,240,255,${a})`;
+let gold = (a) => `rgba(232,189,90,${a})`;
+const inks = new Map();
+function rgbOf(hex) {
+  let h = hex.trim().replace('#', '');
+  if (h.length === 3) h = [...h].map((c) => c + c).join('');
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',');
+}
+function ink(canvas) {
+  let t = inks.get(canvas);
+  if (!t) {
+    const cs = getComputedStyle(canvas);
+    const v = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+    const line = rgbOf(v('--line', '#eef0ff'));
+    const accent = rgbOf(v('--gold', '#e8bd5a'));
+    t = { INK: v('--ink', '#0d1040'), WELL: v('--well', '#0a0c33'), LINE: `rgb(${line})`, GOLD: `rgb(${accent})`, white: (a) => `rgba(${line},${a})`, gold: (a) => `rgba(${accent},${a})` };
+    inks.set(canvas, t);
+  }
+  ({ INK, WELL, LINE, GOLD, white, gold } = t);
+}
+
+// A canvas ready to draw on, or null while it has no size (a hidden pane, a zero-width
+// window): the draw then waits for the resize that gives it one.
 function fit(canvas) {
   const r = canvas.getBoundingClientRect();
+  if (r.width < 8 || r.height < 8) return null;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(1, Math.round(r.width * dpr));
   const h = Math.max(1, Math.round(r.height * dpr));
@@ -35,25 +63,74 @@ function fit(canvas) {
 
 // Text with a halo of the ground color, so line work never runs through it. While a round
 // plate is being drawn (`rim` is set), a label that would cross the rim slides back inside.
+// `ts` scales every size to the canvas. A `soft` label gives way: it is left out when it
+// would sit on one already placed (`placed` holds their boxes), and the call returns false.
 let rim = null;
-function label(g, text, x, y, { size = 12, color = LINE, align = 'left', italic = true } = {}) {
-  g.font = `${italic ? 'italic ' : ''}${size}px ${SERIF}`;
+let ts = 1;
+let placed = null;
+function label(g, text, x, y, { size = 14.5, color = LINE, align = 'left', italic = true, soft = false } = {}) {
+  const px = size * ts;
+  g.font = `${italic ? 'italic ' : ''}${px}px ${SERIF}`;
+  const w = g.measureText(text).width;
   if (rim) {
-    const w = g.measureText(text).width;
     const half = Math.sqrt(Math.max(0, rim.R * rim.R - (y - rim.cy) ** 2)) - 6;
     const left = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
     const min = rim.cx - half;
     const fit = Math.min(Math.max(left, min), Math.max(min, rim.cx + half - w));
     x += fit - left;
   }
+  if (placed) {
+    const left = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+    const box = [left - 3, y - px * 0.62, left + w + 3, y + px * 0.62];
+    if (soft && placed.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return false;
+    placed.push(box);
+  }
   g.textAlign = align;
   g.textBaseline = 'middle';
   g.lineJoin = 'round';
-  g.lineWidth = 3.5;
+  g.lineWidth = Math.max(3.5, px * 0.3);
   g.strokeStyle = INK;
   g.strokeText(text, x, y);
   g.fillStyle = color;
   g.fillText(text, x, y);
+  return true;
+}
+
+// Runs of points (x, y, x, y, ... in whole units) as one stroke: k is pixels per unit.
+function strokeRunsOf(g, lines, k, cx, cy) {
+  g.beginPath();
+  for (const run of lines) {
+    g.moveTo(cx + run[0] * k, cy - run[1] * k);
+    for (let i = 2; i < run.length; i += 2) g.lineTo(cx + run[i] * k, cy - run[i + 1] * k);
+  }
+  g.stroke();
+}
+
+// A measure in the accent color: a line between two points (meters from the center) with a
+// tick at each end, and its words beside the middle, on the side away from the center.
+function measureLine(g, m, ppm, cx, cy, text, a) {
+  const x1 = cx + m[0] * ppm;
+  const y1 = cy - m[1] * ppm;
+  const x2 = cx + m[2] * ppm;
+  const y2 = cy - m[3] * ppm;
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  if (len < 40) return;
+  const nx = -(y2 - y1) / len;
+  const ny = (x2 - x1) / len;
+  g.strokeStyle = gold(a);
+  g.lineWidth = 1.2;
+  g.beginPath();
+  g.moveTo(x1, y1);
+  g.lineTo(x2, y2);
+  for (const [x, y] of [[x1, y1], [x2, y2]]) {
+    g.moveTo(x - nx * 6, y - ny * 6);
+    g.lineTo(x + nx * 6, y + ny * 6);
+  }
+  g.stroke();
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const side = (mx - cx) * nx + (my - cy) * ny >= 0 ? 1 : -1;
+  label(g, text, mx + nx * side * 15 * ts, my + ny * side * 15 * ts, { size: 15.5, color: gold(a), align: 'center' });
 }
 
 // ---- The frame every plate shares: the J2000 ecliptic, seen from its north -------------------
@@ -180,31 +257,61 @@ const GRATICULE = (() => {
 const plate = document.getElementById('plate');
 const zoomIn = document.getElementById('zoom');
 const stopItems = [...document.querySelectorAll('#stops li')];
-const STOPS = stopItems.map((li) => ({ li, z: Number(li.dataset.z), d: Number(li.dataset.d), name: li.querySelector('b').textContent }));
+const STOPS = stopItems.map((li) => ({ li, z: Number(li.dataset.z), d: Number(li.dataset.d), name: li.querySelector('b').textContent, layer: li.dataset.layer || '' }));
+
+// The outlines from Washington inward: two files of line work, fetched after the first paint.
+// Until one arrives, its stops keep the plain ring of their width.
+let GROUND = null;
+let SMALL = null;
+import('./assets/ground.js').then((m) => {
+  GROUND = m.GROUND;
+  drawPlate();
+}, () => {});
+import('./assets/small.js').then((m) => {
+  SMALL = m.SMALL;
+  drawPlate();
+}, () => {});
 let z = 13.1;
 let tween = 0;
 
+// "10^n m", set as one piece so the rim moves it as one.
 function pow(g, n, x, y, alpha) {
-  g.font = `italic 12px ${SERIF}`;
+  const e = String(n).replace('-', '−');
+  g.font = `italic ${13.5 * ts}px ${SERIF}`;
   const w = g.measureText('10').width;
-  label(g, '10', x, y, { size: 12, color: white(alpha) });
-  label(g, String(n).replace('-', '−'), x + w + 1, y - 5, { size: 9, color: white(alpha) });
-  g.font = `italic 12px ${SERIF}`;
-  label(g, 'm', x + w + 4 + g.measureText(String(n)).width * 0.8, y, { size: 12, color: white(alpha) });
+  const wm = g.measureText('m').width;
+  g.font = `italic ${10 * ts}px ${SERIF}`;
+  const we = g.measureText(e).width;
+  const keep = rim;
+  if (rim) {
+    const total = w + we + wm + 6;
+    const half = Math.sqrt(Math.max(0, rim.R * rim.R - (y - rim.cy) ** 2)) - 6;
+    x = Math.min(Math.max(x, rim.cx - half), Math.max(rim.cx - half, rim.cx + half - total));
+    rim = null;
+  }
+  label(g, '10', x, y, { size: 13.5, color: white(alpha) });
+  label(g, e, x + w + 1, y - 5.5 * ts, { size: 10, color: white(alpha) });
+  label(g, 'm', x + w + we + 5, y, { size: 13.5, color: white(alpha) });
+  rim = keep;
 }
 
 function drawPlate() {
-  const { g, w, h } = fit(plate);
+  const f = fit(plate);
+  if (!f) return;
+  const { g, w, h } = f;
+  ink(plate);
   const cx = w / 2;
   const cy = h / 2;
   const edge = Math.min(w, h) / 2 - 1;
   const R = edge - Math.max(14, edge * 0.06);
+  ts = clamp(0.8 + R / 1000, 0.92, 1.12);
+  placed = [];
   const ppm = (2 * R) / 10 ** z; // pixels per meter
   const X = (m) => cx + m * ppm;
   const Y = (m) => cy - m * ppm;
 
   // The graduated rim: ecliptic longitude, a tick every 2 degrees.
-  g.fillStyle = '#0a0c33';
+  g.fillStyle = WELL;
   g.beginPath();
   g.arc(cx, cy, edge, 0, TAU);
   g.fill();
@@ -280,7 +387,7 @@ function drawPlate() {
     }
     names.sort((a, b) => a.ly - b.ly);
     for (const s of names.slice(0, 14)) {
-      label(g, `${s.name}, ${s.ly < 20 ? s.ly.toFixed(1) : Math.round(s.ly)} ly`, cx + s.x * k + 6, cy - s.y * k - 7, { size: 11.5, color: white(0.86 * sa) });
+      label(g, `${s.name}, ${s.ly < 20 ? s.ly.toFixed(1) : Math.round(s.ly)} ly`, cx + s.x * k + 6, cy - s.y * k - 8, { size: 13.5, color: white(0.86 * sa), soft: true });
     }
   }
   for (const [ly, text] of [
@@ -322,7 +429,7 @@ function drawPlate() {
       g.arc(px, py, 3.2, 0, TAU);
       g.fill();
       g.stroke();
-      if (size > 26) label(g, p.name, px + 8, py - 6, { size: 12.5, color: white(0.95 * a) });
+      if (size > 26) label(g, p.name, px + 8, py - 7, { size: 15.5, color: white(0.95 * a) });
     }
   }
   const su = band(z, 9.4, 10.6, 16.6, 17.4);
@@ -442,9 +549,154 @@ function drawPlate() {
     if (z > 7.9) label(g, 'the Earth', cx + Math.max(r * 0.72, 6) + 4, cy + Math.max(r * 0.72, 6) + 8, { color: white(0.95 * ea) });
   }
 
-  // Below the Earth: a ring as wide as each stop, and its name.
+  // From Washington inward: the true outline of each thing, at its true size.
+  const shown = new Set();
+  const layer = (id, alpha, draw) => {
+    if (alpha <= 0.01) return;
+    shown.add(id);
+    draw(alpha);
+  };
+  if (GROUND) {
+    const { city, mall, garden, facts } = GROUND;
+    layer('city', band(z, 3.6, 4.0, 4.95, 5.45), (a) => {
+      const k = city.unit * ppm;
+      g.setLineDash([]);
+      g.lineWidth = 0.6;
+      g.strokeStyle = white(0.24 * a);
+      strokeRunsOf(g, city.lines.roads, k, cx, cy);
+      g.lineWidth = 0.9;
+      g.strokeStyle = white(0.85 * a);
+      strokeRunsOf(g, city.lines.water, k, cx, cy);
+      g.lineWidth = 1.4;
+      g.strokeStyle = gold(a);
+      strokeRunsOf(g, city.lines.boundary, k, cx, cy);
+      if (z < 4.9) label(g, `Washington, D.C.: its sides are ${fmtLen(facts.districtSideKm[0] * 1000)}`, cx + 6400 * ppm, cy - 7600 * ppm, { size: 15.5, color: gold(a), align: 'center' });
+    });
+    layer('mall', band(z, 2.45, 2.85, 3.95, 4.35), (a) => {
+      const k = mall.unit * ppm;
+      g.lineWidth = 0.6;
+      g.strokeStyle = white(0.3 * a);
+      strokeRunsOf(g, mall.lines.roads, k, cx, cy);
+      g.setLineDash([2, 3]);
+      g.strokeStyle = white(0.45 * a);
+      strokeRunsOf(g, mall.lines.park, k, cx, cy);
+      g.setLineDash([]);
+      g.lineWidth = 0.75;
+      g.strokeStyle = white(0.72 * a);
+      strokeRunsOf(g, mall.lines.buildings, k, cx, cy);
+      g.lineWidth = 1.05;
+      g.strokeStyle = white(0.95 * a);
+      strokeRunsOf(g, mall.lines.water, k, cx, cy);
+      if (z > 3.05) {
+        for (const [x, y, text] of mall.labels) label(g, text, cx + x * ppm + 6, cy - y * ppm + 13 * ts, { size: 13.5, color: white(0.92 * a), soft: true });
+        g.setLineDash([5, 4]);
+        measureLine(g, mall.measure, ppm, cx, cy, fmtLen(facts.capitolToLincolnKm * 1000), a);
+        g.setLineDash([]);
+      }
+    });
+    layer('garden', band(z, 0.15, 0.6, 2.5, 2.85), (a) => {
+      const k = garden.unit * ppm;
+      const L = garden.lines;
+      g.lineWidth = 0.6;
+      g.strokeStyle = white(0.3 * a);
+      strokeRunsOf(g, L.roads, k, cx, cy);
+      g.strokeStyle = white(0.4 * a);
+      strokeRunsOf(g, L.paths, k, cx, cy);
+      g.strokeStyle = white(0.6 * a);
+      strokeRunsOf(g, L.beds, k, cx, cy);
+      g.setLineDash([2, 2]);
+      strokeRunsOf(g, L.edges, k, cx, cy);
+      g.setLineDash([]);
+      g.lineWidth = 0.9;
+      g.strokeStyle = white(0.9 * a);
+      strokeRunsOf(g, L.water, k, cx, cy);
+      g.lineWidth = 1.1;
+      g.strokeStyle = white(0.95 * a);
+      strokeRunsOf(g, L.buildings, k, cx, cy);
+      // A tree is a mark of where it stands, not of how wide it has grown.
+      g.fillStyle = white(0.75 * a);
+      const mark = clamp(0.5 * ppm, 1.1, 3.2);
+      for (let i = 0; i < garden.trees.length; i += 2) {
+        g.beginPath();
+        g.arc(cx + garden.trees[i] * k, cy - garden.trees[i + 1] * k, mark, 0, TAU);
+        g.fill();
+      }
+      g.lineWidth = 1.4;
+      g.strokeStyle = gold(a);
+      strokeRunsOf(g, L.haupt, k, cx, cy);
+      if (z > 1.6) {
+        label(g, `the Enid A. Haupt Garden, ${fmtLen(facts.hauptSpanM[0])} long`, cx - 5 * ppm, cy + 60 * ppm, { size: 15.5, color: gold(a), align: 'center' });
+        for (const [x, y, text] of garden.labels) label(g, text, cx + x * ppm, cy - y * ppm, { size: 13.5, color: white(0.92 * a), align: 'center', soft: true });
+      }
+    });
+  }
+  if (SMALL) {
+    const { bed, leaf, cells, chloroplast, ribosome, facts } = SMALL;
+    layer('bed', band(z, -0.95, -0.55, 0.95, 1.35), (a) => {
+      const k = bed.unit * ppm;
+      g.setLineDash([3, 3]);
+      g.lineWidth = 0.7;
+      g.strokeStyle = white(0.4 * a);
+      strokeRunsOf(g, bed.lines.extent, k, cx, cy);
+      g.setLineDash([]);
+      g.strokeStyle = white(0.62 * a);
+      strokeRunsOf(g, bed.lines.fine, k, cx, cy);
+      g.lineWidth = 1.2;
+      g.strokeStyle = white(0.97 * a);
+      strokeRunsOf(g, bed.lines.bold, k, cx, cy);
+      if (z > -0.3) measureLine(g, bed.measure, ppm, cx, cy, `the garden bed, ${fmtLen(facts.bed.longSideM)} long`, a);
+    });
+    layer('leaf', band(z, -2.35, -1.95, -0.45, -0.05), (a) => {
+      const k = leaf.unit * ppm;
+      g.lineWidth = 0.7;
+      g.strokeStyle = white(0.6 * a);
+      strokeRunsOf(g, leaf.lines.veins, k, cx, cy);
+      g.lineWidth = 1.2;
+      g.strokeStyle = white(0.97 * a);
+      strokeRunsOf(g, leaf.lines.edge, k, cx, cy);
+      if (z > -1.4) measureLine(g, leaf.measure, ppm, cx, cy, `one leaf, ${fmtLen(facts.leaf.bladeSpanM)} across`, a);
+    });
+    layer('cells', band(z, -5.05, -4.65, -3.35, -2.9), (a) => {
+      const k = cells.unit * ppm;
+      g.lineWidth = 0.75;
+      g.strokeStyle = white(0.5 * a);
+      strokeRunsOf(g, cells.lines.walls, k, cx, cy);
+      g.lineWidth = 0.9;
+      g.strokeStyle = white(0.95 * a);
+      strokeRunsOf(g, cells.lines.plastids, k, cx, cy);
+      label(g, `each small ring is a chloroplast, about ${fmtLen(facts.cells.plastidMedianM)} across`, cx, cy - R * 0.8, { size: 15.5, color: gold(a), align: 'center' });
+    });
+    layer('chloroplast', band(z, -6.65, -6.25, -5.05, -4.65), (a) => {
+      const k = chloroplast.unit * ppm;
+      g.lineWidth = 0.75;
+      g.strokeStyle = white(0.7 * a);
+      strokeRunsOf(g, chloroplast.lines.lamellae, k, cx, cy);
+      g.lineWidth = 1.2;
+      g.strokeStyle = white(0.97 * a);
+      strokeRunsOf(g, chloroplast.lines.envelope, k, cx, cy);
+      if (z > -5.9) measureLine(g, chloroplast.measure, ppm, cx, cy, `a chloroplast, ${fmtLen(facts.chloroplast.lengthM)} long`, a);
+    });
+    layer('ribosome', band(z, -7.95, -7.9, -6.9, -6.5), (a) => {
+      const k = ribosome.unit * ppm;
+      g.lineJoin = 'round';
+      g.lineWidth = 0.6;
+      g.strokeStyle = white(0.42 * a);
+      strokeRunsOf(g, ribosome.lines.rna, k, cx, cy);
+      g.lineWidth = 0.8;
+      g.strokeStyle = gold(0.75 * a);
+      strokeRunsOf(g, ribosome.lines.protein, k, cx, cy);
+      g.lineWidth = 1.3;
+      g.strokeStyle = white(0.97 * a);
+      strokeRunsOf(g, ribosome.lines.outline, k, cx, cy);
+      measureLine(g, ribosome.measure, ppm, cx, cy, `a ribosome, ${fmtLen(facts.ribosome.acrossM[0])} across`, a);
+    });
+  }
+
+  // A stop with no outline on show keeps a ring as wide as it is, and its name: the Chesapeake
+  // Bay always, and the rest until their line work has arrived.
   for (const s of STOPS) {
     if (s.d >= 1.2742e7) continue;
+    if (s.layer && (s.layer === 'city' || s.layer === 'mall' || s.layer === 'garden' ? GROUND : SMALL)) continue;
     const r = (s.d * ppm) / 2;
     const a = ramp(0.04, 0.16, r / R) * (1 - ramp(1.0, 1.25, r / R));
     if (a <= 0.01) continue;
@@ -453,9 +705,9 @@ function drawPlate() {
     g.beginPath();
     g.arc(cx, cy, r, 0, TAU);
     g.stroke();
-    label(g, `${s.name.replace(/^(The|A|One) /, (m) => m.toLowerCase())}, ${fmtLen(s.d)}`, cx, cy - r - 10 < cy - R + 16 ? cy - r + 14 : cy - r - 10, { size: 12.5, color: gold(a), align: 'center' });
+    label(g, `${s.name.replace(/^(The|A|One) /, (m) => m.toLowerCase())}, ${fmtLen(s.d)}`, cx, cy - r - 12 < cy - R + 18 ? cy - r + 16 : cy - r - 12, { size: 15.5, color: gold(a), align: 'center' });
   }
-  if (z < 7) {
+  if (z < 7 && !shown.has('leaf') && !shown.has('ribosome')) {
     g.strokeStyle = gold(0.9);
     g.lineWidth = 0.9;
     g.beginPath();
@@ -480,8 +732,9 @@ function drawPlate() {
   g.moveTo(cx, by - 3);
   g.lineTo(cx, by);
   g.stroke();
-  label(g, bar.label, cx, by - 14, { size: 13.5, align: 'center' });
+  label(g, bar.label, cx, by - 15 * ts, { size: 17, align: 'center' });
   rim = null;
+  placed = null;
   g.restore();
 }
 
@@ -494,6 +747,7 @@ function readout() {
   document.getElementById('stop-name').textContent = best.name;
   document.getElementById('plate-size').textContent = `The plate is about ${fmtLen(size)} across.`;
   document.getElementById('plate-light').textContent = `Light crosses it in ${lightTime(size).text}.`;
+  document.getElementById('plate-source').textContent = best.li.dataset.source || '';
   zoomIn.value = String(Math.round((Z_MAX - z) * 100));
   zoomIn.setAttribute('aria-valuetext', `${best.name}; the plate is about ${fmtLen(size)} across`);
 }
@@ -662,11 +916,16 @@ const BODY_NAMES = { mercury: 'Mercury', venus: 'Venus', mars: 'Mars', jupiter: 
 
 function drawSky() {
   const ms = NOW + Number(hours.value) * 60000;
-  const { g, w, h } = fit(skyCanvas);
+  const f = fit(skyCanvas);
+  if (!f) return;
+  const { g, w, h } = f;
+  ink(skyCanvas);
+  ts = clamp(0.8 + w / 1800, 0.92, 1.1);
+  placed = [];
   const cx = w / 2;
   const cy = h / 2;
   const edge = Math.min(w, h) / 2 - 1;
-  const R = edge - 20;
+  const R = edge - 22;
   const s = A.sky(ms, LAT, LON);
   // Zenith at the center, horizon at the rim; north up and east to the left, as when looking up.
   const spot = (enu) => {
@@ -675,7 +934,7 @@ function drawSky() {
     const r = ((Math.PI / 2 - alt) / (Math.PI / 2)) * R;
     return [cx - r * Math.sin(az), cy - r * Math.cos(az)];
   };
-  g.fillStyle = '#0a0c33';
+  g.fillStyle = WELL;
   g.beginPath();
   g.arc(cx, cy, edge, 0, TAU);
   g.fill();
@@ -699,7 +958,7 @@ function drawSky() {
     ['E', 90],
     ['S', 180],
     ['W', 270],
-  ].forEach(([t, d]) => label(g, t, cx - Math.sin(d * D2R) * (R + 10), cy - Math.cos(d * D2R) * (R + 10), { size: 13, align: 'center', italic: false, color: GOLD }));
+  ].forEach(([t, d]) => label(g, t, cx - Math.sin(d * D2R) * (R + 10), cy - Math.cos(d * D2R) * (R + 11), { size: 15, align: 'center', italic: false, color: GOLD }));
   // Altitude circles at 30 and 60 degrees.
   g.strokeStyle = white(0.16);
   g.setLineDash([1, 4]);
@@ -737,7 +996,7 @@ function drawSky() {
     g.fill();
     if (STARS.name[i] && mag <= 1.6) named.push([STARS.name[i], p]);
   }
-  for (const [name, p] of named) label(g, name, p[0] + 6, p[1] - 6, { size: 11.5, color: white(0.82) });
+  // (The names are placed after the planets, and give way to them.)
 
   const up = [];
   for (const id of Object.keys(BODY_NAMES)) {
@@ -748,7 +1007,7 @@ function drawSky() {
     g.beginPath();
     g.arc(p[0], p[1], 3.4, 0, TAU);
     g.fill();
-    label(g, BODY_NAMES[id], p[0] + 7, p[1] + 8, { size: 12.5, color: GOLD });
+    label(g, BODY_NAMES[id], p[0] + 8, p[1] + 9, { size: 15, color: GOLD });
     up.push(BODY_NAMES[id]);
   }
   const moon = s.bodies.moon;
@@ -761,7 +1020,7 @@ function drawSky() {
     g.arc(p[0], p[1], 6, 0, TAU);
     g.fill();
     g.stroke();
-    label(g, 'Moon', p[0] + 10, p[1] + 9, { size: 12.5, color: GOLD });
+    label(g, 'Moon', p[0] + 11, p[1] + 10, { size: 15, color: GOLD });
     up.push(`the Moon, ${Math.round(moon.illum * 100)}% lit`);
   }
   const sun = s.bodies.sun;
@@ -775,8 +1034,10 @@ function drawSky() {
     g.beginPath();
     g.arc(p[0], p[1], 9, 0, TAU);
     g.stroke();
-    label(g, 'Sun', p[0] + 13, p[1] + 9, { size: 12.5, color: GOLD });
+    label(g, 'Sun', p[0] + 14, p[1] + 10, { size: 15, color: GOLD });
   }
+  for (const [name, p] of named) label(g, name, p[0] + 6, p[1] - 7, { size: 13.5, color: white(0.86), soft: true });
+  placed = null;
   const light = sun.alt > 0 ? 'The Sun is up, so the stars are there but out of sight.' : sun.alt > -18 ? 'Twilight.' : 'Full night.';
   document.getElementById('sky-read').textContent =
     `Cincinnati, ${when.format(ms)}. ${light} ${up.length ? `Above the horizon: ${up.join(', ')}.` : 'No planet is above the horizon.'}`;
@@ -859,7 +1120,11 @@ let helensNow = 'before';
 let helensMix = 1;
 let helensFrom = 'before';
 function drawHelens() {
-  const { g, w, h } = fit(helensCanvas);
+  const f = fit(helensCanvas);
+  if (!f) return;
+  const { g, w, h } = f;
+  ink(helensCanvas);
+  ts = clamp(0.8 + w / 1800, 0.92, 1.1);
   const pad = 14;
   const k = (Math.min(w, h) - pad * 2) / (N - 1);
   const stroke = (segs, width, alpha) => {
@@ -887,7 +1152,7 @@ function drawHelens() {
     g.moveTo(px, py - 6);
     g.lineTo(px, py + 6);
     g.stroke();
-    label(g, `${grids[key].top.toLocaleString('en-US')} m`, px + 10, py - 9, { size: 13, color: gold(a) });
+    label(g, `${grids[key].top.toLocaleString('en-US')} m`, px + 11, py - 10, { size: 15.5, color: gold(a) });
   };
   if (helensFrom !== helensNow) layer(helensFrom, 1 - helensMix);
   layer(helensNow, helensMix);
@@ -901,7 +1166,7 @@ function drawHelens() {
   g.lineTo(pad + 10 + bar, h - pad - 10);
   g.lineTo(pad + 10 + bar, h - pad - 16);
   g.stroke();
-  label(g, '2 km', pad + 10 + bar / 2, h - pad - 24, { size: 12.5, align: 'center' });
+  label(g, '2 km', pad + 10 + bar / 2, h - pad - 26, { size: 15, align: 'center' });
   g.beginPath();
   g.moveTo(w - pad - 16, pad + 40);
   g.lineTo(w - pad - 16, pad + 14);
@@ -909,7 +1174,7 @@ function drawHelens() {
   g.moveTo(w - pad - 16, pad + 14);
   g.lineTo(w - pad - 11, pad + 22);
   g.stroke();
-  label(g, 'N', w - pad - 16, pad + 50, { size: 13, align: 'center', italic: false });
+  label(g, 'N', w - pad - 16, pad + 52, { size: 15, align: 'center', italic: false });
 }
 
 function showHelens(key) {
@@ -961,18 +1226,56 @@ document.getElementById('after').addEventListener('click', () => showHelens('aft
   host.append(end);
 }
 
-// ---- Draw, and draw again when the page changes size or the type arrives ---------------------
+// ---- Draw, and draw again when a canvas changes size, the type arrives or the edition changes --
 
 function drawAll() {
   drawPlate();
   drawSky();
   drawHelens();
 }
+
+// The editions: the same plates printed another way. The choice is kept for the next visit.
+{
+  const root = document.documentElement;
+  const group = document.getElementById('editions');
+  const buttons = [...group.querySelectorAll('button')];
+  const show = (name) => {
+    if (name === 'gilt') delete root.dataset.scheme;
+    else root.dataset.scheme = name;
+    for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.scheme === name));
+    const on = buttons.find((b) => b.dataset.scheme === name);
+    document.getElementById('edition-name').textContent = on ? on.dataset.name : '';
+    inks.clear();
+    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(root).getPropertyValue('--ink').trim();
+    drawAll();
+  };
+  for (const b of buttons) {
+    b.addEventListener('click', () => {
+      show(b.dataset.scheme);
+      try {
+        localStorage.setItem('atlas:scheme', b.dataset.scheme);
+      } catch {
+        // Private windows may refuse storage: the choice then lasts for the visit.
+      }
+    });
+  }
+  group.hidden = false;
+  const kept = root.dataset.scheme;
+  show(buttons.some((b) => b.dataset.scheme === kept) ? kept : 'gilt');
+}
+
 readout();
 drawAll();
 document.fonts?.ready.then(drawAll);
-let resizeTimer = 0;
-addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(drawAll, 80);
-});
+{
+  let frame = 0;
+  const again = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(drawAll);
+  };
+  if ('ResizeObserver' in window) {
+    const watch = new ResizeObserver(again);
+    for (const c of [plate, skyCanvas, helensCanvas]) watch.observe(c);
+  }
+  addEventListener('resize', again);
+}

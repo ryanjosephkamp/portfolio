@@ -1,4 +1,5 @@
-/* Atlas: an engraved star atlas. Deep indigo, fine white line work, a little gold. */
+/* Atlas: an engraved star atlas. Deep indigo, fine white line work, a little gold.
+   Every color is a variable, so the same plates can be printed another way: see "Editions". */
 
 @font-face {
   font-family: 'IM Fell English';
@@ -19,6 +20,7 @@
   --ink: #0d1040;
   --ink-deep: #080a2b;
   --ink-lift: #161a5c;
+  --well: #0a0c33;
   --line: #eef0ff;
   --dim: rgba(238, 240, 255, 0.72);
   --faint: rgba(238, 240, 255, 0.28);
@@ -26,6 +28,65 @@
   --gold: #e8bd5a;
   --serif: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
   --gutter: clamp(16px, 4vw, 56px);
+  color-scheme: dark;
+}
+
+/* Editions: other ways an engraved atlas was printed. The indigo and gilt plate is the default.
+   --gold is the accent in every edition, whatever its color. */
+
+/* Plain: black ink on laid paper. */
+:root[data-scheme='plain'],
+:root[data-scheme='colored'] {
+  color-scheme: light;
+  --ink: #f2ebd9;
+  --ink-deep: #e7dec6;
+  --ink-lift: #f9f4e7;
+  --well: #f7f2e3;
+  --line: #1c1915;
+  --dim: rgba(28, 25, 21, 0.8);
+  --faint: rgba(28, 25, 21, 0.36);
+  --hair: rgba(28, 25, 21, 0.18);
+  --gold: #1c1915;
+}
+:root[data-scheme='plain'] body,
+:root[data-scheme='colored'] body {
+  /* The laid lines and chain lines of a hand-made sheet. */
+  background:
+    repeating-linear-gradient(0deg, rgba(70, 52, 20, 0.03) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(70, 52, 20, 0.032) 0 1px, transparent 1px 37px),
+    radial-gradient(120% 80% at 50% 0%, var(--ink-lift) 0%, var(--ink) 50%, var(--ink-deep) 100%) fixed,
+    var(--ink);
+}
+
+/* Hand-colored: the same sheet, each one washed along its border in its own color, the way a
+   colorist outlined the countries of a map. */
+:root[data-scheme='colored'] {
+  --gold: #2a6a50;
+}
+:root[data-scheme='colored'] #splashery {
+  --gold: #9a3553;
+}
+:root[data-scheme='colored'] #plates {
+  --gold: #8a5a0c;
+}
+:root[data-scheme='colored'] #interests {
+  --gold: #2f4d8c;
+}
+:root[data-scheme='colored'] .sheet {
+  box-shadow: inset 0 0 0 7px color-mix(in srgb, var(--gold) 20%, transparent);
+}
+
+/* Field edition: white line on black, as a chart is printed for use in the dark. */
+:root[data-scheme='field'] {
+  --ink: #0c0c0b;
+  --ink-deep: #040404;
+  --ink-lift: #171716;
+  --well: #050505;
+  --line: #d6d3cb;
+  --dim: rgba(214, 211, 203, 0.76);
+  --faint: rgba(214, 211, 203, 0.32);
+  --hair: rgba(214, 211, 203, 0.17);
+  --gold: #ffffff;
 }
 
 * {
@@ -52,6 +113,7 @@ a {
 }
 a:hover {
   color: var(--gold);
+  text-decoration-thickness: 2px;
 }
 :focus-visible {
   outline: 2px solid var(--gold);
@@ -99,13 +161,98 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 28px;
-  justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   padding: 18px var(--gutter) 14px;
   border-bottom: 1px solid var(--hair);
 }
 .top-mark {
-  margin: 0;
+  margin: 0 auto 0 0;
+}
+.editions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  font-size: 0.9em;
+}
+.editions[hidden] {
+  display: none;
+}
+.editions-label {
+  color: var(--dim);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.editions-label span {
+  color: var(--line);
+}
+.editions button {
+  all: unset;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.editions button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.editions button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.swatch {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #8a8778;
+  overflow: hidden;
+}
+.swatch::after {
+  content: '';
+  position: absolute;
+  inset: 60% 0 0;
+}
+.s-gilt {
+  background: #0d1040;
+}
+.s-gilt::after {
+  background: #e8bd5a;
+}
+.s-plain,
+.s-colored {
+  background: #f2ebd9;
+}
+.s-plain::after {
+  background: #1c1915;
+}
+.s-colored::after {
+  background: linear-gradient(90deg, #2a6a50 0 34%, #9a3553 34% 67%, #8a5a0c 67%);
+}
+.s-field {
+  background: #0c0c0b;
+}
+.s-field::after {
+  background: #ffffff;
+}
+@media (pointer: coarse) {
+  .editions button {
+    width: 44px;
+    height: 44px;
+  }
+}
+@media (max-width: 560px) {
+  /* The four swatches keep one row; the pressed one and its title name the edition. */
+  .editions-label span {
+    display: none;
+  }
+  .top {
+    gap: 2px 28px;
+    padding-top: 14px;
+    padding-bottom: 8px;
+  }
 }
 .top-mark i {
   color: var(--dim);
@@ -175,7 +322,7 @@ h1 {
 
 .plate {
   display: block;
-  width: min(100%, 66vh);
+  width: min(100%, 60vh);
   aspect-ratio: 1;
   margin: 0 auto;
   border-radius: 50%;
@@ -202,8 +349,16 @@ h1 {
 }
 .readout {
   text-align: center;
-  margin-top: 10px;
-  min-height: 4.6em;
+  margin-top: 8px;
+  min-height: 6.1em;
+}
+.stop-source {
+  font-size: 0.86em;
+  font-style: italic;
+  color: var(--dim);
+  margin: 0.2em auto 0;
+  max-width: 36em;
+  min-height: 1.5em;
 }
 .stop-name {
   font-size: 1.35em;
