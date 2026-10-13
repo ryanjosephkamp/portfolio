@@ -6,10 +6,10 @@
     <title>Ryan Kamp · Slice</title>
     <meta
       name="description"
-      content="Ryan Kamp builds ways to see inside things. A real CT scan of a walnut on a light box: cut it on three planes, set the window, turn its maximum-intensity picture."
+      content="Ryan Kamp builds ways to see inside things. Two real CT scans on a light box, a walnut and a young gar's head: cut them on three planes, set the window, turn the cutaway."
     />
     <meta property="og:title" content="Ryan Kamp · Slice" />
-    <meta property="og:description" content="A real CT scan of a walnut on a light box. Cut it, window it, turn it." />
+    <meta property="og:description" content="Two real CT scans on a light box: a walnut and a young gar's head. Cut them, window them, turn them." />
     <meta property="og:image" content="assets/og.jpg" />
     <meta name="theme-color" content="#eef4f6" />
     <link rel="preload" href="assets/fonts/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -37,21 +37,22 @@
       <section class="exam" aria-labelledby="name">
         <div class="exam-words">
           <div class="who">
-            <p class="tag">Exam: one walnut, X-ray CT</p>
+            <p class="tag">Exam: one walnut, one gar, X-ray CT</p>
             <h1 id="name">Ryan Kamp</h1>
             <p class="lede">builds ways to <mark>see inside things</mark>.</p>
           </div>
           <div class="what">
             <p>
               A graduate student in computer science at the University of Cincinnati, with a degree in
-              neuroscience and another in mathematics. Clipped to the box is a real CT scan of a
-              walnut: the sample that ships in the volume viewer of
-              <a href="#splashery">Splashery</a>, his Gaussian splat playground.
+              neuroscience and another in mathematics. Clipped to the box are two real CT scans, the
+              samples that ship in the volume viewer of <a href="#splashery">Splashery</a>, his
+              Gaussian splat playground: a walnut, and the head of a young gar.
             </p>
             <p class="how">
               <strong><span class="for-mouse">Move across</span><span class="for-touch">Tap, or drag sideways on,</span>
-              any picture to cut the walnut there.</strong> Drag the last one to turn it. The strip
-              underneath sets the window.
+              any picture to cut the scan there.</strong> The last picture is the scan with that corner
+              carved away; drag it to turn it. The strip underneath sets the window, and the two
+              labels on the film change the scan.
             </p>
           </div>
         </div>
@@ -59,10 +60,14 @@
         <figure class="film film-exam" id="viewer" aria-labelledby="viewer-cap">
           <div class="clip" aria-hidden="true"></div>
           <div class="clip clip-2" aria-hidden="true"></div>
-          <p class="burn burn-head">
-            <span>WALNUT 1 · X-RAY CT</span>
+          <div class="burn burn-head">
+            <span class="scans" role="group" aria-label="Scan on the box">
+              <button type="button" data-scan="walnut" aria-pressed="true">Walnut</button>
+              <button type="button" data-scan="gar" aria-pressed="false">Gar's head</button>
+            </span>
+            <span id="burn-title">WALNUT 1 · X-RAY CT</span>
             <span id="burn-pos">113 × 115 × 142 voxels · 0.3 mm</span>
-          </p>
+          </div>
 
           <img
             class="film-fallback"
@@ -74,33 +79,43 @@
           />
 
           <div class="panes">
-            <div class="pane" data-cut="top">
-              <div class="view" tabindex="0" role="group" aria-label="Top down cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
-                <canvas width="113" height="115"></canvas>
-                <i class="hair hair-v"></i><i class="hair hair-h"></i>
+            <div class="row">
+              <div class="pane" data-cut="top" style="--a: 0.983">
+                <div class="view" tabindex="0" role="group" aria-label="Top down cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
+                  <canvas width="113" height="115"></canvas>
+                  <i class="hair hair-v"></i><i class="hair hair-h"></i>
+                </div>
+                <p class="burn"><b>Top down</b> <span data-readout></span></p>
               </div>
-              <p class="burn"><b>Top down</b> <span data-readout></span></p>
+              <div class="pane" data-cut="view" style="--a: 0.729">
+                <div class="view" tabindex="0" role="group" aria-label="The scan as a solid, with the corner at the cut lines carved away. Left and right arrow keys turn it.">
+                  <canvas width="132" height="181"></canvas>
+                </div>
+                <p class="burn">
+                  <span class="modes" role="group" aria-label="The fourth picture">
+                    <button type="button" data-mode="cutaway" aria-pressed="true">Cutaway</button>
+                    <button type="button" data-mode="mip" aria-pressed="false">Maximum intensity</button>
+                  </span>
+                  <span data-readout></span>
+                </p>
+              </div>
             </div>
-            <div class="pane" data-cut="mip">
-              <div class="view" tabindex="0" role="group" aria-label="Maximum-intensity picture. Left and right arrow keys turn the walnut.">
-                <canvas width="132" height="142"></canvas>
+            <div class="row">
+              <div class="pane" data-cut="front" style="--a: 0.796">
+                <div class="view" tabindex="0" role="group" aria-label="Front to back cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
+                  <canvas width="113" height="142"></canvas>
+                  <i class="hair hair-v"></i><i class="hair hair-h"></i>
+                  <span class="scale" aria-hidden="true"><i></i>10 mm</span>
+                </div>
+                <p class="burn"><b>Front to back</b> <span data-readout></span></p>
               </div>
-              <p class="burn"><b>Maximum intensity</b> <span data-readout></span></p>
-            </div>
-            <div class="pane" data-cut="front">
-              <div class="view" tabindex="0" role="group" aria-label="Front to back cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
-                <canvas width="113" height="142"></canvas>
-                <i class="hair hair-v"></i><i class="hair hair-h"></i>
-                <span class="scale" aria-hidden="true"><i></i>10 mm</span>
+              <div class="pane" data-cut="side" style="--a: 0.81">
+                <div class="view" tabindex="0" role="group" aria-label="Side to side cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
+                  <canvas width="115" height="142"></canvas>
+                  <i class="hair hair-v"></i><i class="hair hair-h"></i>
+                </div>
+                <p class="burn"><b>Side to side</b> <span data-readout></span></p>
               </div>
-              <p class="burn"><b>Front to back</b> <span data-readout></span></p>
-            </div>
-            <div class="pane" data-cut="side">
-              <div class="view" tabindex="0" role="group" aria-label="Side to side cut. Arrow keys move the cut lines; Page Up and Page Down step this slice.">
-                <canvas width="115" height="142"></canvas>
-                <i class="hair hair-v"></i><i class="hair hair-h"></i>
-              </div>
-              <p class="burn"><b>Side to side</b> <span data-readout></span></p>
             </div>
           </div>
 
@@ -110,8 +125,8 @@
               <div class="band" id="band"><i class="grip grip-lo"></i><i class="grip grip-hi"></i></div>
             </div>
             <div class="sliders">
-              <label>Level <input type="range" id="level" min="1" max="254" value="148" /><output id="level-out">148</output></label>
-              <label>Width <input type="range" id="width" min="2" max="254" value="184" /><output id="width-out">184</output></label>
+              <label>Level <input type="range" id="level" min="1" max="254" value="166" /><output id="level-out">166</output></label>
+              <label>Width <input type="range" id="width" min="2" max="254" value="178" /><output id="width-out">178</output></label>
             </div>
             <div class="presets" role="group" aria-label="Window presets">
               <button type="button" data-preset="full" aria-pressed="true">Full range</button>
@@ -123,8 +138,15 @@
           </div>
 
           <figcaption id="viewer-cap">
-            Walnut 1 from the CWI cone-beam CT collection (credit below), averaged to 0.3 mm voxels.
-            Every picture is read live from the scan's 1,845,290 voxels.
+            <span data-credit="walnut">
+              Walnut 1 from the CWI cone-beam CT collection, averaged to 0.3 mm voxels. Every picture
+              is read live from the scan's 1,845,290 voxels.
+            </span>
+            <span data-credit="gar" hidden>
+              A 12.8 mm gar larva, micro-CT by Brian Metscher, averaged to 17.7 µm voxels and cropped
+              to the fish. Every picture is read live from the scan's 2,854,656 voxels.
+            </span>
+            Credits are at the foot of the page.
           </figcaption>
         </figure>
       </section>
@@ -163,8 +185,8 @@
               maximum-intensity picture.
             </p>
             <p>
-              Its samples are real scans of things that aren't people: this walnut, and the head of a
-              young gar. The viewer sits behind Splashery's
+              Its samples are real scans of things that aren't people: the walnut and the young gar's
+              head on the box above. The viewer sits behind Splashery's
               <a href="https://ryanjosephkamp.github.io/splashery/?labs=1">labs switch</a>.
             </p>
           </article>
@@ -175,7 +197,7 @@
               <i class="ring" id="ring" aria-hidden="true"></i>
             </div>
             <figcaption>
-              <span class="burn">THE WHOLE EXAM · 142 SLICES · 12 TO A ROW</span>
+              <span class="burn" id="sheet-count">THE WHOLE EXAM · 142 SLICES · 12 TO A ROW</span>
               The ring marks the slice in the top-down picture. Choose any slice to hang it there.
             </figcaption>
           </figure>
@@ -191,7 +213,7 @@
               microscope sees them, and a mug of tea cools in a thermal camera's false colors.
             </p>
             <p class="small">
-              On this page: the walnut slice you chose, rebuilt from nothing but its own X-ray shadows by
+              On this page: the slice you chose, rebuilt from nothing but its own X-ray shadows by
               filtered back projection. One view is a smear. Slide toward 180.
             </p>
             </div>
@@ -469,12 +491,20 @@
 
     <footer class="foot">
       <p>
-        The scan: Walnut 1 from
+        The walnut: Walnut 1 from
         <a href="https://doi.org/10.5281/zenodo.2686726"><cite>Cone-Beam X-Ray CT Data Collection Designed for Machine Learning</cite></a>
         by Henri Der Sarkissian, Felix Lucka, Maureen van Eijnatten, Giulia Colacicco, Sophia Bethany
         Coban and K. Joost Batenburg (CWI), used under
         <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Changed: averaged to 0.3 mm
         voxels and stored as 8-bit densities, as Splashery ships it.
+      </p>
+      <p>
+        The gar: the 12.8 mm larva from
+        <a href="https://doi.org/10.5281/zenodo.19021581"><cite>MicroCT images of 3 early gar (Lepisosteus osseus) stages between 12.7mm and 21.7mm</cite></a>
+        by Brian Metscher (University of Vienna), used under
+        <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Changed: averaged to
+        17.7 µm voxels, cropped to the fish with a margin, and the faint noise of the empty background
+        set to 0, as Splashery ships it.
       </p>
       <p>Ryan Kamp · Cincinnati, Ohio · Switch the box off when you leave.</p>
     </footer>

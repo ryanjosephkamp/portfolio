@@ -288,12 +288,6 @@ h1 {
   .what {
     justify-self: end;
   }
-  .panes {
-    grid-template-columns: 113fr 113fr 115fr 132fr !important;
-  }
-  .pane[data-cut='mip'] {
-    order: 4;
-  }
   .sliders {
     grid-template-columns: 1fr !important;
   }
@@ -315,11 +309,14 @@ h1 {
 }
 .burn-head {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-bottom: 12px;
+  gap: 8px 18px;
+  margin-bottom: 14px;
   min-height: 2.7em;
+}
+#burn-pos {
+  margin-left: auto;
 }
 .film-fallback {
   display: block;
@@ -349,19 +346,42 @@ html:not(.js) .real-frame {
     display: none;
   }
 }
+/* Each picture takes a width in proportion to its own shape, so a row shares one height. */
 .panes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 12px;
-  align-items: end;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.pane {
+  flex: var(--a, 1) 1 0;
+  min-width: 0;
 }
 .pane .burn {
   margin-top: 6px;
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 0 8px;
   white-space: nowrap;
+}
+/* Wide enough for all four in one row, the turning picture last. */
+@media (min-width: 1000px) {
+  .panes {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .row {
+    display: contents;
+  }
+  .pane[data-cut='view'] {
+    order: 4;
+  }
 }
 .view {
   position: relative;
@@ -373,8 +393,69 @@ html:not(.js) .real-frame {
   touch-action: pan-y; /* a sideways drag cuts or turns; an up-and-down swipe scrolls the page */
   background: #070e16;
 }
-.pane[data-cut='mip'] .view {
+.pane[data-cut='view'] .view {
   cursor: ew-resize;
+}
+/* The two labels on the film's edge: which scan is on the box. */
+.scans {
+  display: inline-flex;
+  gap: 10px;
+}
+.scans button {
+  font: 700 0.74rem/1 var(--mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 9px 11px;
+  min-height: 34px;
+  color: var(--ink);
+  background: var(--glow);
+  border: 0;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.5);
+  rotate: -1.5deg;
+}
+.scans button + button {
+  rotate: 1.2deg;
+}
+.scans button[aria-pressed='true'] {
+  background: var(--wax);
+  color: #23000f;
+}
+.scans button[aria-pressed='false']:hover {
+  background: #fff;
+  translate: 0 -1px;
+}
+html:not(.js) .scans {
+  display: none;
+}
+.pane[data-cut='view'] .burn {
+  display: grid;
+  gap: 6px;
+  justify-content: start;
+  white-space: normal;
+}
+.modes {
+  display: flex;
+  gap: 2px 14px;
+  flex-wrap: wrap;
+}
+.modes button {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 3px 0;
+  background: none;
+  border: 0;
+  color: var(--on-film-2);
+  border-bottom: 2px solid transparent;
+}
+.modes button:hover {
+  color: var(--on-film);
+}
+.modes button[aria-pressed='true'] {
+  color: var(--on-film);
+  font-weight: 700;
+  border-bottom-color: var(--wax);
 }
 .view canvas {
   display: block;
@@ -406,7 +487,7 @@ html:not(.js) .real-frame {
   font: 500 0.66rem/1 var(--mono);
   color: var(--on-film);
   pointer-events: none;
-  width: calc(100% * 10 / 0.3 / 113); /* 10 mm of 0.3 mm voxels, 113 across */
+  width: 29.5%; /* 10 mm of the walnut's 33.9; the script sets it for each scan */
   text-align: center;
 }
 .scale i {
@@ -624,14 +705,19 @@ h2 {
   width: 100%;
   height: auto;
 }
+.sheet-frame {
+  --cols: 12;
+  --rows: 12;
+  --cell: 113 / 115;
+}
 .ring {
   --c: 10;
   --r: 5;
   position: absolute;
-  width: calc(100% / 12);
-  aspect-ratio: 113 / 115;
-  left: calc(var(--c) * 100% / 12);
-  top: calc(var(--r) * 100% / 12);
+  width: calc(100% / var(--cols));
+  aspect-ratio: var(--cell);
+  left: calc(var(--c) * 100% / var(--cols));
+  top: calc(var(--r) * 100% / var(--rows));
   border: 2.5px solid var(--wax);
   border-radius: 47% 53% 50% 50% / 54% 46% 54% 46%;
   transform: scale(1.22) rotate(-9deg);
@@ -964,7 +1050,8 @@ html:not(.js) .film-atlas .small {
   .sliders {
     grid-template-columns: 1fr;
   }
-  .panes {
+  .panes,
+  .row {
     gap: 10px 8px;
   }
   .burn,
@@ -1001,6 +1088,12 @@ html:not(.js) .film-atlas .small {
   }
   .presets button {
     min-height: 44px;
+  }
+  .modes button {
+    padding-block: 11px;
+  }
+  .scans button {
+    min-height: 40px;
   }
 }
 
