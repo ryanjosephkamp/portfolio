@@ -75,7 +75,14 @@
         </div>
 
         <div class="contents">
-          <span class="contents__head">Contents</span>
+          <div class="contents__head">
+            <span>Contents</span>
+            <span class="detail" id="detail" role="group" aria-label="How many splats the toy is built from" hidden>
+              <span class="detail__label">Splats</span>
+              <button class="chip" id="fewer" type="button">Fewer</button>
+              <button class="chip" id="more" type="button">More</button>
+            </span>
+          </div>
           <p id="contents">One name, in splats. Turn on JavaScript to tip them out.</p>
           <p class="contents__status" id="status" aria-live="polite"></p>
         </div>
@@ -83,7 +90,7 @@
 
       <div class="hero__foot">
         <p class="hero__intro">I&rsquo;m Ryan Kamp, a master&rsquo;s student in computer science at the <a href="https://www.uc.edu/">University of Cincinnati</a>. I&rsquo;m interested in digital media, and lately in Gaussian splats as something to play with: a toy you can spin, poke, paint, drop and blow on. That one up there is my name. The full toy box is <a href="#box">Splashery</a>.</p>
-        <p class="hero__aside">Every letter rings its own note once the sound is on. Whatever you do to it, <b>Copy link</b> packs the toy, its paint and the way it&rsquo;s turned into the address.</p>
+        <p class="hero__aside">Every letter rings its own note once the sound is on. Whatever you do to it, <b>Copy link</b> packs the toy, its paint and the way it&rsquo;s turned into the address. <b>More</b>, on the label, builds it from more splats.</p>
       </div>
     </div>
   </header>
@@ -112,7 +119,7 @@
           </div>
           <div class="box__role">
             <h3>My part</h3>
-            <p>I defined the project vision and toy categories, refined interaction design through hands-on testing, and contributed selected mathematical recipes.</p>
+            <p>I defined the project&rsquo;s vision and its toy categories, refined the interaction design through hands-on testing, and contributed mathematical recipes.</p>
             <p class="small">It is built on the PlayCanvas engine, with WebGPU when the browser has it and WebGL2 otherwise. Static files and ES modules only: no build step, no framework, no server.</p>
           </div>
         </div>
@@ -168,46 +175,66 @@
         <header class="head">
           <p class="head__tag">Also on the shelf</p>
           <h2>Other things I&rsquo;ve made</h2>
-          <p class="head__lede">Not toys, strictly. Tools for words, for reading and for the agents that write code.</p>
+          <p class="head__lede">Not toys, strictly. Tools for words, for collecting and reading, and for work with coding agents.</p>
         </header>
 
-        <ul class="cards">
-          <li class="card card--art" style="--c:var(--yellow);--tilt:-.8deg">
+        <ul class="cards cards--shelf">
+          <li class="card card--art card--wide" style="--c:var(--yellow);--tilt:-.5deg">
             <div class="art art--grooph" aria-hidden="true">
               <i class="node" style="--x:14%;--y:62%;--n:var(--pink)"></i><i class="node" style="--x:50%;--y:62%;--n:var(--teal)"></i><i class="node" style="--x:86%;--y:62%;--n:var(--violet)"></i>
               <i class="token"></i>
             </div>
             <h3>grooph</h3>
-            <p>Loop graphs for coding agents. Draw who builds, who checks, where a person decides and when the work stops; grooph checks that every loop names a stop, then compiles the graph into a prompt package. It never runs an agent and never calls a model.</p>
-            <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/grooph/">Open the app</a><a class="link" href="https://github.com/ryanjosephkamp/grooph">Source</a></p>
+            <p>Visual loop graphs for coding-agent workflows. You draw who builds, who checks, where a person decides and when the work stops. grooph checks that every loop names a stop, then compiles the graph into a prompt package for a separate coding-agent harness. It runs no agent and calls no model, and graphs stay on your device.</p>
+            <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/grooph/">Open the app</a><a class="link" href="https://ryanjosephkamp.github.io/grooph/docs/">Docs</a><a class="link" href="https://github.com/ryanjosephkamp/grooph">Source</a></p>
           </li>
-          <li class="card card--art" style="--c:var(--sky);--tilt:.8deg">
-            <div class="art art--list" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-            <h3>English OpenList</h3>
-            <p>A free, open, and continuously maintained list of valid English words, published as plain text and JSON so anyone can download it, inspect it and use it.</p>
-            <p class="links"><a class="link" href="https://english-openlist.pages.dev/">Explore</a><a class="link" href="https://huggingface.co/datasets/ryanjosephkamp/english-openlist">Dataset</a><a class="link" href="https://github.com/ryanjosephkamp/english-openlist">Source</a></p>
+          <li class="card card--art" style="--c:var(--teal);--tilt:.9deg">
+            <div class="art art--qr" id="qr" aria-hidden="true"></div>
+            <h3>aqrobat</h3>
+            <p>A local text and emoji QR lab: QR artwork built from letters, symbols or emoji.</p>
+            <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/aqrobat/">Make one</a><a class="link" href="https://github.com/ryanjosephkamp/aqrobat">Source</a></p>
           </li>
-          <li class="card card--art" style="--c:var(--pink);--tilt:-.5deg">
-            <div class="art art--resmon" aria-hidden="true"><i class="sweep"></i><i class="blip" style="--x:30%;--y:34%;--d:0s"></i><i class="blip" style="--x:66%;--y:44%;--d:1.2s"></i><i class="blip" style="--x:44%;--y:70%;--d:2.3s"></i></div>
-            <h3>resmon</h3>
-            <p>Research Monitor: a local-first literature-monitoring desktop application with scheduled searches, deduplication, and optional LLM summarization.</p>
-            <p class="links"><a class="link" href="https://github.com/ryanjosephkamp/resmon">Source</a></p>
+          <li class="card card--art" style="--c:var(--violet);--tilt:-1deg;--fg:var(--paper)">
+            <div class="art art--amordle" aria-hidden="true"><b style="--i:0">S</b><b style="--i:1">P</b><b style="--i:2">L</b><b style="--i:3">A</b><b style="--i:4">T</b></div>
+            <h3>Amordle</h3>
+            <p>A free word game with any word length from 2 to 35 letters, three difficulties, a daily puzzle, and ranked multiplayer with an Elo rating. By its own sum: Wordle + Hurdle + Lichess &minus; ads.</p>
+            <p class="links"><a class="link" href="https://amordle.vercel.app">Play</a><a class="link" href="https://ryanjosephkamp.github.io/blog/articles/amordle/">Write-up</a><a class="link" href="https://github.com/ryanjosephkamp/amordle">Source</a></p>
           </li>
           <li class="card card--art" style="--c:var(--orange);--tilt:1deg">
             <div class="art art--ars" id="ars" aria-hidden="true">
               <b style="--a:0;--b:0">A</b><b style="--a:1;--b:4">R</b><b style="--a:2;--b:7">S</b><b style="--a:3;--b:6">M</b><b style="--a:4;--b:2">A</b><b style="--a:5;--b:3">G</b><b style="--a:6;--b:1">N</b><b style="--a:7;--b:5">A</b>
             </div>
             <h3>Ars Magna</h3>
-            <p>An anagram of &ldquo;Anagrams.&rdquo; Give it any text and it returns every way those exact letters can be re-partitioned into real English words. No AI: a deterministic search.</p>
+            <p>An anagram finder. Give it any text and it returns every way those exact letters can be re-partitioned into real English words, by a deterministic search. Its name is an anagram of &ldquo;Anagrams.&rdquo;</p>
             <p class="links"><a class="link" href="https://ars-magna.pages.dev/">Try it</a><a class="link" href="https://github.com/ryanjosephkamp/ars-magna">Source</a></p>
           </li>
-          <li class="card card--art" style="--c:var(--violet);--tilt:-1deg;--fg:var(--paper)">
-            <div class="art art--amordle" aria-hidden="true"><b style="--i:0">S</b><b style="--i:1">P</b><b style="--i:2">L</b><b style="--i:3">A</b><b style="--i:4">T</b></div>
-            <h3>Amordle</h3>
-            <p>Wordle + Hurdle + Lichess &minus; ads. A free word game with any word length from 2 to 35 letters, three difficulties, a daily puzzle, and ranked multiplayer with a real Elo rating.</p>
-            <p class="links"><a class="link" href="https://amordle.vercel.app">Play</a><a class="link" href="https://github.com/ryanjosephkamp/amordle">Source</a></p>
+          <li class="card card--art" style="--c:var(--sky);--tilt:.8deg">
+            <div class="art art--list" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <h3>English OpenList</h3>
+            <p>A free, open, continuously maintained list of valid English words, about 345,000 of them, with the provenance of every word: which sources attested it, and when. It keeps auditable correction records and has a browser explorer.</p>
+            <p class="links"><a class="link" href="https://english-openlist.pages.dev/">Explore</a><a class="link" href="https://huggingface.co/datasets/ryanjosephkamp/english-openlist">Dataset</a><a class="link" href="https://github.com/ryanjosephkamp/english-openlist">Source</a></p>
+          </li>
+          <li class="card card--art" style="--c:var(--yellow);--tilt:-.9deg">
+            <div class="art art--meteor" aria-hidden="true"><i class="meteor"></i><b class="field field--text">anchor text</b><b class="field field--url">URL</b></div>
+            <h3>Link Meteor</h3>
+            <p>A Chrome extension that collects links with their anchor text and URL in separate fields, for reviewing sources and exporting a research collection. No account, ads, telemetry or backend.</p>
+            <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/link-meteor/">Website</a><a class="link" href="https://github.com/ryanjosephkamp/link-meteor">Source</a></p>
+          </li>
+          <li class="card card--art" style="--c:var(--pink);--tilt:.6deg">
+            <div class="art art--resmon" aria-hidden="true"><i class="sweep"></i><i class="blip" style="--x:30%;--y:34%;--d:0s"></i><i class="blip" style="--x:66%;--y:44%;--d:1.2s"></i><i class="blip" style="--x:44%;--y:70%;--d:2.3s"></i></div>
+            <h3>resmon</h3>
+            <p>A local-first literature-monitoring desktop application. It runs scheduled searches across open-access scholarly sources, removes duplicates, and compiles reading reports, with optional summaries.</p>
+            <p class="links"><a class="link" href="https://github.com/ryanjosephkamp/resmon">Source</a></p>
+          </li>
+          <li class="card card--art" style="--c:var(--paper);--tilt:-.7deg">
+            <div class="art art--reword" aria-hidden="true"><span class="doc"><i></i><i></i><i></i><i></i></span><span class="arrow"></span><span class="book"><i></i><i></i><i></i></span></div>
+            <h3>reword_nerd</h3>
+            <p>A local-first browser workbench that turns a reviewed document, or a set of images, into a portable workbook of rewriting prompts. Everything stays reviewable in the browser, the download is a separate, explicit step, and it contacts no model provider itself.</p>
+            <p class="links"><a class="link" href="https://ryanjosephkamp.github.io/reword-nerd/">Open</a><a class="link" href="https://ryanjosephkamp.github.io/blog/articles/reword-nerd/">Write-up</a><a class="link" href="https://github.com/ryanjosephkamp/reword-nerd">Source</a></p>
           </li>
         </ul>
+
+        <p class="last"><b>And at the back of the shelf:</b> The Speed-Accuracy Trade-Off in Perceptual Decision-Making (April 2025), my undergraduate research capstone. It models evidence accumulation as a diffusion process and uses dynamic programming and value iteration to study decision boundaries in a simulated autonomous-vehicle obstacle-avoidance scenario. <a class="link" href="https://github.com/ryanjosephkamp/UC_Undergraduate_Research_Capstone">Code</a> <a class="link" href="https://youtu.be/LRAP1YHy3g0">Video</a></p>
       </div>
     </section>
 

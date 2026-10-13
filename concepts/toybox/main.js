@@ -145,6 +145,14 @@ function put(T, i, x, y, z, nx, ny, nz, col, k, size, tag = 0) {
   T.tag[i] = tag;
 }
 
+// Where the splats go. White noise leaves clumps and holes that read as grain, so
+// every builder places its splats with a low-discrepancy sequence instead: R2
+// (Roberts) on surfaces and a Fibonacci lattice on the sphere. The random numbers
+// that remain only vary a splat's size and shade.
+const R2 = [0.7548776662466927, 0.5698402909980532];
+const frac = (v) => v - Math.floor(v);
+const TAU = Math.PI * 2;
+
 function buildName(n) {
   const rand = rng(1999);
   const W = 680, H = 430, px = 200;
@@ -167,39 +175,51 @@ function buildName(n) {
   });
   const data = ctx.getImageData(0, 0, W, H).data;
   const alpha = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : data[(y * W + x) * 4 + 3]);
-  const filled = [], edges = [];
-  let x0 = W, x1 = 0, y0 = H, y1 = 0;
+  const edges = [];
+  let x0 = W, x1 = 0, y0 = H, y1 = 0, ink = 0;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       if (alpha(x, y) < 128) continue;
-      filled.push(y * W + x);
+      ink++;
       if (alpha(x - 1, y) < 128 || alpha(x + 1, y) < 128 || alpha(x, y - 1) < 128 || alpha(x, y + 1) < 128) edges.push(y * W + x);
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
     }
   }
   const T = makeToy(n);
-  if (!filled.length) return T;
+  if (!edges.length) return T;
   const S = Math.max((x1 - x0) / 2.7, (y1 - y0) / 1.52), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-  const depth = 0.13, s0 = 0.043 * Math.sqrt(16000 / n);
+  const depth = 0.13, bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+  const letterAt = (p) => Math.max(0, Math.min(7, Math.round(data[p * 4] / 28) - 1));
   T.census = new Array(8).fill(0);
-  for (let i = 0; i < n; i++) {
-    const u = rand(), side = u < 0.2;
-    const p = side ? edges[(rand() * edges.length) | 0] : filled[(rand() * filled.length) | 0];
-    const pxl = p % W, pyl = (p / W) | 0;
-    const letter = Math.max(0, Math.min(7, Math.round(data[p * 4] / 28) - 1));
-    const x = (pxl + rand() - mx) / S, y = -(pyl + rand() - my) / S;
-    const col = LETTER_COLORS[letter], size = s0 * (0.8 + 0.5 * rand()), j = 0.9 + 0.14 * rand();
+  // The letters' rims have several times the area of a face, so they take the biggest
+  // share, and each part's splats are sized to its own spacing (three spacings to the
+  // cut-off, one to a sigma), which is what closes a surface.
+  const nSide = Math.round(n * 0.45), nFront = Math.round(n * 0.4);
+  const faceArea = ink / (S * S), rimArea = (edges.length / S) * 2 * depth;
+  const sFront = 3 * Math.sqrt(faceArea / nFront), sBack = 3 * Math.sqrt(faceArea / (n - nSide - nFront)), sSide = 3 * Math.sqrt(rimArea / nSide);
+  const reach = Math.max(0.02, depth - sSide * 0.35);
+  let i = 0;
+  // The rim: every outline pixel gets its share, spread evenly through the depth.
+  for (let k = 0; i < nSide; k++, i++) {
+    const p = edges[Math.floor(frac(0.5 + k * R2[0]) * edges.length)], pxl = p % W, pyl = (p / W) | 0;
+    const gx = alpha(pxl + 1, pyl) - alpha(pxl - 1, pyl), gy = alpha(pxl, pyl + 1) - alpha(pxl, pyl - 1), len = Math.hypot(gx, gy) || 1;
+    const letter = letterAt(p);
     T.census[letter]++;
-    if (side) {
-      let gx = alpha(pxl + 1, pyl) - alpha(pxl - 1, pyl), gy = alpha(pxl, pyl + 1) - alpha(pxl, pyl - 1);
-      const len = Math.hypot(gx, gy) || 1;
-      put(T, i, x, y, (rand() * 2 - 1) * depth, -gx / len, gy / len, 0, col, 0.74 * j, size, letter);
-    } else if (u < 0.78) {
-      put(T, i, x, y, depth, (rand() - 0.5) * 0.3, (rand() - 0.5) * 0.3, 1, col, j, size, letter);
-    } else {
-      put(T, i, x, y, -depth, 0, 0, -1, col, 0.55 * j, size, letter);
-    }
+    put(T, i, (pxl + rand() - mx) / S, -(pyl + rand() - my) / S, (frac(0.5 + k * R2[1]) * 2 - 1) * reach, -gx / len, gy / len, 0,
+      LETTER_COLORS[letter], 0.74 * (0.98 + 0.035 * rand()), sSide * (0.85 + 0.3 * rand()), letter);
   }
+  // The two faces: points spread over the letters' box, kept where they land on ink.
+  for (let k = 0; i < n && k < n * 40; k++) {
+    const fx = x0 + frac(0.5 + k * R2[0]) * bw, fy = y0 + frac(0.5 + k * R2[1]) * bh;
+    const p = Math.floor(fy) * W + Math.floor(fx);
+    if (data[p * 4 + 3] < 128) continue;
+    const letter = letterAt(p), front = i < nSide + nFront, shade = 0.98 + 0.035 * rand();
+    T.census[letter]++;
+    if (front) put(T, i, (fx - mx) / S, -(fy - my) / S, depth, (rand() - 0.5) * 0.06, (rand() - 0.5) * 0.06, 1, LETTER_COLORS[letter], shade, sFront * (0.85 + 0.3 * rand()), letter);
+    else put(T, i, (fx - mx) / S, -(fy - my) / S, -depth, 0, 0, -1, LETTER_COLORS[letter], 0.55 * shade, sBack * (0.85 + 0.3 * rand()), letter);
+    i++;
+  }
+  T.n = i;
   return T;
 }
 
@@ -208,19 +228,23 @@ function buildDonut(n) {
   const sprinkles = [C.yellow, C.white, C.violet, C.sky, C.orange];
   const hash = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
   for (let i = 0; i < n; i++) {
-    let u, v;
-    do { u = rand() * 6.2832; v = rand() * 6.2832; } while (rand() > (R + r * Math.cos(v)) / (R + r));
+    // A torus has less skin on the inside of the ring than the outside, so the angle
+    // around the tube is not uniform: its share up to v is (R v + r sin v) / (2 pi R),
+    // solved for v here by Newton's method.
+    const u = frac(0.5 + i * R2[0]) * TAU, q = frac(0.5 + i * R2[1]) * TAU * R;
+    let v = q / R;
+    for (let it = 0; it < 5; it++) v -= (R * v + r * Math.sin(v) - q) / (R + r * Math.cos(v));
     const frosted = Math.sin(v) > -0.12 + 0.2 * Math.sin(5 * u) + 0.1 * Math.sin(9 * u + 1);
     const rr = r + (frosted ? 0.035 : 0);
     const cu = Math.cos(u), su = Math.sin(u), cvv = Math.cos(v), sv = Math.sin(v);
     let col = frosted ? C.pink : C.dough;
     if (frosted) {
-      const a = (u / 6.2832) * 26, b = (v / 6.2832) * 9, h = hash(Math.floor(a), Math.floor(b));
+      const a = (u / TAU) * 26, b = (v / TAU) * 9, h = hash(Math.floor(a), Math.floor(b));
       const fa = a - Math.floor(a) - 0.5, fb = b - Math.floor(b) - 0.5, t = h * 3.14;
       const ea = (fa * Math.cos(t) + fb * Math.sin(t)) / 0.4, eb = (-fa * Math.sin(t) + fb * Math.cos(t)) / 0.13;
       if (h < 0.5 && ea * ea + eb * eb < 1) col = sprinkles[Math.floor(h * 97) % 5];
     }
-    put(T, i, (R + rr * cvv) * cu, rr * sv, (R + rr * cvv) * su, cvv * cu, sv, cvv * su, col, 0.9 + 0.14 * rand(), s0 * (0.8 + 0.5 * rand()));
+    put(T, i, (R + rr * cvv) * cu, rr * sv, (R + rr * cvv) * su, cvv * cu, sv, cvv * su, col, 0.975 + 0.04 * rand(), s0 * (0.8 + 0.5 * rand()));
   }
   return T;
 }
@@ -229,33 +253,48 @@ function buildKnot(n) {
   const rand = rng(3), T = makeToy(n), k = 0.33, rho = 0.17, s0 = 0.06 * Math.sqrt(16000 / n);
   const stripes = [C.pink, C.white, C.yellow, C.white];
   for (let i = 0; i < n; i++) {
-    const t = rand() * 6.2832, a = rand() * 6.2832;
+    const t = frac(0.5 + i * R2[0]) * TAU, a = frac(0.5 + i * R2[1]) * TAU;
     const px = (Math.sin(t) + 2 * Math.sin(2 * t)) * k, py = (Math.cos(t) - 2 * Math.cos(2 * t)) * k, pz = -Math.sin(3 * t) * k;
     let tx = Math.cos(t) + 4 * Math.cos(2 * t), ty = -Math.sin(t) + 4 * Math.sin(2 * t), tz = -3 * Math.cos(3 * t);
     const tl = Math.hypot(tx, ty, tz); tx /= tl; ty /= tl; tz /= tl;
     let nx = ty, ny = -tx; // cross(T, z)
     const nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
-    const bx = ty * 0 - tz * ny, by = tz * nx - tx * 0, bz = tx * ny - ty * nx;
+    const bx = -tz * ny, by = tz * nx, bz = tx * ny - ty * nx;
     const ca = Math.cos(a), sa = Math.sin(a);
     const ox = nx * ca + bx * sa, oy = ny * ca + by * sa, oz = bz * sa;
-    const stripe = stripes[Math.floor(((t * 8 + a) / 6.2832) * 2) % 4];
-    put(T, i, px + ox * rho, py + oy * rho, pz + oz * rho, ox, oy, oz, stripe, 0.9 + 0.14 * rand(), s0 * (0.8 + 0.5 * rand()));
+    const stripe = stripes[Math.floor(((t * 8 + a) / TAU) * 2) % 4];
+    put(T, i, px + ox * rho, py + oy * rho, pz + oz * rho, ox, oy, oz, stripe, 0.975 + 0.04 * rand(), s0 * (0.8 + 0.5 * rand()));
   }
   return T;
 }
 
 function buildPlanet(n) {
   const rand = rng(5), T = makeToy(n), s0 = 0.066 * Math.sqrt(16000 / n);
-  for (let i = 0; i < n; i++) {
-    const z = rand() * 2 - 1, ph = rand() * 6.2832, q = Math.sqrt(1 - z * z);
-    const x = q * Math.cos(ph), y = q * Math.sin(ph);
+  const nGround = Math.round(n * 0.96);
+  // The ground: a Fibonacci lattice wound around the spin axis.
+  for (let i = 0; i < nGround; i++) {
+    const y = 1 - (2 * (i + 0.5)) / nGround, ph = i * 2.399963229728653, q = Math.sqrt(1 - y * y);
+    const x = q * Math.cos(ph), z = q * Math.sin(ph);
     const f = Math.sin(2.7 * x + 1.3) * Math.sin(3.1 * y + 0.5) + Math.sin(3.3 * z + 2) * Math.sin(2.2 * x - 1) + 0.5 * Math.sin(6.1 * y + 3 * x) * Math.sin(5.3 * z);
-    const cloud = rand() < 0.12 && Math.sin(4 * x + 2 * y) * Math.sin(3 * z - y * 2 + 1) > 0.35;
-    let col = f > 0.28 ? (f > 0.75 ? C.orange : C.yellow) : C.violet, rad = 0.92;
-    if (Math.abs(y) > 0.82 + 0.05 * Math.sin(7 * ph)) col = C.white;
-    if (cloud) { col = C.white; rad = 1.02; }
-    put(T, i, x * rad, y * rad, z * rad, x, y, z, col, 0.88 + 0.16 * rand(), s0 * (cloud ? 1.5 : 0.8 + 0.5 * rand()));
+    let col = f > 0.28 ? (f > 0.75 ? C.orange : C.yellow) : C.violet;
+    if (Math.abs(y) > 0.82 + 0.05 * Math.sin(7 * Math.atan2(z, x))) col = C.white;
+    put(T, i, x * 0.92, y * 0.92, z * 0.92, x, y, z, col, 0.975 + 0.04 * rand(), s0 * (0.8 + 0.5 * rand()));
   }
+  // The clouds: a second, thinner layer, kept where the weather says so, with splats
+  // sized to the room each one has so that a cloud reads as a puff, not as dots.
+  const nCloud = n - nGround, spots = [];
+  let tried = 0;
+  for (; spots.length < nCloud * 3 && tried < n * 60; tried++) {
+    const y = 1 - 2 * frac(0.5 + tried * R2[0]), ph = frac(0.5 + tried * R2[1]) * TAU, q = Math.sqrt(1 - y * y);
+    const x = q * Math.cos(ph), z = q * Math.sin(ph);
+    if (Math.sin(4 * x + 2 * y) * Math.sin(3 * z - y * 2 + 1) > 0.55) spots.push(x, y, z);
+  }
+  const clouds = spots.length / 3, sCloud = 2.6 * Math.sqrt((4 * Math.PI * 1.02 * 1.02 * clouds) / tried / Math.max(1, clouds));
+  for (let c = 0; c < clouds; c++) {
+    const x = spots[c * 3], y = spots[c * 3 + 1], z = spots[c * 3 + 2];
+    put(T, nGround + c, x * 1.02, y * 1.02, z * 1.02, x, y, z, C.white, 0.975 + 0.04 * rand(), sCloud);
+  }
+  T.n = nGround + clouds;
   return T;
 }
 
@@ -287,8 +326,19 @@ function toybox() {
   const gl = canvas.getContext('webgl2', { alpha: true, antialias: false, premultipliedAlpha: true });
   if (!gl) { document.documentElement.classList.add('no-gl'); return; }
 
+  // How many splats. A tier is picked for the device; Fewer and More step it by hand,
+  // and a tier nobody picked steps down by itself when frames run slow. The choice
+  // stays in this browser and is never part of a link, so a link cannot weigh down
+  // the phone that opens it.
+  const TIERS = [12000, 24000, 48000, 96000, 192000];
   const small = Math.min(innerWidth, innerHeight) < 700 || (navigator.hardwareConcurrency || 4) <= 4;
-  const N = small ? 11000 : 16000;
+  const weak = (navigator.deviceMemory || 8) <= 2 || (navigator.hardwareConcurrency || 4) <= 2;
+  let tier = weak ? 1 : small ? 2 : 3, auto = true;
+  try {
+    const kept = localStorage.getItem('toybox:detail');
+    if (kept !== null && TIERS[Number(kept)]) { tier = Number(kept); auto = false; }
+  } catch { /* storage is off: stay automatic */ }
+  let N = TIERS[tier];
   const DIST = 4.4, K = 46, DAMP = 5.5, GRAV = 7, PAINT_R = 0.12;
   const LIGHT = [0.35, 0.7, 0.62];
 
@@ -347,11 +397,8 @@ void main() {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  const MAXN = N + 64;
-  const buf = new Float32Array(MAXN * 10);
   const inst = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, inst);
-  gl.bufferData(gl.ARRAY_BUFFER, buf.byteLength, gl.DYNAMIC_DRAW);
   [[1, 3, 0], [2, 3, 12], [3, 3, 24], [4, 1, 36]].forEach(([loc, size, offset]) => {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 40, offset);
@@ -360,18 +407,27 @@ void main() {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-  // Per-splat state.
-  const col = new Float32Array(MAXN * 3), off = new Float32Array(MAXN * 3), vel = new Float32Array(MAXN * 3);
-  const wp = new Float32Array(MAXN * 3), rnd = new Float32Array(MAXN), order = new Uint32Array(MAXN);
-  const painted = new Uint8Array(MAXN), counts = new Uint32Array(2049);
-  const r0 = rng(42);
-  for (let i = 0; i < MAXN; i++) rnd[i] = r0();
+  // Per-splat state, with room for the tier in use (it grows when a tier asks for more).
+  let cap = 0, buf, col, off, vel, wp, rnd, order, painted;
+  const counts = new Uint32Array(2049);
+  function reserve(n) {
+    if (n <= cap) return;
+    cap = n;
+    buf = new Float32Array(cap * 10);
+    col = new Float32Array(cap * 3); off = new Float32Array(cap * 3); vel = new Float32Array(cap * 3);
+    wp = new Float32Array(cap * 3); rnd = new Float32Array(cap); order = new Uint32Array(cap);
+    painted = new Uint8Array(cap);
+    const r0 = rng(42);
+    for (let i = 0; i < cap; i++) rnd[i] = r0();
+    gl.bindBuffer(gl.ARRAY_BUFFER, inst);
+    gl.bufferData(gl.ARRAY_BUFFER, buf.byteLength, gl.DYNAMIC_DRAW);
+  }
 
   const S = {
     toy: 0, T: null, tool: 'spin', paint: 0, drop: false, dropT0: 0, strokes: [],
     yaw: 0, pitch: 0.1, vyaw: 0, vpitch: 0, idleAt: 0, tickAt: 0,
     pokes: [], blowing: false, bx: 0, by: 0, gustUntil: 0,
-    halfW: 2, halfH: 1.2, w: 1, h: 1, solid: false, photo: null,
+    halfW: 2, halfH: 1.2, w: 1, h: 1, solid: false, photo: null, calm: false,
   };
   const status = $('#status'), hint = $('#hint'), contents = $('#contents');
   const say = (text) => { if (status) status.textContent = text; };
@@ -408,36 +464,61 @@ void main() {
     return hit;
   }
   function repaint() {
-    col.set(S.T.base);
+    col.set(S.T.base.subarray(0, S.T.n * 3));
     painted.fill(0);
     S.strokes.forEach(applyStroke);
   }
 
-  function setToy(index, { scatter = !reduce.matches, keepPaint = false } = {}) {
+  function setToy(index, { scatter = !reduce.matches, keepPaint = false, keepView = false } = {}) {
     const id = TOYS[index];
     if (id === 'photo' && !S.photo) return false;
     S.toy = index;
+    reserve(N);
     S.T = id === 'name' ? buildName(N) : id === 'donut' ? buildDonut(N) : id === 'knot' ? buildKnot(N) : id === 'planet' ? buildPlanet(N) : buildPhoto(N, S.photo);
     if (!keepPaint) S.strokes = [];
     repaint();
     off.fill(0);
     vel.fill(0);
+    S.calm = false;
     if (scatter) {
-      for (let i = 0; i < S.T.n * 3; i++) { off[i] = (rnd[(i * 7) % MAXN] - 0.5) * 5; vel[i] = (rnd[(i * 13) % MAXN] - 0.5) * 4; }
+      for (let i = 0; i < S.T.n * 3; i++) { off[i] = (rnd[(i * 7) % cap] - 0.5) * 5; vel[i] = (rnd[(i * 13) % cap] - 0.5) * 4; }
     }
     S.pokes.length = 0;
-    S.drop = false;
-    $('#drop').setAttribute('aria-pressed', 'false');
-    S.yaw = 0;
-    S.pitch = TOY_INFO[id].pitch;
-    S.vyaw = S.vpitch = 0;
+    if (keepView) {
+      S.dropT0 = now();
+    } else {
+      S.drop = false;
+      $('#drop').setAttribute('aria-pressed', 'false');
+      S.yaw = 0;
+      S.pitch = TOY_INFO[id].pitch;
+      S.vyaw = S.vpitch = 0;
+    }
     $$('[data-toy]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.toy === id)));
     census();
     return true;
   }
 
+  const fewer = $('#fewer'), more = $('#more');
+  function setTier(next, byVisitor) {
+    next = Math.max(0, Math.min(TIERS.length - 1, next));
+    if (next === tier) return;
+    tier = next;
+    N = TIERS[tier];
+    if (byVisitor) {
+      auto = false;
+      try { localStorage.setItem('toybox:detail', String(tier)); } catch { /* fine */ }
+    }
+    setToy(S.toy, { scatter: false, keepPaint: true, keepView: true });
+    pace.frames = 0;
+    pace.slow = 0;
+    fewer.disabled = tier === 0;
+    more.disabled = tier === TIERS.length - 1;
+    say(byVisitor ? `Built from ${fmt(S.T.n)} splats now.` : `Down to ${fmt(S.T.n)} splats, to keep it moving smoothly.`);
+    kick();
+  }
+
   function resize() {
-    const dpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 2);
+    const dpr = Math.min(devicePixelRatio || 1, 2);
     S.w = stage.clientWidth;
     S.h = stage.clientHeight;
     canvas.width = Math.max(2, Math.round(S.w * dpr));
@@ -484,7 +565,19 @@ void main() {
     const pokes = S.pokes;
     for (const p of pokes) { p.r0 = p.r1; p.r1 = (t - p.t0) * 3.4; }
     counts.fill(0);
-    for (let i = 0; i < n; i++) {
+    // At rest (every splat home and still, nothing pushing) there is only turning to do.
+    const resting = S.calm && !pokes.length && !S.drop && !blowing;
+    if (!resting) S.calm = false;
+    let energy = 0;
+    for (let i = 0; resting && i < n; i++) {
+      const j = i * 3, hx = home[j], hy = home[j + 1], hz = home[j + 2];
+      const pz = M[6] * hx + M[7] * hy + M[8] * hz;
+      wp[j] = M[0] * hx + M[2] * hz; wp[j + 1] = M[3] * hx + M[4] * hy + M[5] * hz; wp[j + 2] = pz;
+      const key = Math.max(0, Math.min(2047, ((pz + 4) * 256) | 0));
+      order[i] = key;
+      counts[key + 1]++;
+    }
+    for (let i = 0; !resting && i < n; i++) {
       const j = i * 3, hx = home[j], hy = home[j + 1], hz = home[j + 2];
       const wx = M[0] * hx + M[2] * hz, wy = M[3] * hx + M[4] * hy + M[5] * hz, wz = M[6] * hx + M[7] * hy + M[8] * hz;
       let ox = off[j], oy = off[j + 1], oz = off[j + 2], vx = vel[j], vy = vel[j + 1], vz = vel[j + 2];
@@ -512,9 +605,10 @@ void main() {
       ox += vx * dt; oy += vy * dt; oz += vz * dt;
       if (S.drop) {
         const fl = floor + 0.14 * rnd[i] * rnd[i] - wy;
-        if (oy < fl) { oy = fl; vy = Math.abs(vy) * 0.42 * rnd[i]; vx = vx * 0.7 + (rnd[(i * 3) % MAXN] - 0.5) * 0.5; vz *= 0.7; if (vy < 0.25) { vy = 0; vx *= 0.6; } }
+        if (oy < fl) { oy = fl; vy = Math.abs(vy) * 0.42 * rnd[i]; vx = vx * 0.7 + (rnd[(i * 3) % cap] - 0.5) * 0.5; vz *= 0.7; if (vy < 0.25) { vy = 0; vx *= 0.6; } }
       }
       off[j] = ox; off[j + 1] = oy; off[j + 2] = oz; vel[j] = vx; vel[j + 1] = vy; vel[j + 2] = vz;
+      energy += ox * ox + oy * oy + oz * oz + vx * vx + vy * vy + vz * vz;
       const pz = wz + oz;
       wp[j] = wx + ox; wp[j + 1] = wy + oy; wp[j + 2] = pz;
       const key = Math.max(0, Math.min(2047, ((pz + 4) * 256) | 0));
@@ -522,6 +616,11 @@ void main() {
       counts[key + 1]++;
     }
     for (let k = pokes.length - 1; k >= 0; k--) if (t - pokes[k].t0 > 1.4) pokes.splice(k, 1);
+    if (!resting && !pokes.length && !S.drop && !blowing && energy < n * 1e-8) {
+      S.calm = true;
+      off.fill(0);
+      vel.fill(0);
+    }
 
     // Back to front: a counting sort on depth, then pack the instance buffer.
     for (let k = 1; k <= 2048; k++) counts[k] += counts[k - 1];
@@ -549,12 +648,21 @@ void main() {
   // where a browser will not run animation frames, such as a hidden tab.
   let skew = 0;
   const now = () => performance.now() / 1000 + skew;
+  // The time a frame takes, averaged. A tier nobody picked gives way when it settles
+  // above 38 ms (under about 26 frames a second; a phone saving power draws 30). Gaps
+  // of a quarter second or more are a tab that was away, and do not count.
+  const pace = { frames: 0, slow: 0 };
   function frame() {
     raf = 0;
-    const t = now(), dt = Math.min(0.033, Math.max(0.001, t - last));
+    const t = now(), gap = t - last, dt = Math.min(0.033, Math.max(0.001, gap));
     last = t;
     step(dt, t);
     draw();
+    if (auto && tier > 0 && gap < 0.25) {
+      pace.frames++;
+      if (pace.frames > 40) pace.slow += (gap - pace.slow) * 0.04;
+      if (pace.frames > 150 && pace.slow > 0.038) setTier(tier - 1, false);
+    }
     if (visible && !document.hidden) raf = requestAnimationFrame(frame);
   }
   const kick = () => { if (!raf) { last = now(); raf = requestAnimationFrame(frame); } };
@@ -595,8 +703,9 @@ void main() {
     const x = d8(s.x), y = d8(s.y), z = d8(s.z);
     for (let k = 0; k < T.n; k++) {
       const m = k * 3, dx = T.home[m] - x, dy = T.home[m + 1] - y, dz = T.home[m + 2] - z;
-      if (dx * dx + dy * dy + dz * dz < PAINT_R * PAINT_R) { vel[m] += (rnd[k] - 0.5) * 1.6; vel[m + 1] += rnd[(k * 5) % MAXN] * 1.4; vel[m + 2] += 0.8; }
+      if (dx * dx + dy * dy + dz * dz < PAINT_R * PAINT_R) { vel[m] += (rnd[k] - 0.5) * 1.6; vel[m + 1] += rnd[(k * 5) % cap] * 1.4; vel[m + 2] += 0.8; }
     }
+    S.calm = false;
     sound.play('squelch');
     census();
   }
@@ -688,6 +797,8 @@ void main() {
 
   $$('[data-tool]').forEach((b) => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $('#drop').addEventListener('click', () => toggleDrop());
+  fewer.addEventListener('click', () => { setTier(tier - 1, true); sound.play('pop'); });
+  more.addEventListener('click', () => { setTier(tier + 1, true); sound.play('pop'); });
   $$('[data-toy]').forEach((b) => b.addEventListener('click', () => {
     if (b.dataset.toy === 'photo') { $('#photo-file').click(); return; }
     setToy(TOYS.indexOf(b.dataset.toy));
@@ -810,17 +921,38 @@ void main() {
       setToy(0);
     }
     setTool('spin');
+    fewer.disabled = tier === 0;
+    more.disabled = tier === TIERS.length - 1;
+    $('#detail').hidden = false;
     stage.classList.add('is-live');
     kick();
   };
   const font = document.fonts?.load ? document.fonts.load('700 200px Fredoka') : Promise.resolve();
   Promise.race([font, new Promise((r) => setTimeout(r, 1500))]).then(start, start);
 
+  // For checks: the state, a clock to step by hand, and a stopwatch. `bench` reads a
+  // pixel back after every frame so the time includes the drawing, not only the sums.
   window.__toybox = {
-    S, pick, wp,
+    S, pick, TIERS,
+    get wp() { return wp; },
+    get tier() { return tier; },
+    setTier: (i, byVisitor = false) => setTier(i, byVisitor),
     advance(seconds) {
       for (let k = 0; k < seconds * 60; k++) { skew += 1 / 60; last = now(); step(1 / 60, last); }
       draw();
+    },
+    // One real frame after a gap of this many seconds, as if the device were that slow.
+    frame(gap) { skew += gap; frame(); },
+    bench(frames = 60) {
+      const px = new Uint8Array(4), t0 = performance.now();
+      for (let k = 0; k < frames; k++) {
+        skew += 1 / 60;
+        last = now();
+        step(1 / 60, last);
+        draw();
+        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      }
+      return (performance.now() - t0) / frames;
     },
   };
 }
@@ -865,6 +997,29 @@ function embed() {
   });
 }
 
+// aqrobat's card: one corner of a QR code, drawn with letters and symbols. It is a
+// picture of the idea, not a code anyone can scan.
+function qrArt() {
+  const el = $('#qr');
+  if (!el) return;
+  const COLS = 19, ROWS = 7, sets = ['aqrobat', '\u2605\u2665\u25cf\u25c6', 'SPLAT'];
+  const rand = rng(77), cells = [];
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      // The finder pattern (a ring around a block), then a gap, then scattered modules.
+      const ring = x < 7 && (x === 0 || x === 6 || y === 0 || y === 6), block = x > 1 && x < 5 && y > 1 && y < 5;
+      const on = x < 7 ? ring || block : x > 7 && rand() < 0.5;
+      const cell = document.createElement('i');
+      if (on) { cell.className = 'on'; cells.push(cell); }
+      el.append(cell);
+    }
+  }
+  let turn = 0;
+  const write = () => { const set = sets[turn++ % sets.length]; cells.forEach((cell, i) => { cell.textContent = set[i % set.length]; }); };
+  write();
+  if (!reduce.matches) setInterval(() => { if (!document.hidden) write(); }, 2400);
+}
+
 function arsMagna() {
   const el = $('#ars');
   if (!el || reduce.matches) return;
@@ -874,4 +1029,5 @@ function arsMagna() {
 toybox();
 oneSplat();
 embed();
+qrArt();
 arsMagna();

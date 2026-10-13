@@ -29,6 +29,36 @@ python3 -m http.server 4176 --bind 127.0.0.1   # from the repo root
 The hero is this page's own small renderer (WebGL2: flat Gaussian discs, counting-sorted back to
 front each frame, simulated on the CPU). It is not Splashery's engine, which is PlayCanvas.
 
+## How many splats
+
+The toy is built from one of five counts: 12,000, 24,000, 48,000, 96,000 or 192,000.
+
+- A desktop starts at 96,000. A phone, or a machine with four cores or fewer, starts at 48,000. A
+  device that reports 2 GB of memory or two cores starts at 24,000.
+- **Fewer** and **More**, on the Contents label, step the count by hand. That choice is kept in
+  this browser (`localStorage`, key `toybox:detail`) and is never part of a link, so a link cannot
+  weigh down the phone that opens it. Paint is placed by position, so it survives a change of count
+  and a link painted at one count opens correctly at another.
+- A count nobody picked steps down by itself when frames average over 38 ms (under about 26 a
+  second) for a couple of seconds.
+
+Splats are placed with low-discrepancy sequences (R2 on the letters, the donut and the knot, a
+Fibonacci lattice on the planet) instead of random numbers, which left clumps and holes that read
+as grain. The letters' rims have several times the area of a face, so they take the largest share,
+and each part's splats are sized to its own spacing.
+
+Measured on one laptop (Apple M3 Pro), in the browser pane, as the time for one whole frame (the
+sums, the upload, the draw and a pixel read back). A frame has 16.7 ms at 60 a second.
+
+| Splats | Width | At rest | Mid-drop |
+|---|---|---|---|
+| 48,000 | 375 px (phone) | 3.2 ms | 4.4 ms |
+| 96,000 | 375 px (phone) | 5.5 ms | 8.3 ms |
+| 96,000 | 1,024 px | 6.1 ms | 8.2 ms |
+| 192,000 | 1,024 px | 8.7 ms | 11.8 ms |
+
+No real phone was timed; the step-down above is the guard for one that is slower.
+
 ## The checks
 
 ```bash
@@ -42,12 +72,15 @@ node concepts/toybox/tools/verify.mjs
 - The covariance readout under "One splat, up close" has the right trace and determinant at all
   1,187,541 positions of its three sliders.
 
-`window.__toybox.advance(seconds)` steps the toy's clock by hand, for checking it where a browser
-will not run animation frames (a hidden tab, a headless run).
+`window.__toybox` is for checking the toy where a browser will not run animation frames (a hidden
+tab, a headless run): `advance(seconds)` steps its clock by hand, `bench(frames)` times whole
+frames, `setTier(i)` picks a count, and `frame(gap)` runs one real frame after a gap of that many
+seconds, which is how the automatic step-down was seen working.
 
 ## Voice
 
 Facts trace to `docs/FACTS.md`, the project READMEs and the live pages. Invented voice: the toy
 packaging lines ("some assembly encouraged", "Take it home", "Peel one off", "The serious sticker",
-"no batteries", "Unwrap it here", "Wash it off"), the line about Fredoka's strokes, and the section
-ledes. The paragraph under Research about splats as a material is a stated interest, not a result.
+"no batteries", "Unwrap it here", "Wash it off", "And at the back of the shelf"), the line about
+Fredoka's strokes, and the section ledes. The art on aqrobat's card is a picture of a QR code's
+corner drawn with letters, not a code that scans. The paragraph under Research about splats as a material is a stated interest, not a result.
