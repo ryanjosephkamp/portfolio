@@ -15,7 +15,7 @@ concept's pull request changes only its own folder and states its row in its des
 | `workshop` | Software engineering | A paper drafting table, graphite and one red pencil | A drafting sheet where the build loop stops for the visitor | `concept/workshop` | 4177 |
 | `overprint` | Media arts | A two-ink print on paper, slightly off register | One cloud of splats that re-forms for every section | `concept/overprint` | 4178 |
 | `molecule` | Molecular visualization | A chemistry lecture hall: slate blackboard, chalk, CPK colors for the atoms | A chalk caffeine molecule you turn in your hand and measure, atom to atom | `concept/molecule` | 4181 |
-| `resonance` | Sound and audio-visual media | Drenched brass, black sand, a violin bow, one verdigris accent | A brass plate you bow: black sand runs to the still lines of the note, one of its 24 figures | `concept/resonance` | 4183 |
+| `resonance` | Sound and audio-visual media | A metal plate the visitor picks (brass, copper, steel, titanium or bronze), drenched in that metal, with its sand, a violin bow, and the metal's own tarnish as the one accent | A plate you bow: sand runs to the still lines of the note, one of its 24 figures | `concept/resonance` | 4183 |
 | `slice` | Volume and medical imaging | A radiology light box: blue-black film on a backlit white wall, one fuchsia wax pencil | Two real CT scans, a walnut and a young gar's head, to cut on three planes, window, and turn as a shaded cutaway | `concept/slice` | 4184 |
 | `atlas` | Scale, astronomy and Earth | An engraved star atlas: deep indigo, fine white line work, a little gold | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today | `concept/atlas` | 4185 |
 
