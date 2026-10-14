@@ -8,12 +8,12 @@
       name="description"
       content="Ryan Kamp's portfolio as an engraved star atlas: one plate that zooms from the Milky Way to a ribosome, with the planets where they are today."
     />
-    <meta name="theme-color" content="#0d1040" />
+    <meta name="theme-color" content="#0c0c0b" />
     <script>
-      // The edition chosen on an earlier visit, set before the first paint.
+      // The edition chosen on an earlier visit, set before the first paint (atlas.js sets the hue).
       try {
         var kept = localStorage.getItem('atlas:scheme');
-        if (kept && kept !== 'gilt') document.documentElement.dataset.scheme = kept;
+        if (kept && kept !== 'field-color') document.documentElement.dataset.scheme = kept;
       } catch (e) {}
     </script>
     <link rel="preload" href="assets/fonts/im-fell-english-roman.woff2" as="font" type="font/woff2" crossorigin />
@@ -30,21 +30,49 @@
         <a href="#interests">Interests</a>
         <a href="#links">Links</a>
       </nav>
-      <div class="editions" id="editions" role="group" aria-label="Edition: how the atlas is printed" hidden>
-        <span class="editions-label"><i>Printed as</i> <span id="edition-name">Indigo and gilt</span></span>
-        <button type="button" data-scheme="gilt" data-name="Indigo and gilt" aria-pressed="true" title="Indigo and gilt: white line on an indigo ground, heightened with gold">
-          <span class="swatch s-gilt" aria-hidden="true"></span><span class="visually-hidden">Indigo and gilt</span>
-        </button>
-        <button type="button" data-scheme="plain" data-name="Plain" aria-pressed="false" title="Plain: black ink on laid paper">
-          <span class="swatch s-plain" aria-hidden="true"></span><span class="visually-hidden">Plain: black ink on laid paper</span>
-        </button>
-        <button type="button" data-scheme="colored" data-name="Hand-colored" aria-pressed="false" title="Hand-colored: black ink on laid paper, each sheet washed in its own color">
-          <span class="swatch s-colored" aria-hidden="true"></span><span class="visually-hidden">Hand-colored: black ink on laid paper, each sheet washed in its own color</span>
-        </button>
-        <button type="button" data-scheme="field" data-name="Field edition" aria-pressed="false" title="Field edition: white line on black">
-          <span class="swatch s-field" aria-hidden="true"></span><span class="visually-hidden">Field edition: white line on black</span>
-        </button>
-      </div>
+      <details class="press" id="press" hidden>
+        <summary>
+          <i>Printed as</i> <span class="swatch s-field-color" id="press-swatch" aria-hidden="true"></span>
+          <span id="edition-name">Field, in color</span>
+        </summary>
+        <div class="press-panel">
+          <div class="press-list" role="group" aria-label="Edition: how the atlas is printed">
+            <button type="button" data-scheme="field-color" data-name="Field, in color" aria-pressed="true">
+              <span class="swatch s-field-color" aria-hidden="true"></span><span class="press-name">Field, in color</span>
+              <span class="press-note">White line on black, its marks in one color</span>
+            </button>
+            <button type="button" data-scheme="field" data-name="Field edition" aria-pressed="false">
+              <span class="swatch s-field" aria-hidden="true"></span><span class="press-name">Field edition</span>
+              <span class="press-note">White line on black, and nothing else</span>
+            </button>
+            <button type="button" data-scheme="one-color" data-name="Black and one color" aria-pressed="false">
+              <span class="swatch s-one-color" aria-hidden="true"></span><span class="press-name">Black and one color</span>
+              <span class="press-note">Black ink on laid paper, its marks in one color</span>
+            </button>
+            <button type="button" data-scheme="plain" data-name="Plain" aria-pressed="false">
+              <span class="swatch s-plain" aria-hidden="true"></span><span class="press-name">Plain</span>
+              <span class="press-note">Black ink on laid paper</span>
+            </button>
+            <button type="button" data-scheme="colored" data-name="Hand-colored" aria-pressed="false">
+              <span class="swatch s-colored" aria-hidden="true"></span><span class="press-name">Hand-colored</span>
+              <span class="press-note">Each sheet washed in its own color</span>
+            </button>
+            <button type="button" data-scheme="gilt" data-name="Indigo and gilt" aria-pressed="false">
+              <span class="swatch s-gilt" aria-hidden="true"></span><span class="press-name">Indigo and gilt</span>
+              <span class="press-note">White line on indigo, heightened with gold</span>
+            </button>
+          </div>
+          <div class="dial" id="dial">
+            <label for="hue"><i>Its color:</i> <span id="hue-name">green</span></label>
+            <input id="hue" type="range" min="0" max="359" step="1" value="175" />
+            <button type="button" id="hue-reset">As printed</button>
+            <p class="press-fine" id="dial-note">
+              Only the hue turns. Its lightness and strength stay where the edition sets them, so every position
+              reads as clearly as the first.
+            </p>
+          </div>
+        </div>
+      </details>
     </header>
 
     <main>

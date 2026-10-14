@@ -8,6 +8,7 @@ import { STARS, LINES, HELENS, COAST } from './assets/data.js';
 import * as A from './assets/astro.js';
 import { LY, AU, Z_MIN, Z_MAX, scaleBar, lightTime, fmtLen, ramp, band } from './scale.js';
 import { surface, swing, dot, unit } from './earth.js';
+import { DIALS, DEFAULT_EDITION, hexOf, hueName } from './editions.js';
 
 const SERIF = '"IM Fell English", "Iowan Old Style", Georgia, serif';
 const TAU = Math.PI * 2;
@@ -18,12 +19,12 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 // The colors come from the page's CSS, so the atlas can be printed more than one way
 // (styles.css, "Editions"). Every draw takes them from its own canvas first: `white` is the
 // line color and `gold` the accent, whatever they are in the edition on show.
-let INK = '#0d1040';
-let WELL = '#0a0c33';
-let LINE = '#eef0ff';
-let GOLD = '#e8bd5a';
-let white = (a) => `rgba(238,240,255,${a})`;
-let gold = (a) => `rgba(232,189,90,${a})`;
+let INK = '#0c0c0b';
+let WELL = '#050505';
+let LINE = '#e2dfd8';
+let GOLD = '#51c9ad';
+let white = (a) => `rgba(226,223,216,${a})`;
+let gold = (a) => `rgba(81,201,173,${a})`;
 const inks = new Map();
 function rgbOf(hex) {
   let h = hex.trim().replace('#', '');
@@ -35,9 +36,9 @@ function ink(canvas) {
   if (!t) {
     const cs = getComputedStyle(canvas);
     const v = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
-    const line = rgbOf(v('--line', '#eef0ff'));
-    const accent = rgbOf(v('--gold', '#e8bd5a'));
-    t = { INK: v('--ink', '#0d1040'), WELL: v('--well', '#0a0c33'), LINE: `rgb(${line})`, GOLD: `rgb(${accent})`, white: (a) => `rgba(${line},${a})`, gold: (a) => `rgba(${accent},${a})` };
+    const line = rgbOf(v('--line', '#e2dfd8'));
+    const accent = rgbOf(v('--gold', '#51c9ad'));
+    t = { INK: v('--ink', '#0c0c0b'), WELL: v('--well', '#050505'), LINE: `rgb(${line})`, GOLD: `rgb(${accent})`, white: (a) => `rgba(${line},${a})`, gold: (a) => `rgba(${accent},${a})` };
     inks.set(canvas, t);
   }
   ({ INK, WELL, LINE, GOLD, white, gold } = t);
@@ -1234,34 +1235,105 @@ function drawAll() {
   drawHelens();
 }
 
-// The editions: the same plates printed another way. The choice is kept for the next visit.
+// The editions: the same plates printed another way, and for those with one color, a dial
+// that turns its hue (editions.js). Both choices are kept for the next visit, under atlas: keys.
 {
   const root = document.documentElement;
-  const group = document.getElementById('editions');
-  const buttons = [...group.querySelectorAll('button')];
-  const show = (name) => {
-    if (name === 'gilt') delete root.dataset.scheme;
-    else root.dataset.scheme = name;
-    for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.scheme === name));
-    const on = buttons.find((b) => b.dataset.scheme === name);
-    document.getElementById('edition-name').textContent = on ? on.dataset.name : '';
+  const press = document.getElementById('press');
+  const buttons = [...press.querySelectorAll('.press-list button')];
+  const dial = document.getElementById('dial');
+  const hue = document.getElementById('hue');
+  const reset = document.getElementById('hue-reset');
+  const note = document.getElementById('dial-note');
+  const turning = note.textContent.trim().replace(/\s+/g, ' ');
+  const store = {
+    get(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      } catch {
+        // Private windows may refuse storage: the choice then lasts for the visit.
+      }
+    },
+  };
+  const keptHue = (name) => {
+    const kept = store.get(`atlas:hue:${name}`);
+    const h = Number(kept);
+    return kept !== null && Number.isFinite(h) && h >= 0 && h < 360 ? h : DIALS[name].hue;
+  };
+  const track = (d) => `linear-gradient(90deg, ${Array.from({ length: 13 }, (_, i) => hexOf(d.l, d.c, i * 30)).join(', ')})`;
+  let edition = DEFAULT_EDITION;
+  const paint = () => {
+    const d = DIALS[edition];
+    if (d) root.style.setProperty('--gold', hexOf(d.l, d.c, Number(hue.value)));
+    else root.style.removeProperty('--gold');
+    for (const b of buttons) {
+      const dd = DIALS[b.dataset.scheme];
+      if (dd) b.querySelector('.swatch').style.setProperty('--swatch', hexOf(dd.l, dd.c, b.dataset.scheme === edition ? Number(hue.value) : keptHue(b.dataset.scheme)));
+    }
+    const on = buttons.find((b) => b.dataset.scheme === edition);
+    const swatch = document.getElementById('press-swatch');
+    swatch.className = `swatch s-${edition}`;
+    swatch.style.cssText = on.querySelector('.swatch').style.cssText;
+    document.getElementById('edition-name').textContent = on.dataset.name;
+    const name = d ? hueName(Number(hue.value)) : 'fixed';
+    document.getElementById('hue-name').textContent = name;
+    hue.setAttribute('aria-valuetext', d ? `${name}, ${hue.value} degrees` : 'fixed');
     inks.clear();
     document.querySelector('meta[name="theme-color"]').content = getComputedStyle(root).getPropertyValue('--ink').trim();
     drawAll();
   };
+  const show = (name) => {
+    edition = name;
+    if (name === DEFAULT_EDITION) delete root.dataset.scheme;
+    else root.dataset.scheme = name;
+    for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.scheme === name));
+    const d = DIALS[name];
+    hue.disabled = !d;
+    reset.disabled = !d;
+    dial.classList.toggle('off', !d);
+    note.textContent = d ? turning : "This edition's colors are fixed. Field, in color and Black and one color can be turned.";
+    if (d) {
+      hue.value = String(Math.round(keptHue(name)));
+      hue.style.setProperty('--track', track(d));
+    } else hue.style.removeProperty('--track');
+    paint();
+  };
   for (const b of buttons) {
     b.addEventListener('click', () => {
       show(b.dataset.scheme);
-      try {
-        localStorage.setItem('atlas:scheme', b.dataset.scheme);
-      } catch {
-        // Private windows may refuse storage: the choice then lasts for the visit.
-      }
+      store.set('atlas:scheme', b.dataset.scheme);
     });
   }
-  group.hidden = false;
+  hue.addEventListener('input', () => {
+    store.set(`atlas:hue:${edition}`, hue.value);
+    paint();
+  });
+  reset.addEventListener('click', () => {
+    store.set(`atlas:hue:${edition}`, null);
+    hue.value = String(DIALS[edition].hue);
+    paint();
+  });
+  // The panel closes on Escape, or on a click anywhere else.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && press.open) {
+      press.open = false;
+      press.querySelector('summary').focus();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (press.open && !press.contains(e.target)) press.open = false;
+  });
+  press.hidden = false;
   const kept = root.dataset.scheme;
-  show(buttons.some((b) => b.dataset.scheme === kept) ? kept : 'gilt');
+  show(buttons.some((b) => b.dataset.scheme === kept) ? kept : DEFAULT_EDITION);
 }
 
 readout();
