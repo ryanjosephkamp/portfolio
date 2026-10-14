@@ -1,0 +1,1532 @@
+{
+ "fetched": "2026-10-13",
+ "groups": [
+  {
+   "group": "Small and simple",
+   "items": [
+    {
+     "id": "HOH",
+     "label": "Water",
+     "ccdName": "WATER",
+     "formula": "H2 O",
+     "weight": 18.015,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CO2",
+     "label": "Carbon dioxide",
+     "ccdName": "CARBON DIOXIDE",
+     "formula": "C O2",
+     "weight": 44.01,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NH3",
+     "label": "Ammonia",
+     "ccdName": "AMMONIA",
+     "formula": "H3 N",
+     "weight": 17.031,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "OXY",
+     "label": "Oxygen",
+     "ccdName": "OXYGEN MOLECULE",
+     "formula": "O2",
+     "weight": 31.999,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CMO",
+     "label": "Carbon monoxide",
+     "ccdName": "CARBON MONOXIDE",
+     "formula": "C O",
+     "weight": 28.01,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NO",
+     "label": "Nitric oxide",
+     "ccdName": "NITRIC OXIDE",
+     "formula": "N O",
+     "weight": 30.006,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "N2O",
+     "label": "Nitrous oxide",
+     "ccdName": "NITROUS OXIDE",
+     "formula": "N2 O",
+     "weight": 44.013,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SO2",
+     "label": "Sulfur dioxide",
+     "ccdName": "SULFUR DIOXIDE",
+     "formula": "O2 S",
+     "weight": 64.064,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "H2S",
+     "label": "Hydrogen sulfide",
+     "ccdName": "HYDROSULFURIC ACID",
+     "formula": "H2 S",
+     "weight": 34.081,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PEO",
+     "label": "Hydrogen peroxide",
+     "ccdName": "HYDROGEN PEROXIDE",
+     "formula": "H2 O2",
+     "weight": 34.015,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "MOH",
+     "label": "Methanol",
+     "ccdName": "METHANOL",
+     "formula": "C H4 O",
+     "weight": 32.042,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "EOH",
+     "label": "Ethanol",
+     "ccdName": "ETHANOL",
+     "formula": "C2 H6 O",
+     "weight": 46.068,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "IPA",
+     "label": "Isopropyl alcohol",
+     "ccdName": "ISOPROPYL ALCOHOL",
+     "formula": "C3 H8 O",
+     "weight": 60.095,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "EDO",
+     "label": "Ethylene glycol",
+     "ccdName": "1,2-ETHANEDIOL",
+     "formula": "C2 H6 O2",
+     "weight": 62.068,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GOL",
+     "label": "Glycerol",
+     "ccdName": "GLYCEROL",
+     "formula": "C3 H8 O3",
+     "weight": 92.094,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ACN",
+     "label": "Acetone",
+     "ccdName": "ACETONE",
+     "formula": "C3 H6 O",
+     "weight": 58.079,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ACY",
+     "label": "Acetic acid",
+     "ccdName": "ACETIC ACID",
+     "formula": "C2 H4 O2",
+     "weight": 60.052,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "FMT",
+     "label": "Formic acid",
+     "ccdName": "FORMIC ACID",
+     "formula": "C H2 O2",
+     "weight": 46.025,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "URE",
+     "label": "Urea",
+     "ccdName": "UREA",
+     "formula": "C H4 N2 O",
+     "weight": 60.055,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "DMS",
+     "label": "Dimethyl sulfoxide",
+     "ccdName": "DIMETHYL SULFOXIDE",
+     "formula": "C2 H6 O S",
+     "weight": 78.133,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CCN",
+     "label": "Acetonitrile",
+     "ccdName": "ACETONITRILE",
+     "formula": "C2 H3 N",
+     "weight": 41.052,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "Rings and chains",
+   "items": [
+    {
+     "id": "BNZ",
+     "label": "Benzene",
+     "ccdName": "BENZENE",
+     "formula": "C6 H6",
+     "weight": 78.112,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "MBN",
+     "label": "Toluene",
+     "ccdName": "TOLUENE",
+     "formula": "C7 H8",
+     "weight": 92.138,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "IPH",
+     "label": "Phenol",
+     "ccdName": "PHENOL",
+     "formula": "C6 H6 O",
+     "weight": 94.111,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ANL",
+     "label": "Aniline",
+     "ccdName": "ANILINE",
+     "formula": "C6 H7 N",
+     "weight": 93.126,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "0PY",
+     "label": "Pyridine",
+     "ccdName": "pyridine",
+     "formula": "C5 H5 N",
+     "weight": 79.1,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "IMD",
+     "label": "Imidazole",
+     "ccdName": "IMIDAZOLE",
+     "formula": "C3 H5 N2",
+     "weight": 69.085,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "IND",
+     "label": "Indole",
+     "ccdName": "INDOLE",
+     "formula": "C8 H7 N",
+     "weight": 117.148,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CHX",
+     "label": "Cyclohexane",
+     "ccdName": "CYCLOHEXANE",
+     "formula": "C6 H12",
+     "weight": 84.159,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "HEX",
+     "label": "Hexane",
+     "ccdName": "HEXANE",
+     "formula": "C6 H14",
+     "weight": 86.175,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "OCT",
+     "label": "Octane",
+     "ccdName": "N-OCTANE",
+     "formula": "C8 H18",
+     "weight": 114.229,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PLM",
+     "label": "Palmitic acid",
+     "ccdName": "PALMITIC ACID",
+     "formula": "C16 H32 O2",
+     "weight": 256.424,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "STE",
+     "label": "Stearic acid",
+     "ccdName": "STEARIC ACID",
+     "formula": "C18 H36 O2",
+     "weight": 284.477,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "OLA",
+     "label": "Oleic acid",
+     "ccdName": "OLEIC ACID",
+     "formula": "C18 H34 O2",
+     "weight": 282.461,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CAM",
+     "label": "Camphor",
+     "ccdName": "CAMPHOR",
+     "formula": "C10 H16 O",
+     "weight": 152.233,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "60C",
+     "label": "Buckminsterfullerene",
+     "ccdName": "(C_{60}-I_{h})[5,6]fullerene",
+     "formula": "C60",
+     "weight": 720.642,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "From the kitchen",
+   "items": [
+    {
+     "id": "CFF",
+     "label": "Caffeine",
+     "ccdName": "CAFFEINE",
+     "formula": "C8 H10 N4 O2",
+     "weight": 194.191,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "37T",
+     "label": "Theobromine",
+     "ccdName": "THEOBROMINE",
+     "formula": "C7 H8 N4 O2",
+     "weight": 180.164,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GLC",
+     "label": "Glucose",
+     "ccdName": "alpha-D-glucopyranose",
+     "formula": "C6 H12 O6",
+     "weight": 180.156,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "FRU",
+     "label": "Fructose",
+     "ccdName": "beta-D-fructofuranose",
+     "formula": "C6 H12 O6",
+     "weight": 180.156,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GAL",
+     "label": "Galactose",
+     "ccdName": "beta-D-galactopyranose",
+     "formula": "C6 H12 O6",
+     "weight": 180.156,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "RIB",
+     "label": "Ribose",
+     "ccdName": "alpha-D-ribofuranose",
+     "formula": "C5 H10 O5",
+     "weight": 150.13,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SOR",
+     "label": "Sorbitol",
+     "ccdName": "sorbitol",
+     "formula": "C6 H14 O6",
+     "weight": 182.172,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "XYL",
+     "label": "Xylitol",
+     "ccdName": "Xylitol",
+     "formula": "C5 H12 O5",
+     "weight": 152.146,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CIT",
+     "label": "Citric acid",
+     "ccdName": "CITRIC ACID",
+     "formula": "C6 H8 O7",
+     "weight": 192.124,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TLA",
+     "label": "Tartaric acid",
+     "ccdName": "L(+)-TARTARIC ACID",
+     "formula": "C4 H6 O6",
+     "weight": 150.087,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "LAC",
+     "label": "Lactic acid",
+     "ccdName": "LACTIC ACID",
+     "formula": "C3 H6 O3",
+     "weight": 90.078,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "BEZ",
+     "label": "Benzoic acid",
+     "ccdName": "BENZOIC ACID",
+     "formula": "C7 H6 O2",
+     "weight": 122.121,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "V55",
+     "label": "Vanillin",
+     "ccdName": "4-hydroxy-3-methoxybenzaldehyde",
+     "formula": "C8 H8 O3",
+     "weight": 152.147,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "4DY",
+     "label": "Capsaicin",
+     "ccdName": "(6E)-N-(4-hydroxy-3-methoxybenzyl)-8-methylnon-6-enamide",
+     "formula": "C18 H27 N O3",
+     "weight": 305.412,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "QUE",
+     "label": "Quercetin",
+     "ccdName": "3,5,7,3',4'-PENTAHYDROXYFLAVONE",
+     "formula": "C15 H10 O7",
+     "weight": 302.236,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "STL",
+     "label": "Resveratrol",
+     "ccdName": "RESVERATROL",
+     "formula": "C14 H12 O3",
+     "weight": 228.243,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CC9",
+     "label": "Curcumin",
+     "ccdName": "curcumin",
+     "formula": "C21 H20 O6",
+     "weight": 368.38,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "Neurotransmitters and hormones",
+   "items": [
+    {
+     "id": "LDP",
+     "label": "Dopamine",
+     "ccdName": "L-DOPAMINE",
+     "formula": "C8 H11 N O2",
+     "weight": 153.178,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SRO",
+     "label": "Serotonin",
+     "ccdName": "SEROTONIN",
+     "formula": "C10 H12 N2 O",
+     "weight": 176.215,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ACH",
+     "label": "Acetylcholine",
+     "ccdName": "ACETYLCHOLINE",
+     "formula": "C7 H16 N O2",
+     "weight": 146.207,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ABU",
+     "label": "GABA",
+     "ccdName": "GAMMA-AMINO-BUTANOIC ACID",
+     "formula": "C4 H9 N O2",
+     "weight": 103.12,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "LNR",
+     "label": "Norepinephrine",
+     "ccdName": "L-NOREPINEPHRINE",
+     "formula": "C8 H11 N O3",
+     "weight": 169.178,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ALE",
+     "label": "Epinephrine",
+     "ccdName": "L-EPINEPHRINE",
+     "formula": "C9 H13 N O3",
+     "weight": 183.204,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "HSM",
+     "label": "Histamine",
+     "ccdName": "HISTAMINE",
+     "formula": "C5 H9 N3",
+     "weight": 111.145,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ML1",
+     "label": "Melatonin",
+     "ccdName": "N-[2-(5-methoxy-1H-indol-3-yl)ethyl]acetamide",
+     "formula": "C13 H16 N2 O2",
+     "weight": 232.278,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ADN",
+     "label": "Adenosine",
+     "ccdName": "ADENOSINE",
+     "formula": "C10 H13 N5 O4",
+     "weight": 267.241,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "DAH",
+     "label": "Levodopa",
+     "ccdName": "3,4-DIHYDROXYPHENYLALANINE",
+     "formula": "C9 H11 N O4",
+     "weight": 197.188,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CHT",
+     "label": "Choline",
+     "ccdName": "CHOLINE ION",
+     "formula": "C5 H14 N O",
+     "weight": 104.171,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TAU",
+     "label": "Taurine",
+     "ccdName": "2-AMINOETHANESULFONIC ACID",
+     "formula": "C2 H7 N O3 S",
+     "weight": 125.147,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NCT",
+     "label": "Nicotine",
+     "ccdName": "(S)-3-(1-METHYLPYRROLIDIN-2-YL)PYRIDINE",
+     "formula": "C10 H14 N2",
+     "weight": 162.232,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TES",
+     "label": "Testosterone",
+     "ccdName": "TESTOSTERONE",
+     "formula": "C19 H28 O2",
+     "weight": 288.424,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "EST",
+     "label": "Estradiol",
+     "ccdName": "ESTRADIOL",
+     "formula": "C18 H24 O2",
+     "weight": 272.382,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "STR",
+     "label": "Progesterone",
+     "ccdName": "PROGESTERONE",
+     "formula": "C21 H30 O2",
+     "weight": 314.462,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "HCY",
+     "label": "Cortisol",
+     "ccdName": "(11alpha,14beta)-11,17,21-trihydroxypregn-4-ene-3,20-dione",
+     "formula": "C21 H30 O5",
+     "weight": 362.46,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "AS4",
+     "label": "Aldosterone",
+     "ccdName": "ALDOSTERONE",
+     "formula": "C21 H28 O5",
+     "weight": 360.444,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "T44",
+     "label": "Thyroxine",
+     "ccdName": "3,5,3',5'-TETRAIODO-L-THYRONINE",
+     "formula": "C15 H11 I4 N O4",
+     "weight": 776.87,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "Medicines",
+   "items": [
+    {
+     "id": "AIN",
+     "label": "Aspirin",
+     "ccdName": "2-(ACETYLOXY)BENZOIC ACID",
+     "formula": "C9 H8 O4",
+     "weight": 180.157,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SAL",
+     "label": "Salicylic acid",
+     "ccdName": "2-HYDROXYBENZOIC ACID",
+     "formula": "C7 H6 O3",
+     "weight": 138.121,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "IBP",
+     "label": "Ibuprofen",
+     "ccdName": "IBUPROFEN",
+     "formula": "C13 H18 O2",
+     "weight": 206.281,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NPS",
+     "label": "Naproxen",
+     "ccdName": "(2S)-2-(6-methoxynaphthalen-2-yl)propanoic acid",
+     "formula": "C14 H14 O3",
+     "weight": 230.259,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TYL",
+     "label": "Acetaminophen",
+     "ccdName": "N-(4-HYDROXYPHENYL)ACETAMIDE (TYLENOL)",
+     "formula": "C8 H9 N O2",
+     "weight": 151.163,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "LQZ",
+     "label": "Lidocaine",
+     "ccdName": "2-(diethylamino)-N-(2,6-dimethylphenyl)ethanamide",
+     "formula": "C14 H22 N2 O",
+     "weight": 234.337,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PNN",
+     "label": "Penicillin G",
+     "ccdName": "PENICILLIN G",
+     "formula": "C16 H18 N2 O4 S",
+     "weight": 334.39,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "MF8",
+     "label": "Metformin",
+     "ccdName": "Metformin",
+     "formula": "C4 H11 N5",
+     "weight": 129.164,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SWF",
+     "label": "S-warfarin",
+     "ccdName": "S-WARFARIN",
+     "formula": "C19 H16 O4",
+     "weight": 308.328,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "MOI",
+     "label": "Morphine",
+     "ccdName": "(7R,7AS,12BS)-3-METHYL-2,3,4,4A,7,7A-HEXAHYDRO-1H-4,12-METHANO[1]BENZOFURO[3,2-E]ISOQUINOLINE-7,9-DIOL",
+     "formula": "C17 H19 N O3",
+     "weight": 285.338,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "DZP",
+     "label": "Diazepam",
+     "ccdName": "7-CHLORO-1-METHYL-5-PHENYL-1,3-DIHYDRO-2H-1,4-BENZODIAZEPIN-2-ONE",
+     "formula": "C16 H13 Cl N2 O",
+     "weight": 284.74,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "MTX",
+     "label": "Methotrexate",
+     "ccdName": "METHOTREXATE",
+     "formula": "C20 H22 N8 O5",
+     "weight": 454.439,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CLQ",
+     "label": "Chloroquine",
+     "ccdName": "N4-(7-CHLORO-QUINOLIN-4-YL)-N1,N1-DIETHYL-PENTANE-1,4-DIAMINE",
+     "formula": "C18 H26 Cl N3",
+     "weight": 319.872,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "QI9",
+     "label": "Quinine",
+     "ccdName": "Quinine",
+     "formula": "C20 H24 N2 O2",
+     "weight": 324.417,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "DEX",
+     "label": "Dexamethasone",
+     "ccdName": "DEXAMETHASONE",
+     "formula": "C22 H29 F O5",
+     "weight": 392.461,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "STI",
+     "label": "Imatinib",
+     "ccdName": "4-(4-METHYL-PIPERAZIN-1-YLMETHYL)-N-[4-METHYL-3-(4-PYRIDIN-3-YL-PYRIMIDIN-2-YLAMINO)-PHENYL]-BENZAMIDE",
+     "formula": "C29 H31 N7 O",
+     "weight": 493.603,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "VIA",
+     "label": "Sildenafil",
+     "ccdName": "5-{2-ETHOXY-5-[(4-METHYLPIPERAZIN-1-YL)SULFONYL]PHENYL}-1-METHYL-3-PROPYL-1H,6H,7H-PYRAZOLO[4,3-D]PYRIMIDIN-7-ONE",
+     "formula": "C22 H30 N6 O4 S",
+     "weight": 474.576,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CPT",
+     "label": "Cisplatin",
+     "ccdName": "Cisplatin",
+     "formula": "Cl2 H6 N2 Pt",
+     "weight": 300.045,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TA1",
+     "label": "Paclitaxel",
+     "ccdName": "TAXOL",
+     "formula": "C47 H51 N O14",
+     "weight": 853.906,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ERY",
+     "label": "Erythromycin",
+     "ccdName": "ERYTHROMYCIN A",
+     "formula": "C37 H67 N O13",
+     "weight": 733.927,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CLM",
+     "label": "Chloramphenicol",
+     "ccdName": "CHLORAMPHENICOL",
+     "formula": "C11 H12 Cl2 N2 O5",
+     "weight": 323.129,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "Vitamins, cofactors and pigments",
+   "items": [
+    {
+     "id": "ASC",
+     "label": "Vitamin C",
+     "ccdName": "ASCORBIC ACID",
+     "formula": "C6 H8 O6",
+     "weight": 176.124,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "RTL",
+     "label": "Retinol",
+     "ccdName": "RETINOL",
+     "formula": "C20 H30 O",
+     "weight": 286.452,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "RET",
+     "label": "Retinal",
+     "ccdName": "RETINAL",
+     "formula": "C20 H28 O",
+     "weight": 284.436,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "VD3",
+     "label": "Vitamin D3",
+     "ccdName": "(1S,3Z)-3-[(2E)-2-[(1R,3AR,7AS)-7A-METHYL-1-[(2R)-6-METHYLHEPTAN-2-YL]-2,3,3A,5,6,7-HEXAHYDRO-1H-INDEN-4-YLIDENE]ETHYLI\nDENE]-4-METHYLIDENE-CYCLOHEXAN-1-OL",
+     "formula": "C27 H44 O",
+     "weight": 384.638,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "VIT",
+     "label": "Vitamin E",
+     "ccdName": "VITAMIN E",
+     "formula": "C29 H50 O2",
+     "weight": 430.706,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PQN",
+     "label": "Vitamin K1",
+     "ccdName": "PHYLLOQUINONE",
+     "formula": "C31 H46 O2",
+     "weight": 450.696,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "VIB",
+     "label": "Thiamine",
+     "ccdName": "3-(4-AMINO-2-METHYL-PYRIMIDIN-5-YLMETHYL)-5-(2-HYDROXY-ETHYL)-4-METHYL-THIAZOL-3-IUM",
+     "formula": "C12 H17 N4 O S",
+     "weight": 265.355,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "RBF",
+     "label": "Riboflavin",
+     "ccdName": "RIBOFLAVIN",
+     "formula": "C17 H20 N4 O6",
+     "weight": 376.364,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NIO",
+     "label": "Nicotinic acid",
+     "ccdName": "NICOTINIC ACID",
+     "formula": "C6 H5 N O2",
+     "weight": 123.109,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NCA",
+     "label": "Nicotinamide",
+     "ccdName": "NICOTINAMIDE",
+     "formula": "C6 H6 N2 O",
+     "weight": 122.125,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PAU",
+     "label": "Pantothenic acid",
+     "ccdName": "PANTOTHENOIC ACID",
+     "formula": "C9 H17 N O5",
+     "weight": 219.235,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PLP",
+     "label": "Pyridoxal phosphate",
+     "ccdName": "PYRIDOXAL-5'-PHOSPHATE",
+     "formula": "C8 H10 N O6 P",
+     "weight": 247.142,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "BTN",
+     "label": "Biotin",
+     "ccdName": "BIOTIN",
+     "formula": "C10 H16 N2 O3 S",
+     "weight": 244.311,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "FOL",
+     "label": "Folic acid",
+     "ccdName": "FOLIC ACID",
+     "formula": "C19 H19 N7 O6",
+     "weight": 441.397,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ATP",
+     "label": "ATP",
+     "ccdName": "ADENOSINE-5'-TRIPHOSPHATE",
+     "formula": "C10 H16 N5 O13 P3",
+     "weight": 507.181,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ADP",
+     "label": "ADP",
+     "ccdName": "ADENOSINE-5'-DIPHOSPHATE",
+     "formula": "C10 H15 N5 O10 P2",
+     "weight": 427.201,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "AMP",
+     "label": "AMP",
+     "ccdName": "ADENOSINE MONOPHOSPHATE",
+     "formula": "C10 H14 N5 O7 P",
+     "weight": 347.221,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "NAD",
+     "label": "NAD",
+     "ccdName": "NICOTINAMIDE-ADENINE-DINUCLEOTIDE",
+     "formula": "C21 H27 N7 O14 P2",
+     "weight": 663.425,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "FAD",
+     "label": "FAD",
+     "ccdName": "FLAVIN-ADENINE DINUCLEOTIDE",
+     "formula": "C27 H33 N9 O15 P2",
+     "weight": 785.55,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "COA",
+     "label": "Coenzyme A",
+     "ccdName": "COENZYME A",
+     "formula": "C21 H36 N7 O16 P3 S",
+     "weight": 767.534,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SAM",
+     "label": "S-adenosylmethionine",
+     "ccdName": "S-ADENOSYLMETHIONINE",
+     "formula": "C15 H22 N6 O5 S",
+     "weight": 398.437,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GSH",
+     "label": "Glutathione",
+     "ccdName": "Glutathione",
+     "formula": "C10 H17 N3 O6 S",
+     "weight": 307.323,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "HEM",
+     "label": "Heme",
+     "ccdName": "PROTOPORPHYRIN IX CONTAINING FE",
+     "formula": "C34 H32 Fe N4 O4",
+     "weight": 616.487,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CLA",
+     "label": "Chlorophyll a",
+     "ccdName": "CHLOROPHYLL A",
+     "formula": "C55 H72 Mg N4 O5",
+     "weight": 893.489,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CLR",
+     "label": "Cholesterol",
+     "ccdName": "CHOLESTEROL",
+     "formula": "C27 H46 O",
+     "weight": 386.654,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "The letters of DNA and RNA",
+   "items": [
+    {
+     "id": "ADE",
+     "label": "Adenine",
+     "ccdName": "ADENINE",
+     "formula": "C5 H5 N5",
+     "weight": 135.127,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GUN",
+     "label": "Guanine",
+     "ccdName": "GUANINE",
+     "formula": "C5 H5 N5 O",
+     "weight": 151.126,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CYT",
+     "label": "Cytosine",
+     "ccdName": "6-AMINOPYRIMIDIN-2(1H)-ONE",
+     "formula": "C4 H5 N3 O",
+     "weight": 111.102,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TDR",
+     "label": "Thymine",
+     "ccdName": "THYMINE",
+     "formula": "C5 H6 N2 O2",
+     "weight": 126.113,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "URA",
+     "label": "Uracil",
+     "ccdName": "URACIL",
+     "formula": "C4 H4 N2 O2",
+     "weight": 112.087,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  },
+  {
+   "group": "The twenty amino acids",
+   "items": [
+    {
+     "id": "ALA",
+     "label": "Alanine",
+     "ccdName": "ALANINE",
+     "formula": "C3 H7 N O2",
+     "weight": 89.093,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ARG",
+     "label": "Arginine",
+     "ccdName": "ARGININE",
+     "formula": "C6 H15 N4 O2",
+     "weight": 175.209,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ASN",
+     "label": "Asparagine",
+     "ccdName": "ASPARAGINE",
+     "formula": "C4 H8 N2 O3",
+     "weight": 132.118,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ASP",
+     "label": "Aspartic acid",
+     "ccdName": "ASPARTIC ACID",
+     "formula": "C4 H7 N O4",
+     "weight": 133.103,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "CYS",
+     "label": "Cysteine",
+     "ccdName": "CYSTEINE",
+     "formula": "C3 H7 N O2 S",
+     "weight": 121.158,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GLN",
+     "label": "Glutamine",
+     "ccdName": "GLUTAMINE",
+     "formula": "C5 H10 N2 O3",
+     "weight": 146.144,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GLU",
+     "label": "Glutamic acid",
+     "ccdName": "GLUTAMIC ACID",
+     "formula": "C5 H9 N O4",
+     "weight": 147.129,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "GLY",
+     "label": "Glycine",
+     "ccdName": "GLYCINE",
+     "formula": "C2 H5 N O2",
+     "weight": 75.067,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "HIS",
+     "label": "Histidine",
+     "ccdName": "HISTIDINE",
+     "formula": "C6 H10 N3 O2",
+     "weight": 156.162,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "ILE",
+     "label": "Isoleucine",
+     "ccdName": "ISOLEUCINE",
+     "formula": "C6 H13 N O2",
+     "weight": 131.173,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "LEU",
+     "label": "Leucine",
+     "ccdName": "LEUCINE",
+     "formula": "C6 H13 N O2",
+     "weight": 131.173,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "LYS",
+     "label": "Lysine",
+     "ccdName": "LYSINE",
+     "formula": "C6 H15 N2 O2",
+     "weight": 147.195,
+     "charge": 1,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "MET",
+     "label": "Methionine",
+     "ccdName": "METHIONINE",
+     "formula": "C5 H11 N O2 S",
+     "weight": 149.211,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PHE",
+     "label": "Phenylalanine",
+     "ccdName": "PHENYLALANINE",
+     "formula": "C9 H11 N O2",
+     "weight": 165.189,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "PRO",
+     "label": "Proline",
+     "ccdName": "PROLINE",
+     "formula": "C5 H9 N O2",
+     "weight": 115.13,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "SER",
+     "label": "Serine",
+     "ccdName": "SERINE",
+     "formula": "C3 H7 N O3",
+     "weight": 105.093,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "THR",
+     "label": "Threonine",
+     "ccdName": "THREONINE",
+     "formula": "C4 H9 N O3",
+     "weight": 119.119,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TRP",
+     "label": "Tryptophan",
+     "ccdName": "TRYPTOPHAN",
+     "formula": "C11 H12 N2 O2",
+     "weight": 204.225,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "TYR",
+     "label": "Tyrosine",
+     "ccdName": "TYROSINE",
+     "formula": "C9 H11 N O3",
+     "weight": 181.189,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    },
+    {
+     "id": "VAL",
+     "label": "Valine",
+     "ccdName": "VALINE",
+     "formula": "C5 H11 N O2",
+     "weight": 117.146,
+     "charge": 0,
+     "coords": "ideal",
+     "named": true
+    }
+   ]
+  }
+ ],
+ "entries": [
+  {
+   "id": "1CRN",
+   "title": "WATER STRUCTURE OF A HYDROPHOBIC PROTEIN AT ATOMIC RESOLUTION. PENTAGON RINGS OF WATER MOLECULES IN CRYSTALS OF CRAMBIN",
+   "bytes": 49491
+  },
+  {
+   "id": "1UBQ",
+   "title": "STRUCTURE OF UBIQUITIN REFINED AT 1.8 ANGSTROMS RESOLUTION",
+   "bytes": 78570
+  },
+  {
+   "id": "4INS",
+   "title": "THE STRUCTURE OF 2ZN PIG INSULIN CRYSTALS AT 1.5 ANGSTROMS RESOLUTION",
+   "bytes": 144585
+  },
+  {
+   "id": "1LYZ",
+   "title": "REAL-SPACE REFINEMENT OF THE STRUCTURE OF HEN EGG-WHITE LYSOZYME",
+   "bytes": 145962
+  },
+  {
+   "id": "1MBN",
+   "title": "THE STEREOCHEMISTRY OF THE PROTEIN MYOGLOBIN",
+   "bytes": 147420
+  },
+  {
+   "id": "1EMA",
+   "title": "GREEN FLUORESCENT PROTEIN FROM AEQUOREA VICTORIA",
+   "bytes": 190188
+  },
+  {
+   "id": "2DHB",
+   "title": "THREE DIMENSIONAL FOURIER SYNTHESIS OF HORSE DEOXYHAEMOGLOBIN AT 2.8 ANGSTROMS RESOLUTION",
+   "bytes": 248670
+  },
+  {
+   "id": "1STP",
+   "title": "STRUCTURAL ORIGINS OF HIGH-AFFINITY BIOTIN BINDING TO STREPTAVIDIN",
+   "bytes": 117855
+  },
+  {
+   "id": "1BL8",
+   "title": "POTASSIUM CHANNEL (KCSA) FROM STREPTOMYCES LIVIDANS",
+   "bytes": 272727
+  },
+  {
+   "id": "1BNA",
+   "title": "STRUCTURE OF A B-DNA DODECAMER. CONFORMATION AND DYNAMICS",
+   "bytes": 76464
+  },
+  {
+   "id": "1EHZ",
+   "title": "THE CRYSTAL STRUCTURE OF YEAST PHENYLALANINE TRNA AT 1.93 A RESOLUTION",
+   "bytes": 228825
+  }
+ ]
+}
