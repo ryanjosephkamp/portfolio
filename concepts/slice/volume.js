@@ -26,6 +26,13 @@ export const SCANS = {
     turn: 0.6, // where the cutaway rests, so its carved corner faces the viewer
     bar: [10, '10 mm'],
     parts: ['air', 'soft part', 'shell'],
+    // "The real thing": the same scan in Splashery's own embed player.
+    real: {
+      heading: 'The same walnut, in Splashery',
+      text: "Everything above is this page's own drawing of the scan. This one is Splashery's: its walnut toy in the embed player, the same CT scan drawn as volume splats. It turns when idle and you can orbit it. In the playground you can cut it, or show only its dense shell.",
+      title: "Splashery: a walnut's CT scan as volume splats",
+      embed: 'embed/?toy=walnut-ct&labs=1&theme=dark&zoom=0.6',
+    },
   },
   gar: {
     id: 'gar',
@@ -46,8 +53,50 @@ export const SCANS = {
     turn: 1.05,
     bar: [0.5, '0.5 mm'],
     parts: ['background', 'soft tissue', 'densest part'],
+    real: {
+      heading: "The young gar's head, in Splashery",
+      text: "Everything above is this page's own drawing of the scan. This one is Splashery's: its volume viewer in the embed player, with the gar sample open, the same micro-CT drawn as volume splats in the viewer's own colors. It turns when idle and you can orbit it. In the playground the viewer adds window and level, a cut plane on each axis and a maximum-intensity picture.",
+      title: "Splashery: a young gar's head, micro-CT, as volume splats",
+      // A scene link: the volume viewer toy with the gar sample chosen.
+      scene: { id: 'volume-viewer', options: { source: 'gar' }, camera: { yaw: 0.6, pitch: 0.25, roll: 0, distance: 5.2 } },
+    },
   },
 };
+
+// Where a scan's "real thing" opens: Splashery's embed player, by a toy id or by a scene link
+// (docs/SCENE-SCHEMA.md in the Splashery repository: "j." and the scene as base64url JSON).
+export const SPLASHERY = 'https://ryanjosephkamp.github.io/splashery/';
+export function embedUrl(real) {
+  if (real.embed) return SPLASHERY + real.embed;
+  const { id, options, camera } = real.scene;
+  const off = (o) => ({ on: false, ...o });
+  const scene = {
+    app: 'splashery',
+    version: 3,
+    createdAt: '2026-10-14T12:00:00.000Z',
+    seed: 1,
+    toy: { kind: 'builtin', id, options },
+    look: { background: 'page', theme: 'dark', accent: 'auto', splatScale: 1, exposure: 1 },
+    effects: {
+      poke: off({ strength: 0.6, wobble: 0.5 }),
+      wind: off({ strength: 0.55, direction: 0 }),
+      dissolve: off({ spread: 0.55, speed: 0.5 }),
+      drop: off({ bounce: 0.45, scatter: 0.5 }),
+      magnet: off({ strength: 0.7, radius: 0.45 }),
+      twist: off({ amount: 0.5, wobble: 0.3, axis: 'y' }),
+      slice: off({ position: 0, sweep: 0.35, axis: 'x' }),
+      paint: off({ size: 0.5, splash: 0.5, color: '#e63b2e' }),
+    },
+    paint: { stamps: [] },
+    camera,
+    autoplay: { turntable: true, effect: 'none' },
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(scene));
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${SPLASHERY}embed/?theme=dark#s=j.${b64}`;
+}
 
 // The three windows, named as Splashery's volume viewer names its presets.
 export const presets = (s) => ({

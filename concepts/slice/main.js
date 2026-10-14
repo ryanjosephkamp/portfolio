@@ -1,7 +1,7 @@
 // The light box: reads a scan off its contact sheet and hangs the live pictures.
 // The math is in volume.js; this file is the DOM.
 
-import { SCANS, CUT_LABELS, presets, sheetSize, sheetToVolume, cutShape, cut, mip, solids, blocks, cutaway, shade, viewShape, histogram, runningCount, windowCounts, lookup, shadowSet, viewAngle, rebuild } from './volume.js'; // prettier-ignore
+import { SCANS, embedUrl, CUT_LABELS, presets, sheetSize, sheetToVolume, cutShape, cut, mip, solids, blocks, cutaway, shade, viewShape, histogram, runningCount, windowCounts, lookup, shadowSet, viewAngle, rebuild } from './volume.js'; // prettier-ignore
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (s, root = document) => root.querySelector(s);
@@ -187,6 +187,7 @@ function start(first) {
     frame.style.setProperty('--rows', rows);
     frame.style.setProperty('--cell', `${s.nx} / ${s.ny}`);
     $('#sheet-count').textContent = `The whole exam · ${s.nz} slices · ${s.cols} to a row`;
+    showReal(s);
     sizeCT();
     dirty.cuts = dirty.window = dirty.view = dirty.ct = true;
     ask();
@@ -505,14 +506,25 @@ layers.forEach((li, i) => {
   });
 });
 
-// The real toy, from Splashery's own site, only when asked for.
-$('#real-load')?.addEventListener('click', () => {
+// "The real thing": the scan on the box, in Splashery's own embed player, loaded from Splashery's
+// site only when asked for. It follows the scan: its heading, its words, and the toy if it is open.
+let realScan = SCANS.walnut;
+function showReal(s) {
+  realScan = s;
+  $('#real-h').textContent = s.real.heading;
+  $('#real-text').textContent = s.real.text;
+  const frame = $('#real iframe');
+  if (frame && frame.dataset.scan !== s.id) loadReal();
+}
+function loadReal() {
   const frame = document.createElement('iframe');
-  frame.src = 'https://ryanjosephkamp.github.io/splashery/embed/?toy=walnut-ct&labs=1&theme=dark&zoom=0.6';
-  frame.title = "Splashery: a walnut's CT scan as volume splats";
+  frame.src = embedUrl(realScan.real);
+  frame.title = realScan.real.title;
   frame.allow = 'fullscreen';
+  frame.dataset.scan = realScan.id;
   $('#real').replaceChildren(frame);
-});
+}
+$('#real-load')?.addEventListener('click', loadReal);
 
 // Without the scan the page falls back to what it is without scripts: the contact sheet.
 load('walnut').then(start, (err) => {

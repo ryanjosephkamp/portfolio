@@ -45,8 +45,9 @@ method on the histogram; the 99.9th percentile), so the three presets are the vi
 
 **To add a scan:** it must be a real scan under a license that allows it. Write its volume as a
 sheet (`tools/build-sheet.mjs` reads Splashery's two formats; add a reader for a new one), add an
-entry to `SCANS` in `volume.js`, a label button in `index.html` (`data-scan`), a caption line
-(`data-credit`) and its credit in the footer. `verify.mjs` runs every check for every entry.
+entry to `SCANS` in `volume.js` (its `real` field is section D: heading, words, and the Splashery
+embed that shows it), a label button in `index.html` (`data-scan`), a caption line (`data-credit`)
+and its credit in the footer. `verify.mjs` runs every check for every entry.
 
 ## Why it looks this way
 
@@ -92,8 +93,12 @@ For each scan it also checks:
   scrolls the page (`touch-action: pan-y` on every picture).
 - Without scripts the hero shows the walnut's contact sheet, and the parts that need a scan are
   hidden.
-- "The real thing" loads Splashery's own `walnut-ct` toy in its embed player, from Splashery's
-  site, only when the visitor asks. <!-- us-spelling: keep -->
+- "The real thing" (section D) follows the scan on the film, and loads from Splashery's site only
+  when the visitor asks. For the walnut it is Splashery's `walnut-ct` toy in the embed player
+  (`embed/?toy=walnut-ct`); for the gar it is the volume viewer with its gar sample, opened by a
+  scene link (`embed/#s=j.…`, the toy `volume-viewer` with the option `source: "gar"`; see
+  `embedUrl` in `volume.js` and `docs/SCENE-SCHEMA.md` in the Splashery repository). Both were
+  seen rendering on October 14, 2026. <!-- us-spelling: keep -->
 
 ## Credit
 
