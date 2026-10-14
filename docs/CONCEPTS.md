@@ -10,24 +10,33 @@ concept's pull request changes only its own folder and states its row in its des
 | --- | --- | --- | --- | --- | --- |
 | `v1` (repo root) | Words and tools | Drenched blue, white tiles, one lime accent | His name as letter tiles that rearrange into its real anagrams | `main` (merged) | 4173 |
 | `one-splat` | Computer graphics | A dark instrument; the only color is orange light | His name drawn with Gaussian splats, on a dial from 1 to 16,384 | `concept/one-splat` | 4174 |
-| `specimen` | Scientific visualization | A daylight lab bench and a microscope slide | A neuron of 4,096 splats that you focus and fire | `concept/specimen` | 4175 |
+| `specimen` | Scientific visualization | A daylight lab bench and a microscope slide | A neuron of 32,768 splats that you focus, label, stain and fire | `concept/specimen` | 4175 |
 | `toybox` | Digital media | A loud, saturated toy shop | His name as a splat toy to spin, poke, paint and drop | `concept/toybox` | 4176 |
-| `workshop` | Software engineering | A paper drafting table, graphite and one red pencil | A drafting sheet where the build loop stops for the visitor | `concept/workshop` | 4177 |
+| `workshop` | Software engineering | A paper drafting table, graphite and one red pencil | A drafting sheet: pick one of four toys from Splashery's kit and one of five loop graphs from grooph, and the build stops where the graph says, sometimes at the visitor | `concept/workshop` | 4177 |
 | `overprint` | Media arts | A two-ink print on paper, slightly off register | One cloud of splats that re-forms for every section | `concept/overprint` | 4178 |
 | `molecule` | Molecular visualization | A chemistry lecture hall: slate blackboard, chalk, CPK colors for the atoms | A chalk caffeine molecule you turn in your hand and measure, atom to atom | `concept/molecule` | 4181 |
-| `ripple` | Physical simulation: waves and optics | Bright shallow water over white tile, lit from above; ink tile lettering and one float red | His name in tile under a ripple tank that solves the wave equation, read through the surface by Snell's law | `concept/ripple` | 4182 |
-| `resonance` | Sound and audio-visual media | Drenched brass, black sand, a violin bow, one verdigris accent | A brass plate you bow: black sand runs to the still lines of the note, one of its 24 figures | `concept/resonance` | 4183 |
-| `slice` | Volume and medical imaging | A radiology light box: blue-black film on a backlit white wall, one fuchsia wax pencil | A real CT scan of a walnut to cut on three planes, window and turn | `concept/slice` | 4184 |
-| `atlas` | Scale, astronomy and Earth | An engraved star atlas: deep indigo, fine white line work, a little gold | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today | `concept/atlas` | 4185 |
-| `query` | Information retrieval | A split-flap departure board: black panel, white and yellow characters | A departure board you search: a query re-ranks all ten projects and shows each score's arithmetic | `concept/query` | 4186 |
+| `resonance` | Sound and audio-visual media | Drenched copper, black sand, a violin bow, one patina-blue accent; the visitor can pick another plate (brass, steel, titanium or bronze), each with its own sand and tarnish | A plate you bow: sand runs to the still lines of the note, one of its 24 figures | `concept/resonance` | 4183 |
+| `slice` | Volume and medical imaging | A radiology light box: blue-black film on a backlit white wall, one fuchsia wax pencil | Two real CT scans, a walnut and a young gar's head, to cut on three planes, window, and turn as a shaded cutaway | `concept/slice` | 4184 |
+| `atlas` | Scale, astronomy and Earth | An engraved star atlas in four editions: indigo and gilt (the default), plain black ink on laid paper, hand-colored, and a field edition in white on black | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today and a true outline at every stop | `concept/atlas` | 4185 |
+| `arcade` | Games and interaction design | A vector arcade monitor: mint phosphor lines on black glass, one hot red ball | His name as a wall of 32 strokes in a vector brick-breaker, with three rule switches, eight rule sets and a house score to beat on each | `concept/arcade` | 4189 |
+
+## Dropped
+
+Ryan dropped these after his walkthrough on October 13, 2026. Each pull request is closed, each
+branch is still on GitHub, and its tip is kept as a tag. Their territories are free again.
+
+| Slug | Direction | Why | Kept as |
+| --- | --- | --- | --- |
+| `ripple` | Physical simulation: waves and optics | He liked the splash; the light and ripple lab parts were too plain | `archive/ripple-1`, pull request #12 |
+| `query` | Information retrieval | Too many words, and not engaging enough | `archive/query-1`, pull request #11 |
 
 ## Next
 
-Twelve are built. A thirteenth would take one of these, or a direction no row has.
+Eleven are built. `arcade` took Ripple's place on October 13, 2026. Nothing replaces Query for now, so
+no concept leads with information retrieval.
 
 Alternates, if one is replaced: `plot` (data visualization: data in 3D and the climate records),
-`arcade` (games: the arcade shelf and Amordle), `lesson` (explorable explanations: the Tinkerer's
-Manual).
+`lesson` (explorable explanations: the Tinkerer's Manual).
 
 Not a basis for any concept: the capstone. It is the last, short entry in every project list.
 
