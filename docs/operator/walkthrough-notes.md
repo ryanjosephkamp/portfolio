@@ -185,3 +185,104 @@ If Splashery is wrong, then let me know and give me a prompt to hand to the Opus
   prompt for Splashery's own operator session went to Ryan in chat.
 - Workshop: he wants to plan for it to be the main portfolio. That belongs to the publish step.
 - One Splat's refine and Arcade's build were launched by Ryan and were running when these were read.
+
+# Round three, October 14, 2026
+
+Ryan's final review of the eleven concepts, as he pasted it in chat; the walkthrough page's database
+holds the same text (collection `review`, documents `r3-<slug>`). His words, unedited.
+
+## Verdicts
+
+- **Favorite:** none
+- **Keep:** Anagram Tiles, One Splat, Specimen, Toy Box, Workshop, Overprint, Molecule, Resonance
+- **Rework:** Slice, Atlas, Arcade
+- **Drop:** none
+
+## Notes, in his words
+
+### Anagram Tiles (v1) [Keep]
+
+Wording is good. Perfect now.
+
+### One Splat (one-splat) [Keep]
+
+That's acceptable. Lemma section looks amazing! Very, very impressive. This looks perfect.
+
+### Specimen (specimen) [Keep]
+
+Perfect.
+
+### Toy Box (toybox) [Keep]
+
+Keep the packaging voice. Those lines are fine.
+
+### Workshop (workshop) [Keep]
+
+Perfect! I was ultimately planning to actually maybe make one gallery page on my website called
+"Portfolios", where these will be shown like movie posters or something (ideally, they'll be
+dynamic), and users can click into them and see these portfolios.
+
+Let's disregard what "main" means here. I've changed my mind a bit. I want to be able to link to any
+of these if needed, or to the Portfolios page on my site, etc. So, "main" no longer really applies. I
+also want to open these portfolios up as templates that other people can clone and replace names or
+projects, etc. and further develop if they want to. We should keep our portfolios as they are (or
+with any other fixes or improvements that I've specified), but maybe we can make template versions
+that others can easily clone and add their own contents to?
+
+### Overprint (overprint) [Keep]
+
+Looks amazing! The text even supports EMOJIS! WOW! This might be my favorite.
+
+### Molecule (molecule) [Keep]
+
+(no notes)
+
+### Resonance (resonance) [Keep]
+
+(no notes)
+
+### Slice (slice) [Rework]
+
+Almost perfect, but when the user chooses the "Gar's Head", section D ("The same walnut, in
+Splashery") doesn't change to something like "The young gar's head, in Splashery", and the text below
+it ("Everything above is this page's own drawing of the scan. This one is Splashery's: its walnut toy
+in the embed player, the same CT scan drawn as volume splats. It turns when idle and you can orbit it.
+In the playground you can cut it, or show only its dense shell.") doesn't update for the young gar's
+head toy.
+
+If we were to try to expand this to support more objects than just a walnut and a young gar's head,
+how would we do that? Should we give a prompt to the Splashery operator to have it add the new toys
+to Splashery first? If so, then what ideas do you have about suitable objects?
+
+### Atlas (atlas) [Rework]
+
+I'm sending the prompt to the Splashery operator now. Atlas is basically complete, but I'd like to
+see a few more color themes. Maybe something like the Field edition with a bit of color? I don't
+like Indigo and gilt as the default, but I don't want to delete it or anything; Field edition is
+close to what I want, but maybe it could have a bit more color? Is there a way to allow the user to
+customize the color without making this look terrible?
+
+### Arcade (arcade) [Rework]
+
+EXTREMELY COOL! WOW! So creative... thank you for making this. Now, is the Amordle game demo actually
+playable? Can we make it playable? And can we make the red letter box animation go away or be slower
+or something? Aside from those comments, this portfolio is basically perfect. Great work!
+
+## His other notes, the same day
+
+1. I want to create ~blank templates from these portfolios and create a portfolio gallery page on my
+   personal website called "Portfolios", and people can browse these. I noted that a bit above.
+2. I want to have some prompts or an artifact, etc. that I can easily use to request changes or new
+   portfolio concept pages like these, etc. in the future. Can you create that artifact for me?
+3. Please mark my notes here but don't send messages to the other sessions just yet. Save whatever you
+   need to save to the repo. I will need to sign out of this account and sign into another account
+   briefly before coming back to this account.
+
+## What the operator did with them (not Ryan's words)
+
+- Held the three rework prompts (Slice, Atlas, Arcade), as he asked. They are drafted in
+  `docs/operator/RESUME.md`, ready to send when he says so.
+- Drafted a prompt for Splashery's own operator session to add new scans, so Slice can show more than
+  two objects. It is in the same file.
+- "Main portfolio" is retired. The publish step is now a "Portfolios" gallery on his site, and
+  templates for others are a separate step after it.
