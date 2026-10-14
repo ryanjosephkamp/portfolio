@@ -116,7 +116,7 @@
   </div>
 
   <footer class="foot">
-    <p>Where the state lives: <code>docs/operator/RESUME.md</code> (where things stand), <code>docs/operator/walkthrough-notes.md</code> (your notes, word for word), <code>docs/CONCEPTS.md</code> (the registry). Until pull request #14 merges, those are on the branch <code>claude/portfolio-operator-takeover-d29b75</code>.</p>
+    <p>Where the state lives, on main: <code>docs/operator/RESUME.md</code> (where things stand), <code>docs/operator/walkthrough-notes.md</code> (your notes, word for word), <code>docs/CONCEPTS.md</code> (the registry), and <code>tools/operator/</code> (staging and checks).</p>
     <p>Pages to keep: the <a href="https://claude.ai/artifact/RqSMxQRX232yRdcVkFqp9E">operator manual</a> and the <a href="https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt">Portfolio Walkthrough</a>.</p>
   </footer>
 </div>
@@ -135,11 +135,6 @@
     { slug: 'atlas', name: 'Atlas', dir: 'scale, astronomy and Earth', pr: 9, sw: ['#0d1040', '#eef0ff', '#e8bd5a'] },
     { slug: 'arcade', name: 'Arcade', dir: 'games and interaction design', pr: 15, sw: ['#040706', '#7dffc6', '#ff4a3d'] },
   ];
-  const PULLS = [
-    ...CONCEPTS.filter((c) => c.slug !== 'v1').map((c) => ({ n: c.pr, label: c.name })),
-    { n: 13, label: 'Anagram Tiles caption' },
-    { n: 14, label: 'Operator files' },
-  ].sort((a, b) => a.n - b.n);
   const OPERATOR = 'the operator session (or any session that has read docs/operator/RESUME.md)';
   const nameOf = (slug) => (CONCEPTS.find((c) => c.slug === slug) || { name: slug }).name;
   const folder = (slug) => (slug === 'v1' ? 'the repo root' : `concepts/${slug}/`);
@@ -150,7 +145,7 @@
     { group: 'Keep going', id: 'resume', title: 'Resume the operator', what: 'After a break, an account switch or a fresh session: picks the work up from the repo and tells you where it stands.', where: 'A new session on /Users/noir/portfolio, or the operator session itself', run: 'Opus · High', fields: [],
       make: () => `Resume as the operator session for my portfolio concepts in /Users/noir/portfolio (repo ryanjosephkamp/portfolio).
 
-START: run \`git fetch origin\`. Work in the worktree /Users/noir/portfolio/.claude/worktrees/portfolio-operator-takeover-d29b75 on the branch claude/portfolio-operator-takeover-d29b75 if that branch is still open; once pull request #14 has merged, work from main on a new branch. Read docs/operator/RESUME.md first (from that branch: \`git show origin/claude/portfolio-operator-takeover-d29b75:docs/operator/RESUME.md\`), then CLAUDE.md, docs/PLAYBOOK.md, docs/CONCEPTS.md, the end of docs/operator/walkthrough-notes.md, and your memory notes for this project.
+START: run \`git fetch origin\` and work from main, on a new branch for any change. Read docs/operator/RESUME.md first, then CLAUDE.md, docs/PLAYBOOK.md, docs/CONCEPTS.md, the end of docs/operator/walkthrough-notes.md, and your memory notes for this project.
 
 Then check the present against RESUME.md: which pull requests are open or merged, which concept branches moved since their recorded tips, and which lane sessions exist and are idle. Rebuild staging with tools/operator/rebuild-staging.sh and start the launch config named staging, so http://localhost:4180/concepts/ serves every concept.
 
@@ -266,8 +261,8 @@ Follow the project's own rules for content, credits, licenses and tests, and che
 DONE WHEN: it works in the app, the project's checks pass, and a pull request is open. Reply with what changed, where each fact came from, and anything a portfolio page will need to know to use it (toy ids, embed parameters, file names).` },
 
     { group: 'Ship', id: 'merge', title: 'Merge pull requests', what: 'Your go-ahead for exactly the pull requests you tick. Nothing merges without it.', where: OPERATOR, run: 'Opus · High',
-      fields: [{ id: 'prs', label: 'Which pull requests', type: 'prs' }],
-      make: (v) => `Merge these pull requests in ryanjosephkamp/portfolio, squashed, deleting their branches: ${(v.prs || []).map((n) => '#' + n).join(', ') || '(tick them)'}. This is my go-ahead for exactly these.
+      fields: [{ id: 'prs', label: 'Pull request numbers', hint: 'for example 17, 18', type: 'text' }],
+      make: (v) => `Merge these pull requests in ryanjosephkamp/portfolio, squashed, deleting their branches: ${String(v.prs || '').split(/[^0-9]+/).filter(Boolean).map((n) => '#' + n).join(', ') || '(name them)'}. This is my go-ahead for exactly these.
 
 Before each merge, check it is still mergeable and its branch has not moved since your last recheck; if it has, recheck it first and tell me. After merging, update docs/CONCEPTS.md (the Branch column reads merged), the working index if it needs it, and the operator manual's status, then rebuild staging from main.
 
@@ -358,7 +353,6 @@ DONE WHEN: every template passes those checks, the spelling check prints nothing
     if (f.type === 'select') return `<label class="f${wide}" for="${id}">${esc(f.label)}${hint}<select id="${id}" data-f="${f.id}">${f.options().map(([val, text]) => `<option value="${esc(val)}"${v[f.id] === val ? ' selected' : ''}>${esc(text)}</option>`).join('')}</select></label>`;
     if (f.type === 'toggle') return `<label class="toggle wide" for="${id}"><input type="checkbox" id="${id}" data-f="${f.id}"${v[f.id] ? ' checked' : ''}> ${esc(f.label)}</label>`;
     if (f.type === 'checks') return `<fieldset class="f wide"><legend>${esc(f.label)}</legend><div class="checks">${CONCEPTS.map((c) => `<label><input type="checkbox" data-f="${f.id}" value="${c.slug}"${v[f.id].includes(c.slug) ? ' checked' : ''}><span class="sw" aria-hidden="true">${c.sw.map((s) => `<i style="background:${s}"></i>`).join('')}</span>${esc(c.name)}</label>`).join('')}</div><div class="mini"><button type="button" data-all="${f.id}">All</button><button type="button" data-none="${f.id}">None</button></div></fieldset>`;
-    if (f.type === 'prs') return `<fieldset class="f wide"><legend>${esc(f.label)}</legend><div class="checks">${PULLS.map((p) => `<label><input type="checkbox" data-f="${f.id}" value="${p.n}"${v[f.id].includes(p.n) ? ' checked' : ''}>#${p.n} ${esc(p.label)}</label>`).join('')}</div><div class="mini"><button type="button" data-all="${f.id}">All</button><button type="button" data-none="${f.id}">None</button></div></fieldset>`;
     return `<label class="f${wide}" for="${id}">${esc(f.label)}${hint}<input type="text" id="${id}" data-f="${f.id}" value="${esc(v[f.id])}"></label>`;
   }
 

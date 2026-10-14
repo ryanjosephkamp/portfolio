@@ -6,31 +6,25 @@ A session picking the work back up reads this file, then `CLAUDE.md`, `docs/PLAY
 
 ## State
 
-Updated October 14, 2026, after Ryan's go-ahead to send the held prompts and merge at the
-operator's discretion.
+Updated October 14, 2026, when the last three concepts merged.
 
-- **Eleven concepts are built.** On main: v1 (Anagram Tiles, the repo root, now with its new caption),
-  one-splat, specimen, toybox, workshop, overprint, molecule and resonance. Still on branches, each
-  in a last refine pass: slice (#10), atlas (#9) and arcade (#15). Ripple and Query were dropped;
-  their tips are the tags `archive/ripple-1` and `archive/query-1`.
-- **Merged on October 14:** #14 (operator files), #13 (v1's caption), #1 specimen, #2 workshop,
-  #3 toybox, #4 one-splat, #6 overprint, #7 molecule, #8 resonance. Each was squashed at the tip the
-  operator had rechecked, and main was checked afterward: every merged folder matches its rechecked
-  tip, and the spelling check passes on all of main.
-- **Sent on October 14:** the round-three prompts to Slice, Atlas and Arcade (the text is below).
-  When each reports, recheck it, rebuild staging, and merge its pull request: Ryan's go-ahead of
-  October 14 covers these three once they pass.
-- **Ryan's final review (round three):** Keep: v1, one-splat, specimen, toybox, workshop, overprint,
-  molecule, resonance. Rework: slice, atlas, arcade. His words are in `walkthrough-notes.md`.
+- **All eleven concepts are on main** and no pull request is open: v1 (Anagram Tiles, the repo root),
+  one-splat, specimen, toybox, workshop, overprint, molecule, resonance, slice, atlas and arcade.
+  Ripple and Query were dropped; their tips are the tags `archive/ripple-1` and `archive/query-1`.
+- **Each merge was squashed at the tip the operator had rechecked**, and main was checked after each:
+  every concept folder matches its rechecked tip, and the spelling check passes on all of main.
+- **Round three is done.** Slice's section D follows the chosen scan, Atlas opens on "Field, in color"
+  with a hue dial, and Arcade's Amordle cabinet plays a real round with its walking red box removed.
+  Ryan's notes for all three rounds are in `walkthrough-notes.md`.
 - **With Ryan, for Splashery's own operator session (another account):** the stop-label prompt for
   Atlas, which he sent on October 14, and the new-scans prompt below, if he wants more objects in
   Slice.
 
 ## Next, in order
 
-1. As Slice, Atlas and Arcade report, recheck each (`tools/operator/check-lane.sh`), rebuild
-   staging, update `docs/CONCEPTS.md` for any changed row, and merge its pull request.
-2. Ryan's next look at the three, if he wants one.
+1. Ryan's next look, if he wants one: "Set up a walkthrough" in the Prompt Kit.
+2. Any further change to a concept goes on a new branch from main in that concept's worktree, as
+   `update/<slug>-<topic>`, with its own pull request.
 3. **Portfolios gallery** on ryanjosephkamp.github.io: a page called "Portfolios" that shows the
    concepts like movie posters, ideally live, each opening its own page at its own address so any one
    can be linked. "Main portfolio" is retired. The prompt is in the Portfolio Prompt Kit.
