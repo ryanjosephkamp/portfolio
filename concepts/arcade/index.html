@@ -260,22 +260,32 @@
           </header>
           <p>Any word length from 2 to 35 letters, three difficulties, a daily puzzle, and ranked multiplayer with an Elo rating. Two modes: OG is one puzzle with one answer, and GO is a chain of five, seven or ten puzzles where every answer you solve carries forward as evidence in the next.</p>
           <p>Both modes can be played against another person on one shared board, taking turns. Ratings live in forty separate pools, ten clocks by two modes by Hard Mode on or off, because a rating only means something when everyone holding it played the same game. The eight tables at the top of this page follow that rule.</p>
+          <p>Play a round here: OG or GO, at the length the slider picks, with or without Hard Mode. It is a round in Amordle&rsquo;s rules on this page, not Amordle itself; the daily puzzle, the three difficulties and ranked play are in the real game.</p>
           <p class="links">
             <a class="link" href="https://amordle.vercel.app">Play</a>
             <a class="link" href="https://ryanjosephkamp.github.io/blog/articles/amordle/">Write-up</a>
             <a class="link" href="https://github.com/ryanjosephkamp/amordle">Code</a>
           </p>
         </div>
-        <div class="plate" id="amo">
+        <div class="plate amo" id="amo">
           <label class="slide"><span>Word length <b id="amo-len">5</b></span><input type="range" id="amo-range" min="2" max="35" value="5" aria-label="Word length, 2 to 35 letters"></label>
-          <div class="tiles" id="amo-tiles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
           <div class="plate__keys">
             <button class="btn" type="button" id="amo-mode" role="switch" aria-checked="false"><span>Mode</span><b>OG</b></button>
             <button class="btn" type="button" id="amo-hard" role="switch" aria-checked="false"><span>Hard Mode</span><b>Off</b></button>
-            <label class="slide slide--short"><span>Clock <b id="amo-clockn">1</b> of 10</span><input type="range" id="amo-clock" min="1" max="10" value="1" aria-label="Which of the ten clocks"></label>
+            <button class="btn btn--start" type="button" id="amo-new">New round</button>
           </div>
-          <div class="pools" id="amo-pools" aria-hidden="true"></div>
-          <p class="plate__read" id="amo-read" aria-live="polite">Pool 1 of 40: OG, Hard Mode off, clock 1. Your rating here is only ever compared with ratings earned here.</p>
+          <p class="amo__status" id="amo-status">OG &middot; 5 letters &middot; six guesses</p>
+          <div class="amo__board" id="amo-board" tabindex="0" role="group" aria-label="The board. Type a word and press Enter to guess."><p class="amo__nojs">The round loads its words when you get here, and needs JavaScript.</p></div>
+          <p class="amo__draft" id="amo-draft" aria-hidden="true"></p>
+          <p class="plate__read amo__read" id="amo-read" aria-live="polite"></p>
+          <div class="amo__suggest" id="amo-suggest" aria-label="Words in this round&rsquo;s list that start with what you have typed"></div>
+          <div class="amo__keys" id="amo-keys" aria-label="Keyboard"></div>
+          <p class="amo__note">Guesses must be in this round&rsquo;s list, a slice of <a href="https://english-openlist.pages.dev/">English OpenList</a>: every word it accepts at 2 to 5 letters, and about a thousand at each longer length, suggested as you type.</p>
+          <div class="amo__pools">
+            <label class="slide slide--short"><span>Ranked play: clock <b id="amo-clockn">1</b> of 10</span><input type="range" id="amo-clock" min="1" max="10" value="1" aria-label="Which of the ten clocks"></label>
+            <div class="pools" id="amo-pools" aria-hidden="true"></div>
+            <p class="plate__read" id="amo-pool" aria-live="polite">Pool 1 of 40: OG, Hard Mode off, clock 1. A rating earned here is only ever compared with ratings earned here.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -390,7 +400,7 @@
       </ul>
       <div class="colophon">
         <p>&copy; 2026 Ryan Kamp &middot; Cincinnati, Ohio</p>
-        <p>Headings drawn stroke by stroke, text set in Martian Mono. No frameworks, no trackers, no quarters.</p>
+        <p>Headings drawn stroke by stroke, text set in Martian Mono. The Amordle round&rsquo;s words are from English OpenList, MIT License. No frameworks, no trackers, no quarters.</p>
       </div>
     </div>
   </footer>

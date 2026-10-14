@@ -1,5 +1,6 @@
 // The page's side of the cabinet: drawing, input, and the small plates below.
 // The rules themselves are in game.js and know nothing of the page.
+import { OG_GUESSES, GO_PUZZLES, budgetFor, newRound, submit, advance, evidence, puzzleRows, guessesUsed } from "./amordle.js";
 import { glyphSegments, textSegments, W, H, DT, PADDLE_Y, HW, BALL_R, RULES, HOUSE, HOUSE_SEED, ruleCode, createGame, setRules, step, autopilot } from "./game.js";
 
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
@@ -456,49 +457,223 @@ for (const btn of $$(".seg button", shelf))
   else requestAnimationFrame(run);
 }
 
-// ---------------------------------------------------------- Amordle's pools
+// ---------------------------------------------------------- Amordle's round
 {
+  const plate = $("#amo");
   const range = $("#amo-range");
   const clock = $("#amo-clock");
-  const tiles = $("#amo-tiles");
   const pools = $("#amo-pools");
   const modeBtn = $("#amo-mode");
   const hardBtn = $("#amo-hard");
+  const board = $("#amo-board");
+  const read = $("#amo-read");
+  const status = $("#amo-status");
+  const suggest = $("#amo-suggest");
+  const keys = $("#amo-keys");
   let go = false;
   let hard = false;
+  let round = null;
+  let draft = "";
+  let lists = new Map(); // length -> { answers, all: Set, sorted }
+  let reached = false;
+  let seen = false;
+  let deal = 0;
+  const NUM = ["zero", "one", "two", "three", "four", "five", "six"];
+
   pools.innerHTML = "<i></i>".repeat(40);
   const cells = $$("i", pools);
-  function render() {
-    const n = Number(range.value);
+  function poolView() {
     const c = Number(clock.value);
-    $("#amo-len").textContent = n;
     $("#amo-clockn").textContent = c;
-    if (tiles.children.length !== n) tiles.innerHTML = "<i></i>".repeat(n);
-    tiles.style.gap = n > 20 ? "2px" : "3px";
     const row = (go ? 2 : 0) + (hard ? 1 : 0);
     cells.forEach((el, i) => (el.className = (Math.floor(i / 10) === row ? "row " : "") + (i === row * 10 + c - 1 ? "on" : "")));
-    $("#amo-read").textContent = `${n} letters. Pool ${row * 10 + c} of 40: ${go ? "GO" : "OG"}, Hard Mode ${hard ? "on" : "off"}, clock ${c}. A rating earned here is only ever compared with ratings earned here.`;
+    $("#amo-pool").textContent = `Pool ${row * 10 + c} of 40: ${go ? "GO" : "OG"}, Hard Mode ${hard ? "on" : "off"}, clock ${c}. A rating earned here is only ever compared with ratings earned here.`;
   }
+
+  async function words(n) {
+    if (!lists.has(n))
+      lists.set(
+        n,
+        fetch(`assets/words/${n}.txt`)
+          .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
+          .then((t) => {
+            const [a, b = ""] = t.split("\n");
+            const rest = b.split("|").pop(); // after the marker for the repository's spelling check
+            const answers = a.split(" ").filter(Boolean);
+            const sorted = [...answers, ...rest.split(" ").filter(Boolean)].sort();
+            return { answers, all: new Set(sorted), sorted };
+          }),
+      );
+    return lists.get(n);
+  }
+
+  function pick(answers, k) {
+    const pool = [...answers];
+    const out = [];
+    while (out.length < k && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    return out;
+  }
+
+  async function start() {
+    const n = Number(range.value);
+    const ticket = ++deal;
+    draft = "";
+    read.textContent = "Dealing a word…";
+    let list;
+    try {
+      list = await words(n);
+    } catch {
+      read.textContent = "The word list did not load. Try New round.";
+      lists.delete(n);
+      return;
+    }
+    if (ticket !== deal) return;
+    round = newRound({ length: n, mode: go ? "go" : "og", hard, answers: pick(list.answers, go ? GO_PUZZLES : 1) });
+    round.list = list;
+    read.textContent = "Type a word, then Enter.";
+    render();
+  }
+
+  const markText = { correct: "in the word, in this spot", present: "in the word, elsewhere", absent: "not in the word" };
+  function rowHTML(letters, marks, cls, label) {
+    const tiles = [];
+    for (let i = 0; i < round.length; i++) tiles.push(`<i class="${marks ? marks[i] : letters[i] ? "typed" : ""}">${letters[i] ? letters[i].toUpperCase() : ""}</i>`);
+    return `<div class="amo__row ${cls}"${label ? ` role="img" aria-label="${label}"` : ' aria-hidden="true"'}>${tiles.join("")}</div>`;
+  }
+  function render() {
+    if (!round) return;
+    const n = round.length;
+    const rows = puzzleRows(round);
+    const budget = budgetFor(round.mode, round.index);
+    const used = guessesUsed(round);
+    const html = [];
+    for (const row of rows) {
+      const label = `${row.seeded ? "Evidence from an earlier answer," : "Guess"} ${row.guess.toUpperCase()}: ${row.marks.map((m, i) => `${row.guess[i].toUpperCase()} ${markText[m]}`).join(", ")}`;
+      html.push(rowHTML(row.guess, row.marks, row.seeded ? "seeded" : "done", label));
+    }
+    if (round.status === "active") {
+      html.push(rowHTML(draft, null, "now", `Your guess so far: ${draft.toUpperCase() || "empty"}, ${draft.length} of ${n} letters`));
+      for (let i = used + 1; i < budget; i++) html.push(rowHTML("", null, "empty"));
+    }
+    board.style.setProperty("--n", n);
+    board.innerHTML = html.join("");
+    // Past twelve letters the tiles are too small to read: spell the guess out too.
+    $("#amo-draft").textContent = round.status === "active" && n > 12 ? draft.toUpperCase().padEnd(n, "·") : "";
+    const where = round.mode === "go" ? `GO · puzzle ${round.index + 1} of ${round.answers.length}` : "OG";
+    const left = budget - used;
+    status.textContent = `${where} · ${n} letters · ${round.status === "active" ? `${NUM[left] || left} guess${left === 1 ? "" : "es"} left` : round.status === "won" ? "solved" : round.status === "holding" ? "solved, next puzzle coming" : "out of guesses"}`;
+    // the keyboard's evidence
+    const ev = evidence(round);
+    for (const k of $$("button[data-k]", keys)) {
+      const m = ev[k.dataset.k];
+      for (const c of ["correct", "present", "absent"]) k.classList.toggle(c, m === c);
+    }
+    // suggestions, for the lengths whose list is a slice
+    suggest.innerHTML = "";
+    if (round.status === "active" && n > 5 && draft.length >= 2) {
+      const hits = [];
+      for (const w of round.list.sorted) {
+        if (w.startsWith(draft)) hits.push(w);
+        if (hits.length === 6) break;
+      }
+      suggest.innerHTML = hits.map((w) => `<button type="button" data-w="${w}">${w.toUpperCase()}</button>`).join("");
+    }
+  }
+
+  function finishLine() {
+    const answer = round.answers[round.index].toUpperCase();
+    const used = guessesUsed(round);
+    if (round.status === "won") return round.mode === "go" ? `Chain complete: all ${NUM[round.answers.length]} puzzles, the last in ${NUM[used]} guess${used === 1 ? "" : "es"}. New round deals another.` : `Solved in ${NUM[used]} of ${NUM[OG_GUESSES]} guesses. New round deals another.`;
+    if (round.status === "lost") return `Out of guesses. The word was ${answer}.${round.mode === "go" ? ` The chain ends at puzzle ${round.index + 1}.` : ""} New round deals another.`;
+    return `Solved: ${answer}. It goes onto the next board as evidence.`;
+  }
+  function type(k) {
+    if (!round || round.status !== "active") return;
+    if (k === "enter") {
+      const why = submit(round, draft, round.list.all);
+      if (why) {
+        read.textContent = why;
+        board.classList.remove("nope");
+        void board.offsetWidth;
+        if (!reduce.matches) board.classList.add("nope");
+        return;
+      }
+      draft = "";
+      read.textContent = round.status === "active" ? "" : finishLine();
+      if (round.status === "holding") {
+        const r = round;
+        setTimeout(() => {
+          if (round !== r) return;
+          advance(r);
+          read.textContent = `Puzzle ${r.index + 1} of ${r.answers.length}: the answers so far are already on the board, scored against the new word. ${NUM[budgetFor(r.mode, r.index)].replace(/^./, (c) => c.toUpperCase())} guesses.`;
+          render();
+        }, 1600);
+      }
+    } else if (k === "delete") draft = draft.slice(0, -1);
+    else if (/^[a-z]$/.test(k) && draft.length < round.length) draft += k;
+    else return;
+    render();
+  }
+
+  keys.innerHTML = ["qwertyuiop", "asdfghjkl", "+zxcvbnm-"]
+    .map((row) => `<div>${[...row].map((c) => (c === "+" ? '<button type="button" data-k="enter" class="wide">Enter</button>' : c === "-" ? '<button type="button" data-k="delete" class="wide" aria-label="Delete">Del</button>' : `<button type="button" data-k="${c}">${c.toUpperCase()}</button>`)).join("")}</div>`)
+    .join("");
+  keys.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-k]");
+    if (b) type(b.dataset.k);
+  });
+  suggest.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-w]");
+    if (!b || !round) return;
+    draft = b.dataset.w;
+    render();
+    board.focus({ preventScroll: true });
+  });
+  board.addEventListener("pointerdown", () => board.focus({ preventScroll: true }));
+  // Typing goes to the round when the board (or a key) has focus, or when
+  // nothing does and the round is on screen.
+  addEventListener("keydown", (e) => {
+    if (!round || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    const inside = t instanceof Element && plate.contains(t) && !t.closest("input");
+    if (!inside && !(t === document.body && seen)) return;
+    const k = e.key === "Backspace" ? "delete" : e.key === "Enter" ? "enter" : e.key.toLowerCase();
+    if (k === "enter" && t !== board && t !== document.body) return; // Enter on a button presses the button
+    if (k !== "enter" && k !== "delete" && !/^[a-z]$/.test(k)) return;
+    e.preventDefault();
+    type(k);
+  });
+
   const flip = (btn, get, labels) =>
     btn.addEventListener("click", () => {
       const v = get();
       btn.setAttribute("aria-checked", v);
       $("b", btn).textContent = labels[v ? 1 : 0];
-      render();
+      poolView();
+      start();
     });
   flip(modeBtn, () => (go = !go), ["OG", "GO"]);
   flip(hardBtn, () => (hard = !hard), ["Off", "On"]);
-  range.addEventListener("input", render);
-  clock.addEventListener("input", render);
-  render();
-  // A cursor walks the row, the way a guess goes in.
-  let at = 0;
-  if (!reduce.matches)
-    setInterval(() => {
-      const kids = tiles.children;
-      for (const k of kids) k.classList.remove("hit");
-      kids[at++ % kids.length]?.classList.add("hit");
-    }, 220);
+  range.addEventListener("input", () => {
+    $("#amo-len").textContent = range.value;
+    clearTimeout(range.wait);
+    range.wait = setTimeout(start, 250);
+  });
+  clock.addEventListener("input", poolView);
+  $("#amo-new").addEventListener("click", start);
+  poolView();
+  // The words load when the cabinet comes near, not with the page.
+  new IntersectionObserver(
+    ([e]) => {
+      seen = e.intersectionRatio > 0.3;
+      if (e.isIntersecting && !reached) {
+        reached = true;
+        start();
+      }
+    },
+    { rootMargin: "300px 0px", threshold: [0, 0.3] },
+  ).observe(plate);
+  window.amordle = { get round() { return round; }, get draft() { return draft; }, type, start }; // prettier-ignore
 }
 
 // ---------------------------------------------------------- Ars Magna's letters
