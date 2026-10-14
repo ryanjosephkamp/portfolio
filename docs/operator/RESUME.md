@@ -6,29 +6,31 @@ A session picking the work back up reads this file, then `CLAUDE.md`, `docs/PLAY
 
 ## State
 
-- **Eleven concepts are built.** v1 (Anagram Tiles) is the merged repo root. The other ten live on
-  `concept/<slug>` branches: one-splat, specimen, toybox, workshop, overprint, molecule, resonance,
-  slice, atlas, arcade. Ripple and Query were dropped; their tips are the tags `archive/ripple-1` and
-  `archive/query-1`.
-- **Every branch passed the operator's recheck at its current tip:** changes only in its own folder,
-  noreply identity, the spelling check clean, the ten projects in order with the capstone last, and
-  loaded from staging at 1440 and 375 pixels wide with an empty console.
-- **Nothing is merged since v1.** Open pull requests: #1 specimen, #2 workshop, #3 toybox,
-  #4 one-splat, #6 overprint, #7 molecule, #8 resonance, #9 atlas, #10 slice, #15 arcade,
-  #13 v1's caption fix, #14 this operator branch. Merge a pull request only when Ryan names it.
+Updated October 14, 2026, after Ryan's go-ahead to send the held prompts and merge at the
+operator's discretion.
+
+- **Eleven concepts are built.** On main: v1 (Anagram Tiles, the repo root, now with its new caption),
+  one-splat, specimen, toybox, workshop, overprint, molecule and resonance. Still on branches, each
+  in a last refine pass: slice (#10), atlas (#9) and arcade (#15). Ripple and Query were dropped;
+  their tips are the tags `archive/ripple-1` and `archive/query-1`.
+- **Merged on October 14:** #14 (operator files), #13 (v1's caption), #1 specimen, #2 workshop,
+  #3 toybox, #4 one-splat, #6 overprint, #7 molecule, #8 resonance. Each was squashed at the tip the
+  operator had rechecked, and main was checked afterward: every merged folder matches its rechecked
+  tip, and the spelling check passes on all of main.
+- **Sent on October 14:** the round-three prompts to Slice, Atlas and Arcade (the text is below).
+  When each reports, recheck it, rebuild staging, and merge its pull request: Ryan's go-ahead of
+  October 14 covers these three once they pass.
 - **Ryan's final review (round three):** Keep: v1, one-splat, specimen, toybox, workshop, overprint,
   molecule, resonance. Rework: slice, atlas, arcade. His words are in `walkthrough-notes.md`.
-- **Held, not sent:** the three rework prompts below. Ryan said to hold them until he is back.
 - **With Ryan, for Splashery's own operator session (another account):** the stop-label prompt for
   Atlas, which he sent on October 14, and the new-scans prompt below, if he wants more objects in
   Slice.
 
 ## Next, in order
 
-1. When Ryan says so, send the three rework prompts to their lanes. Recheck each as it reports
-   (`tools/operator/check-lane.sh`), rebuild staging, and update `docs/CONCEPTS.md` for any changed
-   row.
-2. Merges, as Ryan names them.
+1. As Slice, Atlas and Arcade report, recheck each (`tools/operator/check-lane.sh`), rebuild
+   staging, update `docs/CONCEPTS.md` for any changed row, and merge its pull request.
+2. Ryan's next look at the three, if he wants one.
 3. **Portfolios gallery** on ryanjosephkamp.github.io: a page called "Portfolios" that shows the
    concepts like movie posters, ideally live, each opening its own page at its own address so any one
    can be linked. "Main portfolio" is retired. The prompt is in the Portfolio Prompt Kit.
@@ -92,7 +94,7 @@ Send a lane its prompt with `SendMessage` to its session id (`list_sessions` sho
 checking that the session is idle and its worktree clean. If a session is gone, the same prompt
 works in a new session opened on that worktree.
 
-## Held prompts
+## The round-three prompts (sent October 14)
 
 ### Slice
 
