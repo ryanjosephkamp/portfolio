@@ -45,6 +45,21 @@ Open decisions for Ryan, with the operator's recommendation:
 | Where the templates live | One new public repository, `portfolio-templates`, a folder per concept, each filled from one data file |
 | What a template keeps | The signature and the look. Name, projects, links and interests move into the data file; the Splashery, grooph and Amordle pieces become examples a cloner replaces |
 
+## Pages
+
+These are private pages on Ryan's claude.ai account. Their sources are in the repo, so a session
+that cannot open them can still read and republish them.
+
+| Page | Source | Address |
+| --- | --- | --- |
+| Portfolio Prompt Kit: copy-ready prompts for every kind of job | `docs/operator/prompt-kit.html` | https://claude.ai/artifact/NDCiAYaB23L5aqKQU3JsZo |
+| Operator manual: status, registry, launch pack | `docs/operator/manual.html` | https://claude.ai/artifact/RqSMxQRX232yRdcVkFqp9E |
+| Portfolio Walkthrough: a card per concept; verdicts and notes save to its database (collection `review`, documents `r<round>-<slug>`) | `docs/operator/walkthrough.html` | https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt |
+
+Republish a page by reading it first (`Artifact` with `action: "read"` and its address), then
+publishing its source file with that address. The walkthrough page keeps its `db` capability when the
+publish leaves `capabilities` out.
+
 ## Staging
 
 - `tools/operator/rebuild-staging.sh` rebuilds the local `staging` branch in

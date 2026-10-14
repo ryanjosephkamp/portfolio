@@ -1,0 +1,420 @@
+<title>Portfolio Prompt Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<style>
+  /* Layout: a drafting sheet. Jobs down the left margin; the chosen job is a work order on the right: its fields, then the prompt to copy. */
+  :root {
+    --paper: #eef0ec;
+    --sheet: #fbfbf8;
+    --ink: #1c2025;
+    --graphite: #545b62;
+    --rule: #d3d7d1;
+    --blue: #2c6b8f;
+    --blue-soft: #dbeaf2;
+    --red: #b0342a;
+    --red-ink: #ffffff;
+    --sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #131619; --sheet: #1a1e22; --ink: #e6e8e3; --graphite: #a3a9ae; --rule: #2c3237;
+      --blue: #86bfdd; --blue-soft: #1c2c36; --red: #f08070; --red-ink: #1a0f0d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #131619; --sheet: #1a1e22; --ink: #e6e8e3; --graphite: #a3a9ae; --rule: #2c3237;
+    --blue: #86bfdd; --blue-soft: #1c2c36; --red: #f08070; --red-ink: #1a0f0d;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    background-image: linear-gradient(var(--blue-soft) 1px, transparent 1px), linear-gradient(90deg, var(--blue-soft) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--ink);
+    font: 1rem/1.55 var(--sans);
+    padding-inline: max(16px, 3vw);
+    padding-block: 0 4rem;
+  }
+  h1, h2, h3, p, ul, ol, fieldset { margin: 0; }
+  a { color: var(--blue); text-underline-offset: 0.18em; }
+  code { font-family: var(--mono); font-size: 0.9em; overflow-wrap: anywhere; }
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 3px; }
+
+  .wrap { max-width: 76rem; margin-inline: auto; }
+  header.top { padding-block: clamp(1.75rem, 5vw, 3rem) 1.5rem; display: grid; gap: 0.6rem; }
+  .eyebrow { font: 600 0.78rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue); }
+  h1 { font-size: clamp(2rem, 1.2rem + 3vw, 3.1rem); font-weight: 800; line-height: 1.02; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--graphite); max-width: 68ch; }
+
+  .desk { display: grid; grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+  @media (max-width: 52rem) { .desk { grid-template-columns: minmax(0, 1fr); } }
+
+  nav.jobs { display: grid; gap: 1.1rem; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1rem); }
+  @media (max-width: 52rem) { nav.jobs { position: static; } }
+  .group { display: grid; gap: 0.3rem; }
+  .group h2 { font: 600 0.74rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); padding-bottom: 0.15rem; border-bottom: 1px dashed var(--rule); }
+  .job {
+    font: 600 0.95rem var(--sans); color: var(--ink); text-align: left; background: transparent;
+    border: 1px solid transparent; border-radius: 6px; padding: 0.45em 0.7em; cursor: pointer;
+  }
+  .job:hover { background: var(--sheet); border-color: var(--rule); }
+  .job[aria-current="true"] { background: var(--sheet); border-color: var(--ink); box-shadow: 3px 3px 0 var(--blue-soft); }
+
+  .order { background: var(--sheet); border: 1px solid var(--ink); border-radius: 4px; box-shadow: 5px 5px 0 var(--blue-soft); padding: clamp(1rem, 3vw, 1.75rem); display: grid; gap: 1.1rem; min-width: 0; }
+  .order header { display: grid; gap: 0.35rem; }
+  .order h2 { font-size: 1.55rem; font-weight: 800; line-height: 1.15; text-wrap: balance; }
+  .order .what { color: var(--graphite); max-width: 70ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font: 0.86rem var(--mono); color: var(--graphite); border-block: 1px solid var(--rule); padding-block: 0.55rem; }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+  @media (max-width: 40rem) { .fields { grid-template-columns: minmax(0, 1fr); } }
+  .fields .wide { grid-column: 1 / -1; }
+  label.f, fieldset.f { display: grid; gap: 0.3rem; font-weight: 600; font-size: 0.93rem; min-width: 0; border: 0; padding: 0; }
+  label.f small, fieldset.f small { font-weight: 400; color: var(--graphite); }
+  legend { padding: 0; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.93rem; }
+  input[type="text"], textarea, select {
+    font: 0.95rem var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 0.5em 0.65em; width: 100%;
+  }
+  textarea { min-height: 7rem; resize: vertical; font-family: var(--sans); }
+  .checks { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .checks label { display: inline-flex; align-items: center; gap: 0.4em; font-weight: 400; font-size: 0.9rem; padding: 0.3em 0.6em; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); cursor: pointer; }
+  .checks label:has(input:checked) { border-color: var(--ink); background: var(--blue-soft); }
+  .sw { display: inline-flex; }
+  .sw i { width: 0.6rem; height: 0.95rem; display: block; }
+  .sw i:first-child { border-radius: 2px 0 0 2px; }
+  .sw i:last-child { border-radius: 0 2px 2px 0; }
+  .mini { display: flex; gap: 0.4rem; margin-top: 0.35rem; }
+  .mini button { font: 0.82rem var(--mono); background: transparent; color: var(--blue); border: 1px solid var(--rule); border-radius: 4px; padding: 0.2em 0.6em; cursor: pointer; }
+  .toggle { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.93rem; cursor: pointer; }
+
+  .out { display: grid; gap: 0.5rem; }
+  .out header { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .out h3 { font: 600 0.78rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); }
+  .copy { font: 700 0.95rem var(--sans); color: var(--red-ink); background: var(--red); border: 0; border-radius: 4px; padding: 0.55em 1.2em; cursor: pointer; }
+  pre { margin: 0; padding: 1rem; background: var(--paper); border: 1px solid var(--rule); border-left: 3px solid var(--blue); border-radius: 4px; font: 0.86rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 34rem; overflow-y: auto; }
+  .note { font-size: 0.88rem; color: var(--graphite); max-width: 70ch; }
+  footer.foot { margin-top: 2rem; color: var(--graphite); font-size: 0.88rem; display: grid; gap: 0.35rem; max-width: 72ch; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">ryanjosephkamp/portfolio · operator</p>
+    <h1>Portfolio Prompt Kit</h1>
+    <p class="lede">Pick a job, fill in what you know, and copy the prompt. Most go to the operator session, the one that keeps the registry and sends work to each concept's own session. Every prompt points at files in the repo, so it works in a fresh session and after an account switch.</p>
+  </header>
+
+  <div class="desk">
+    <nav class="jobs" id="jobs" aria-label="Jobs"></nav>
+    <main class="order" id="order" aria-live="polite"></main>
+  </div>
+
+  <footer class="foot">
+    <p>Where the state lives: <code>docs/operator/RESUME.md</code> (where things stand), <code>docs/operator/walkthrough-notes.md</code> (your notes, word for word), <code>docs/CONCEPTS.md</code> (the registry). Until pull request #14 merges, those are on the branch <code>claude/portfolio-operator-takeover-d29b75</code>.</p>
+    <p>Pages to keep: the <a href="https://claude.ai/artifact/RqSMxQRX232yRdcVkFqp9E">operator manual</a> and the <a href="https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt">Portfolio Walkthrough</a>.</p>
+  </footer>
+</div>
+
+<script>
+  const CONCEPTS = [
+    { slug: 'v1', name: 'Anagram Tiles', dir: 'words and tools', pr: 13, sw: ['#2b45d4', '#ffffff', '#d6f24a'] },
+    { slug: 'one-splat', name: 'One Splat', dir: 'computer graphics', pr: 4, sw: ['#0a0a0b', '#ff6a3a', '#8fe6f0'] },
+    { slug: 'specimen', name: 'Specimen', dir: 'scientific visualization', pr: 1, sw: ['#f7f8f6', '#3d1f6b', '#d8345f'] },
+    { slug: 'toybox', name: 'Toy Box', dir: 'digital media', pr: 3, sw: ['#ffd23f', '#3fb8c4', '#ff4f9a'] },
+    { slug: 'workshop', name: 'Workshop', dir: 'software engineering', pr: 2, sw: ['#f3efe6', '#2a2a2a', '#c8372d'] },
+    { slug: 'overprint', name: 'Overprint', dir: 'media arts', pr: 6, sw: ['#f4efe7', '#2f7f7a', '#e2553a'] },
+    { slug: 'molecule', name: 'Molecule', dir: 'molecular visualization', pr: 7, sw: ['#1c2526', '#efece2', '#ffe45c'] },
+    { slug: 'resonance', name: 'Resonance', dir: 'sound and audio-visual media', pr: 8, sw: ['#c58565', '#190d08', '#f8d9c7'] },
+    { slug: 'slice', name: 'Slice', dir: 'volume and medical imaging', pr: 10, sw: ['#eaf1f4', '#0a1520', '#ff3ea5'] },
+    { slug: 'atlas', name: 'Atlas', dir: 'scale, astronomy and Earth', pr: 9, sw: ['#0d1040', '#eef0ff', '#e8bd5a'] },
+    { slug: 'arcade', name: 'Arcade', dir: 'games and interaction design', pr: 15, sw: ['#040706', '#7dffc6', '#ff4a3d'] },
+  ];
+  const PULLS = [
+    ...CONCEPTS.filter((c) => c.slug !== 'v1').map((c) => ({ n: c.pr, label: c.name })),
+    { n: 13, label: 'Anagram Tiles caption' },
+    { n: 14, label: 'Operator files' },
+  ].sort((a, b) => a.n - b.n);
+  const OPERATOR = 'the operator session (or any session that has read docs/operator/RESUME.md)';
+  const nameOf = (slug) => (CONCEPTS.find((c) => c.slug === slug) || { name: slug }).name;
+  const folder = (slug) => (slug === 'v1' ? 'the repo root' : `concepts/${slug}/`);
+  const list = (slugs) => slugs.map(nameOf).join(', ');
+  const RULES = 'Follow the three rules in CLAUDE.md: American English, project-first, claim-safe.';
+
+  const JOBS = [
+    { group: 'Keep going', id: 'resume', title: 'Resume the operator', what: 'After a break, an account switch or a fresh session: picks the work up from the repo and tells you where it stands.', where: 'A new session on /Users/noir/portfolio, or the operator session itself', run: 'Opus · High', fields: [],
+      make: () => `Resume as the operator session for my portfolio concepts in /Users/noir/portfolio (repo ryanjosephkamp/portfolio).
+
+START: run \`git fetch origin\`. Work in the worktree /Users/noir/portfolio/.claude/worktrees/portfolio-operator-takeover-d29b75 on the branch claude/portfolio-operator-takeover-d29b75 if that branch is still open; once pull request #14 has merged, work from main on a new branch. Read docs/operator/RESUME.md first (from that branch: \`git show origin/claude/portfolio-operator-takeover-d29b75:docs/operator/RESUME.md\`), then CLAUDE.md, docs/PLAYBOOK.md, docs/CONCEPTS.md, the end of docs/operator/walkthrough-notes.md, and your memory notes for this project.
+
+Then check the present against RESUME.md: which pull requests are open or merged, which concept branches moved since their recorded tips, and which lane sessions exist and are idle. Rebuild staging with tools/operator/rebuild-staging.sh and start the launch config named staging, so http://localhost:4180/concepts/ serves every concept.
+
+DONE WHEN: you have told me in a few lines what you found, what is waiting on me, and what you would do next. Send nothing to the lanes and merge nothing until I say so.` },
+    { group: 'Keep going', id: 'walk', title: 'Set up a walkthrough', what: 'Rebuilds staging and the walkthrough page so you can look at every concept again and mark each card.', where: OPERATOR, run: 'Opus · High',
+      fields: [{ id: 'round', label: 'Round', hint: 'the next round number', type: 'text', value: '4' }],
+      make: (v) => `Set me up for walkthrough round ${v.round || 'N'}.
+
+Rebuild staging with tools/operator/rebuild-staging.sh, start the launch config named staging, and check that every page answers at http://localhost:4180/concepts/.
+
+Then update the Portfolio Walkthrough page (source docs/operator/walkthrough.html, published at https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt): a card per concept with a fresh screenshot, what changed since my last round, what to try, what nobody checked, and any decision that is mine. Verdicts and notes save under review/r${v.round || 'N'}-<slug>, and my earlier rounds fold open under each card. Read the page before you republish it, and keep its database capability.
+
+DONE WHEN: the page is published and open for me, and staging serves every concept. Tell me my phone's address for staging too.` },
+    { group: 'Keep going', id: 'read', title: 'Read my walkthrough notes', what: 'The operator reads your verdicts and notes from the walkthrough page and records them; it can send the refine prompts or hold them.', where: OPERATOR, run: 'Opus · High',
+      fields: [{ id: 'round', label: 'Round', type: 'text', value: '4' }, { id: 'send', label: 'Send the refine prompts to the lanes now', type: 'toggle', on: true }],
+      make: (v) => `My walkthrough round ${v.round || 'N'} is done. Read my verdicts and notes from the walkthrough page's database (collection review, documents r${v.round || 'N'}-<slug>) and add them to docs/operator/walkthrough-notes.md word for word.
+
+${v.send ? `For each concept I marked Rework, write one refine prompt from my notes (my words verbatim, your additions marked as yours) and send it to that concept's own session after checking it is idle and its worktree clean. Recheck each as it reports (tools/operator/check-lane.sh) and rebuild staging.` : `Do not send anything yet. Draft one refine prompt for each concept I marked Rework and save the drafts in docs/operator/RESUME.md under "Held prompts".`}
+For Keep or Favorite with nothing asked, tell me its pull request is ready. For Drop, ask me before doing anything.
+
+DONE WHEN: my notes are recorded, committed and pushed, and you have told me in one line per concept what happens next. Merge nothing.` },
+
+    { group: 'Change pages', id: 'refine', title: 'Refine a concept from my notes', what: 'Your notes for one concept become a refine prompt the operator sends to that concept\'s own session, then checks.', where: OPERATOR, run: 'Opus · High (the lane: Opus · High or Xhigh)',
+      fields: [
+        { id: 'slug', label: 'Concept', type: 'select', options: () => CONCEPTS.map((c) => [c.slug, c.name]) },
+        { id: 'notes', label: 'Your notes', hint: 'as you would say them; they go to the lane word for word', type: 'area', wide: true },
+        { id: 'core', label: 'Also check it still has all ten projects in order', type: 'toggle', on: true },
+      ],
+      make: (v) => `Refine ${nameOf(v.slug)} (${folder(v.slug)}) from my notes.
+
+MY NOTES:
+${v.notes || '(write them here)'}
+
+Write the refine prompt from these notes, with my words verbatim and anything you add marked as yours, and send it to ${nameOf(v.slug)}'s own session after checking it is idle and its worktree clean. If it has no session, give me the prompt to paste into a new one on its worktree.${v.core ? ' The prompt also keeps the page at all ten projects in docs/FACTS.md: Splashery first and largest, grooph second, the capstone last and brief.' : ''}
+
+When it reports, recheck the branch with tools/operator/check-lane.sh (spelling, the ten projects in order, changes only inside ${folder(v.slug)}), load it from staging at desktop and phone widths, rebuild staging, and update docs/CONCEPTS.md if its row changed.
+
+DONE WHEN: you have told me what changed and what is left unchecked. Merge nothing.` },
+    { group: 'Change pages', id: 'project', title: 'Add a project everywhere', what: 'Adds a new project to the facts, then to every concept page in its own idiom.', where: OPERATOR, run: 'Opus · High; each lane at High',
+      fields: [
+        { id: 'pname', label: 'Project name', type: 'text' },
+        { id: 'links', label: 'Links', hint: 'live page, code, write-up', type: 'text' },
+        { id: 'does', label: 'What it does', hint: 'two sentences a visitor could check for themselves', type: 'area', wide: true },
+        { id: 'targets', label: 'Which concepts', type: 'checks', all: true },
+      ],
+      make: (v) => `Add a project to my portfolio concepts.
+
+PROJECT: ${v.pname || '(name)'}
+WHAT IT DOES: ${v.does || '(two sentences)'}
+LINKS: ${v.links || '(links)'}
+
+First, in docs/FACTS.md: add it to the project list in the group it belongs to, after grooph and before the capstone, in the same form as its neighbors, leading with what it does. Check each sentence against its README or live page. Update the count of projects wherever the facts, the playbook and CLAUDE.md state it. Commit and push that on its own branch and give me the pull request.
+
+Then send each of these concepts' own sessions a prompt to add it in the page's own idiom, with a small piece of live art if its neighbors have one: ${list(v.targets)}. Recheck each as it reports and rebuild staging.
+
+${RULES}
+
+DONE WHEN: the facts pull request is open and every listed concept shows the project, seen at desktop and phone widths. Merge nothing.` },
+    { group: 'Change pages', id: 'fact', title: 'Change a fact or link everywhere', what: 'A search and replace with checking, across every concept and, if you want, your homepage and blog.', where: OPERATOR, run: 'Sonnet · Medium is enough',
+      fields: [
+        { id: 'what', label: 'What is changing', type: 'text', wide: true },
+        { id: 'from', label: 'From', type: 'text' },
+        { id: 'to', label: 'To', type: 'text' },
+        { id: 'sites', label: 'Also check my homepage and blog repos', type: 'toggle', on: true },
+      ],
+      make: (v) => `Change one fact everywhere in my portfolio work.
+
+CHANGE: ${v.what || '(what)'}
+FROM: ${v.from || '(old value)'}
+TO: ${v.to || '(new value)'}
+
+Update docs/FACTS.md first. Then find every place the old value appears on every concept branch and on main (\`git grep\`), and change it in that concept's own worktree, after checking its session is idle and its worktree clean. Commit with the identity in CLAUDE.md and push each branch.${v.sites ? `
+
+Then check ryanjosephkamp/ryanjosephkamp.github.io and ryanjosephkamp/blog for the old value. Where it appears, make the change on a branch, run that repo's own checks, and open a pull request.` : ''}
+
+DONE WHEN: \`git grep\` finds the old value nowhere, every changed page loads with an empty console, and you give me a table of place and result. Merge nothing.` },
+
+    { group: 'New pages', id: 'new', title: 'Build a new concept', what: 'A new concept site on a research direction and a look no other concept has. Runs in its own session and worktree.', where: 'A new session on /Users/noir/portfolio with its own worktree', run: 'Opus · Xhigh · about 45 minutes',
+      fields: [
+        { id: 'name', label: 'Name', type: 'text', value: 'Plot' },
+        { id: 'slug', label: 'Slug', hint: 'lowercase, the folder name', type: 'text', value: 'plot' },
+        { id: 'dir', label: 'Research direction', type: 'text', value: 'data visualization' },
+        { id: 'port', label: 'Preview port', hint: 'one no other concept uses', type: 'text', value: '4187' },
+        { id: 'look', label: 'Territory', hint: 'a place or object, unlike every concept in docs/CONCEPTS.md', type: 'text', wide: true, value: 'graph paper and a pen plotter: a fine grid, one ink per series' },
+        { id: 'angle', label: 'Angle', hint: 'what is true about you and this direction, and which part of Splashery or your work it stands on', type: 'area', wide: true, value: 'Data you can turn over. Splashery turns a CSV into a 3D scatter, bars or a surface, and draws climate records: Mauna Loa CO2 as a spiral, GISTEMP temperature anomalies.' },
+      ],
+      make: (v) => `Build a concept portfolio site for me, Ryan Kamp, in this repo (ryanjosephkamp/portfolio). You have about 45 minutes. Your tech stack is not limited. Use your best judgment and ideas, be creative, and have fun. I want something incredible and unique.
+
+CONCEPT: ${(v.name || 'Untitled').toUpperCase()} (slug ${v.slug || 'untitled'}). Me as a researcher in ${v.dir || 'the direction'}, with Splashery, my Gaussian splat playground, as the centerpiece.
+
+ANGLE: ${v.angle || '(the angle)'}
+
+TERRITORY: ${v.look || '(the territory)'}. Every other concept's territory is in docs/CONCEPTS.md; stay apart from all of them.
+
+START: run \`git pull origin main\`, then read CLAUDE.md, docs/PLAYBOOK.md, docs/FACTS.md and docs/CONCEPTS.md. The playbook is the process: follow its steps and meet its completion checks. Before you write about a part of Splashery, read its README and the header of that part's pack in the splashery repo.
+
+WHERE: your own worktree, branch concept/${v.slug || 'untitled'}, every file inside concepts/${v.slug || 'untitled'}/. Preview on port ${v.port || '4187'}.
+
+DONE WHEN: the playbook's ship step is complete. That means seen working in a real browser at three widths, \`node tools/us-spelling.mjs concepts/${v.slug || 'untitled'}\` printing nothing, the branch pushed, and a pull request to main open that changes only concepts/${v.slug || 'untitled'}/ and states your registry row in its description. Reply with the PR link, a screenshot, one sentence naming the signature, and the lines that are invented voice. Then tell the operator session it is ready.
+
+When my usage reaches 98%, find a natural stopping point.` },
+    { group: 'New pages', id: 'splashery', title: 'Ask Splashery for something', what: 'For a change that has to land in Splashery first, such as a new toy or scan a concept page wants to show. Goes to Splashery\'s own operator.', where: 'Splashery\'s operator session', run: 'Opus · High',
+      fields: [
+        { id: 'ask', label: 'What you want in Splashery', type: 'area', wide: true },
+        { id: 'for', label: 'Which portfolio page needs it, and how', hint: 'optional', type: 'area', wide: true },
+      ],
+      make: (v) => `${v.ask || '(what you want in Splashery)'}
+${v.for ? `
+Why: my portfolio concept pages in ryanjosephkamp/portfolio build on Splashery. ${v.for}
+` : ''}
+Follow the project's own rules for content, credits, licenses and tests, and check every number and name against a source you read before it goes on a page.
+
+DONE WHEN: it works in the app, the project's checks pass, and a pull request is open. Reply with what changed, where each fact came from, and anything a portfolio page will need to know to use it (toy ids, embed parameters, file names).` },
+
+    { group: 'Ship', id: 'merge', title: 'Merge pull requests', what: 'Your go-ahead for exactly the pull requests you tick. Nothing merges without it.', where: OPERATOR, run: 'Opus · High',
+      fields: [{ id: 'prs', label: 'Which pull requests', type: 'prs' }],
+      make: (v) => `Merge these pull requests in ryanjosephkamp/portfolio, squashed, deleting their branches: ${(v.prs || []).map((n) => '#' + n).join(', ') || '(tick them)'}. This is my go-ahead for exactly these.
+
+Before each merge, check it is still mergeable and its branch has not moved since your last recheck; if it has, recheck it first and tell me. After merging, update docs/CONCEPTS.md (the Branch column reads merged), the working index if it needs it, and the operator manual's status, then rebuild staging from main.
+
+DONE WHEN: each is merged or you have told me why not, and main serves the merged pages at http://localhost:4180/ through staging.` },
+    { group: 'Ship', id: 'publish', title: 'Publish to my Portfolios page', what: 'A gallery page called Portfolios on your personal site, each concept a poster that opens its own page at its own address.', where: OPERATOR + ', or a new session on ryanjosephkamp.github.io', run: 'Opus · Xhigh',
+      fields: [
+        { id: 'targets', label: 'Which concepts', type: 'checks', all: true },
+        { id: 'path', label: 'Address on your site', hint: 'ryanjosephkamp.github.io/<this>/', type: 'text', value: 'portfolios' },
+        { id: 'style', label: 'How the posters should feel', type: 'area', wide: true, value: 'Like movie posters, one per concept, in each concept\'s own look. Ideally live: a poster comes alive on hover or when it scrolls into view, and stays still for reduced motion.' },
+        { id: 'tpl', label: 'Add a "Use as a template" link to each poster (once the templates exist)', type: 'toggle' },
+      ],
+      make: (v) => `Publish my portfolio concepts to my personal site as a gallery page called "Portfolios".
+
+PICKS: ${list(v.targets) || '(tick them)'}
+WHERE: ryanjosephkamp.github.io/${v.path || 'portfolios'}/ is the gallery, and each concept lives at /${v.path || 'portfolios'}/<slug>/ so any one can be linked on its own. No concept is the main one.
+POSTERS: ${v.style || '(how they should feel)'}${v.tpl ? '\nTEMPLATES: each poster also links to its template in my templates repository.' : ''}
+
+Source: ryanjosephkamp/portfolio, each pick's folder on main (v1 is the repo root). If a pick's pull request is still open, tell me before going on; do not merge it yourself.
+Destination: ryanjosephkamp/ryanjosephkamp.github.io, on a new branch.
+
+1. Read the destination's PRODUCT.md and DESIGN.md. The gallery follows that site's style; each concept page keeps its own.
+2. Copy each pick to ${v.path || 'portfolios'}/<slug>/. Fix each page's og:url and og:image to the new address, and check that every relative link, asset and embed still resolves.
+3. Build the gallery: each pick as a poster with its name, its research direction and one line on what a visitor can do there. Add "Portfolios" to the site's navigation, header and footer.
+4. Run the destination's own checks (its formatter and its browser tests), and load the gallery and every published page at desktop and phone widths with an empty console.
+5. Open a pull request. Leave merging to me.
+
+${RULES}
+
+DONE WHEN: the pull request is open and every page in it has been seen working. Reply with the link, a screenshot of the gallery, and anything that did not survive the move.` },
+    { group: 'Ship', id: 'templates', title: 'Make templates for others', what: 'Blank, cloneable versions of the concepts that anyone can fill with their own name and projects. Your own pages stay as they are.', where: OPERATOR, run: 'Opus · Xhigh; one session per template',
+      fields: [
+        { id: 'targets', label: 'Which concepts', type: 'checks', all: true },
+        { id: 'repo', label: 'Repository', hint: 'a new public repo', type: 'text', value: 'portfolio-templates' },
+        { id: 'license', label: 'License', type: 'select', options: () => [['MIT', 'MIT (as Splashery has)'], ['Apache-2.0', 'Apache 2.0'], ['CC-BY-4.0', 'CC BY 4.0'], ['ask', 'Ask me first']] },
+      ],
+      make: (v) => `Make cloneable templates from my portfolio concepts, so other people can build their own portfolios from them. My own pages stay exactly as they are.
+
+PICKS: ${list(v.targets) || '(tick them)'}
+WHERE: a new public repository, ryanjosephkamp/${v.repo || 'portfolio-templates'}, one folder per template. ${v.license === 'ask' ? 'Ask me which license before you create it.' : `License: ${v.license || 'MIT'}.`} Ask me before you create the repository, since it is public.
+
+EACH TEMPLATE:
+- keeps the concept's signature, look and interactions;
+- moves everything about me into one data file: name, a short bio, research interests, projects with links, contact links;
+- ships with clearly fake placeholder content in that file, and nothing of mine except credits;
+- turns my projects' special pieces (Splashery toys and embeds, grooph graphs, the Amordle and Ars Magna pieces) into optional examples that a cloner keeps, replaces or deletes by editing the data file;
+- has a README: how to copy it, what to edit, how to preview it, and what each part of the page does.
+
+Plan it first: for each pick, list what is mine and must move to data, and what is reusable as it is. Show me that plan before building. Then build each template in its own session, and check each renders with its placeholder data and with a second, different data file, at desktop and phone widths, with an empty console.
+
+${RULES}
+
+DONE WHEN: every template passes those checks, the spelling check prints nothing, and the work is on a branch with a pull request for my review. Leave publishing to me.` },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('kit:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('kit:' + k, JSON.stringify(v)); } catch (e) { /* storage is optional */ } },
+  };
+  let current = store.get('job', 'resume');
+  if (!JOBS.find((j) => j.id === current)) current = 'resume';
+  const values = store.get('values', {});
+
+  function jobValues(job) {
+    const v = values[job.id] || (values[job.id] = {});
+    job.fields.forEach((f) => {
+      if (v[f.id] !== undefined) return;
+      if (f.type === 'toggle') v[f.id] = Boolean(f.on);
+      else if (f.type === 'checks') v[f.id] = f.all ? CONCEPTS.map((c) => c.slug) : [];
+      else if (f.type === 'prs') v[f.id] = [];
+      else if (f.type === 'select') v[f.id] = f.options()[0][0];
+      else v[f.id] = f.value || '';
+    });
+    return v;
+  }
+
+  function renderJobs() {
+    const groups = [...new Set(JOBS.map((j) => j.group))];
+    $('jobs').innerHTML = groups.map((g) => `<div class="group"><h2>${esc(g)}</h2>${JOBS.filter((j) => j.group === g).map((j) => `<button type="button" class="job" data-job="${j.id}" aria-current="${j.id === current}">${esc(j.title)}</button>`).join('')}</div>`).join('');
+  }
+
+  function fieldHTML(job, f, v) {
+    const id = `f-${job.id}-${f.id}`;
+    const hint = f.hint ? ` <small>${esc(f.hint)}</small>` : '';
+    const wide = f.wide ? ' wide' : '';
+    if (f.type === 'area') return `<label class="f${wide}" for="${id}">${esc(f.label)}${hint}<textarea id="${id}" data-f="${f.id}">${esc(v[f.id])}</textarea></label>`;
+    if (f.type === 'select') return `<label class="f${wide}" for="${id}">${esc(f.label)}${hint}<select id="${id}" data-f="${f.id}">${f.options().map(([val, text]) => `<option value="${esc(val)}"${v[f.id] === val ? ' selected' : ''}>${esc(text)}</option>`).join('')}</select></label>`;
+    if (f.type === 'toggle') return `<label class="toggle wide" for="${id}"><input type="checkbox" id="${id}" data-f="${f.id}"${v[f.id] ? ' checked' : ''}> ${esc(f.label)}</label>`;
+    if (f.type === 'checks') return `<fieldset class="f wide"><legend>${esc(f.label)}</legend><div class="checks">${CONCEPTS.map((c) => `<label><input type="checkbox" data-f="${f.id}" value="${c.slug}"${v[f.id].includes(c.slug) ? ' checked' : ''}><span class="sw" aria-hidden="true">${c.sw.map((s) => `<i style="background:${s}"></i>`).join('')}</span>${esc(c.name)}</label>`).join('')}</div><div class="mini"><button type="button" data-all="${f.id}">All</button><button type="button" data-none="${f.id}">None</button></div></fieldset>`;
+    if (f.type === 'prs') return `<fieldset class="f wide"><legend>${esc(f.label)}</legend><div class="checks">${PULLS.map((p) => `<label><input type="checkbox" data-f="${f.id}" value="${p.n}"${v[f.id].includes(p.n) ? ' checked' : ''}>#${p.n} ${esc(p.label)}</label>`).join('')}</div><div class="mini"><button type="button" data-all="${f.id}">All</button><button type="button" data-none="${f.id}">None</button></div></fieldset>`;
+    return `<label class="f${wide}" for="${id}">${esc(f.label)}${hint}<input type="text" id="${id}" data-f="${f.id}" value="${esc(v[f.id])}"></label>`;
+  }
+
+  function renderOrder() {
+    const job = JOBS.find((j) => j.id === current);
+    const v = jobValues(job);
+    $('order').innerHTML = `
+      <header><p class="eyebrow">${esc(job.group)}</p><h2>${esc(job.title)}</h2><p class="what">${esc(job.what)}</p></header>
+      <p class="meta"><span>Paste into: <b>${esc(job.where)}</b></span><span>Run with: <b>${esc(job.run)}</b></span></p>
+      ${job.fields.length ? `<div class="fields">${job.fields.map((f) => fieldHTML(job, f, v)).join('')}</div>` : '<p class="note">Nothing to fill in. Copy it as it is.</p>'}
+      <div class="out"><header><h3>The prompt</h3><button type="button" class="copy" id="copy">Copy</button></header><pre id="prompt"></pre></div>`;
+    renderPrompt();
+  }
+
+  function renderPrompt() {
+    const job = JOBS.find((j) => j.id === current);
+    $('prompt').textContent = job.make(jobValues(job));
+  }
+
+  function readField(el) {
+    const job = JOBS.find((j) => j.id === current);
+    const v = jobValues(job);
+    const f = job.fields.find((x) => x.id === el.dataset.f);
+    if (!f) return;
+    if (f.type === 'checks' || f.type === 'prs') {
+      const boxes = [...document.querySelectorAll(`input[data-f="${f.id}"]`)];
+      v[f.id] = boxes.filter((b) => b.checked).map((b) => (f.type === 'prs' ? Number(b.value) : b.value));
+    } else if (f.type === 'toggle') v[f.id] = el.checked;
+    else v[f.id] = el.value;
+    store.set('values', values);
+    renderPrompt();
+  }
+
+  document.addEventListener('click', (e) => {
+    const j = e.target.closest('[data-job]');
+    if (j) { current = j.dataset.job; store.set('job', current); renderJobs(); renderOrder(); $('order').scrollIntoView({ block: 'nearest' }); return; }
+    const all = e.target.closest('[data-all]');
+    const none = e.target.closest('[data-none]');
+    if (all || none) {
+      const fid = (all || none).dataset.all || (none && none.dataset.none);
+      document.querySelectorAll(`input[data-f="${fid}"]`).forEach((b) => { b.checked = Boolean(all); });
+      const first = document.querySelector(`input[data-f="${fid}"]`);
+      if (first) readField(first);
+      return;
+    }
+    if (e.target.id === 'copy') {
+      const btn = e.target;
+      const done = (t) => { btn.textContent = t; setTimeout(() => { btn.textContent = 'Copy'; }, 1600); };
+      const select = () => { const r = document.createRange(); r.selectNodeContents($('prompt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done('Selected: press Copy on your keyboard'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText($('prompt').textContent).then(() => done('Copied'), select);
+      else select();
+    }
+  });
+  document.addEventListener('input', (e) => { if (e.target.dataset && e.target.dataset.f) readField(e.target); });
+  document.addEventListener('change', (e) => { if (e.target.dataset && e.target.dataset.f) readField(e.target); });
+
+  renderJobs();
+  renderOrder();
+</script>
