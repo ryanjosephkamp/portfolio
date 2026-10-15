@@ -267,54 +267,40 @@ DONE WHEN: it works in the app, the project's checks pass, and a pull request is
 Before each merge, check it is still mergeable and its branch has not moved since your last recheck; if it has, recheck it first and tell me. After merging, update docs/CONCEPTS.md (the Branch column reads merged), the working index if it needs it, and the operator manual's status, then rebuild staging from main.
 
 DONE WHEN: each is merged or you have told me why not, and main serves the merged pages at http://localhost:4180/ through staging.` },
-    { group: 'Ship', id: 'publish', title: 'Publish to my Portfolios page', what: 'A gallery page called Portfolios on your personal site, each concept a poster that opens its own page at its own address.', where: OPERATOR + ', or a new session on ryanjosephkamp.github.io', run: 'Opus · Xhigh',
+    { group: 'Ship', id: 'publish', title: 'Refresh my Portfolios page', what: 'After a concept changes on main: copy it to the gallery again, re-shoot its poster if its first screen changed, and replace its template download.', where: OPERATOR, run: 'Opus · High',
       fields: [
-        { id: 'targets', label: 'Which concepts', type: 'checks', all: true },
-        { id: 'path', label: 'Address on your site', hint: 'ryanjosephkamp.github.io/<this>/', type: 'text', value: 'portfolios' },
-        { id: 'style', label: 'How the posters should feel', type: 'area', wide: true, value: 'Like movie posters, one per concept, in each concept\'s own look. Ideally live: a poster comes alive on hover or when it scrolls into view, and stays still for reduced motion.' },
-        { id: 'tpl', label: 'Add a "Use as a template" link to each poster (once the templates exist)', type: 'toggle' },
+        { id: 'targets', label: 'Which concepts changed', type: 'checks' },
+        { id: 'poster', label: 'Re-shoot their posters (the change shows in the first six seconds)', type: 'toggle' },
+        { id: 'release', label: 'Templates', type: 'select', options: () => [['replace', 'Replace the zips on templates-v1'], ['new', 'Publish a new templates release'], ['none', 'Leave the templates as they are']] },
       ],
-      make: (v) => `Publish my portfolio concepts to my personal site as a gallery page called "Portfolios".
+      make: (v) => `Refresh what is published for these concepts, which changed on main since the Portfolios gallery went live: ${list(v.targets) || '(tick them)'}.
 
-PICKS: ${list(v.targets) || '(tick them)'}
-WHERE: ryanjosephkamp.github.io/${v.path || 'portfolios'}/ is the gallery, and each concept lives at /${v.path || 'portfolios'}/<slug>/ so any one can be linked on its own. No concept is the main one.
-POSTERS: ${v.style || '(how they should feel)'}${v.tpl ? '\nTEMPLATES: each poster also links to its template in my templates repository.' : ''}
+The gallery at https://ryanjosephkamp.github.io/portfolios/ holds copies, not links into the portfolio repo. docs/operator/RESUME.md, "Refreshing what is published", has the steps; follow them.
 
-Source: ryanjosephkamp/portfolio, each pick's folder on main (v1 is the repo root). If a pick's pull request is still open, tell me before going on; do not merge it yourself.
-Destination: ryanjosephkamp/ryanjosephkamp.github.io, on a new branch.
-
-1. Read the destination's PRODUCT.md and DESIGN.md. The gallery follows that site's style; each concept page keeps its own.
-2. Copy each pick to ${v.path || 'portfolios'}/<slug>/. Fix each page's og:url and og:image to the new address, and check that every relative link, asset and embed still resolves.
-3. Build the gallery: each pick as a poster with its name, its research direction and one line on what a visitor can do there. Add "Portfolios" to the site's navigation, header and footer.
-4. Run the destination's own checks (its formatter and its browser tests), and load the gallery and every published page at desktop and phone widths with an empty console.
-5. Open a pull request. Leave merging to me.
+1. In a worktree of ryanjosephkamp/ryanjosephkamp.github.io on a new branch, copy each concept from main to portfolios/<slug>/ (v1 is anagram-tiles), drop the files RESUME.md names, and point og:url, og:image and canonical at its address there.${v.poster ? '\n2. Re-shoot each poster with tools/operator/trailers.sh and copy it into portfolios/assets/posters/. Look at each trailer before using it.' : '\n2. Keep the posters as they are.'}
+3. Run the site's formatter, its CSS lint and tests/web-qa/portfolios.spec.mjs, load the gallery and each refreshed page at desktop and phone widths with an empty console, and open a pull request.
+4. ${v.release === 'none' ? 'Leave the templates release alone.' : v.release === 'new' ? 'Rebuild the zips with tools/operator/build-templates.sh and publish them as the next templates release (templates-v2 if v1 is the latest), then point the gallery\'s Template links at it in the same pull request.' : 'Rebuild the zips with tools/operator/build-templates.sh and replace them on templates-v1 (gh release upload --clobber).'} Check each changed concept's TEMPLATE.md and DESIGN.md still describe it; fix them on a branch of the portfolio repo if not.
+5. Leave merging to me.
 
 ${RULES}
 
-DONE WHEN: the pull request is open and every page in it has been seen working. Reply with the link, a screenshot of the gallery, and anything that did not survive the move.` },
-    { group: 'Ship', id: 'templates', title: 'Make templates for others', what: 'Blank, cloneable versions of the concepts that anyone can fill with their own name and projects. Your own pages stay as they are.', where: OPERATOR, run: 'Opus · Xhigh; one session per template',
+DONE WHEN: the pull request is open, every refreshed page has been seen working, and the downloads match main. Reply with the link and what changed on each page.` },
+    { group: 'Ship', id: 'templates', title: 'Add a new concept to the gallery', what: 'A newly merged concept becomes a poster on your Portfolios page and a template download, like the first eleven.', where: OPERATOR, run: 'Opus · Xhigh',
       fields: [
-        { id: 'targets', label: 'Which concepts', type: 'checks', all: true },
-        { id: 'repo', label: 'Repository', hint: 'a new public repo', type: 'text', value: 'portfolio-templates' },
-        { id: 'license', label: 'License', type: 'select', options: () => [['MIT', 'MIT (as Splashery has)'], ['Apache-2.0', 'Apache 2.0'], ['CC-BY-4.0', 'CC BY 4.0'], ['ask', 'Ask me first']] },
+        { id: 'slug', label: 'The new concept\'s slug', hint: 'its folder under concepts/', type: 'text' },
+        { id: 'line', label: 'Its line on the poster', hint: 'what a visitor can do there, in one sentence', type: 'text', wide: true },
       ],
-      make: (v) => `Make cloneable templates from my portfolio concepts, so other people can build their own portfolios from them. My own pages stay exactly as they are.
+      make: (v) => `Add the concept ${v.slug || '(slug)'} to my Portfolios gallery and to the templates, the way the first eleven were added. It is merged to main.
 
-PICKS: ${list(v.targets) || '(tick them)'}
-WHERE: a new public repository, ryanjosephkamp/${v.repo || 'portfolio-templates'}, one folder per template. ${v.license === 'ask' ? 'Ask me which license before you create it.' : `License: ${v.license || 'MIT'}.`} Ask me before you create the repository, since it is public.
+1. Templates, in ryanjosephkamp/portfolio on a new branch: write concepts/${v.slug || '<slug>'}/TEMPLATE.md and DESIGN.md in the form the others have (read two first, such as concepts/atlas/ and concepts/arcade/). TEMPLATE.md says how to make it yours and lists every third-party file with its source and license; DESIGN.md is its design system, ready for Claude Code or any coding agent. Add anything new to THIRD_PARTY.md and the slug to tools/operator/build-templates.sh. Open a pull request.
+2. Gallery, in ryanjosephkamp/ryanjosephkamp.github.io on a new branch: copy the concept to portfolios/${v.slug || '<slug>'}/ as docs/operator/RESUME.md describes, record its poster with tools/operator/trailers.sh (add its actions to the script, so the trailer shows it doing something), and add its poster to portfolios/index.html with its title face, its glow color and this line: ${v.line || '(its line)'}. Update the counts the page states ("Eleven sites") and tests/web-qa/portfolios.spec.mjs. Open a pull request.
+3. After both merge: build the zips and add the new one to the templates release, then check its Template and Design links resolve on the live page.
 
-EACH TEMPLATE:
-- keeps the concept's signature, look and interactions;
-- moves everything about me into one data file: name, a short bio, research interests, projects with links, contact links;
-- ships with clearly fake placeholder content in that file, and nothing of mine except credits;
-- turns my projects' special pieces (Splashery toys and embeds, grooph graphs, the Amordle and Ars Magna pieces) into optional examples that a cloner keeps, replaces or deletes by editing the data file;
-- has a README: how to copy it, what to edit, how to preview it, and what each part of the page does.
-
-Plan it first: for each pick, list what is mine and must move to data, and what is reusable as it is. Show me that plan before building. Then build each template in its own session, and check each renders with its placeholder data and with a second, different data file, at desktop and phone widths, with an empty console.
+Leave merging to me.
 
 ${RULES}
 
-DONE WHEN: every template passes those checks, the spelling check prints nothing, and the work is on a branch with a pull request for my review. Leave publishing to me.` },
+DONE WHEN: both pull requests are open, the poster plays at desktop and phone widths with an empty console, and the template zip unpacks to a page that runs. Reply with both links and a screenshot of the new poster.` },
   ];
 
   const $ = (id) => document.getElementById(id);
