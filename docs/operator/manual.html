@@ -119,14 +119,12 @@
 <div class="wrap">
   <header class="mast">
     <h1>Portfolio Operator Manual</h1>
-    <p>Twelve concept portfolio sites, all built. The rules they follow, where each one stands, and a prompt maker for every change you will want to make to them.</p>
+    <p>Eleven concept portfolio sites, all live and all downloadable as templates. The rules they follow, where each one stands, and a prompt maker for every change you will want to make to them.</p>
     <ul class="strip" aria-label="State at a glance">
-      <li class="chip done">12 of 12 concepts built</li>
-      <li class="chip done">All twelve pass the rules check</li>
-      <li class="chip done">Six new ones finished a second pass</li>
-      <li class="chip wait">Your walkthrough is next</li>
-      <li class="chip done">v1, homepage and blog merged</li>
-      <li class="chip wait">11 concept pull requests open</li>
+      <li class="chip done">All eleven merged to main</li>
+      <li class="chip live">Live: ryanjosephkamp.github.io/portfolios/</li>
+      <li class="chip done">Templates v1 released</li>
+      <li class="chip done">No pull request open</li>
       <li class="chip live">Staging: localhost:4180/concepts/</li>
     </ul>
   </header>
@@ -147,7 +145,7 @@
 <main class="wrap">
   <section id="now">
     <h2>Where things stand</h2>
-    <p class="lede"><b>Update, October 14, evening:</b> all eleven concepts are merged to main, and no pull request is open. Slice, Atlas and Arcade finished their last pass from your final review and passed the recheck before merging. Next: the "Portfolios" gallery on your site, then templates for other people once you pick a license. The <a href="https://claude.ai/artifact/NDCiAYaB23L5aqKQU3JsZo">Portfolio Prompt Kit</a> makes the prompt for every job, and <code>docs/operator/RESUME.md</code> holds where things stand.</p>
+    <p class="lede"><b>Update, October 14, night:</b> the <a href="https://ryanjosephkamp.github.io/portfolios/">Portfolios gallery</a> is live on your site, linked from the header of the homepage, the repositories page and the blog. All eleven concepts are on it, each at its own address, and each is a template on the <a href="https://github.com/ryanjosephkamp/portfolio/releases/tag/templates-v1">templates-v1 release</a> under the MIT License, with <code>TEMPLATE.md</code>, <code>DESIGN.md</code> and <code>THIRD_PARTY.md</code> inside. Next, when you are ready: about ten more concepts. The <a href="https://claude.ai/artifact/NDCiAYaB23L5aqKQU3JsZo">Portfolio Prompt Kit</a> makes the prompt for every job, and <code>docs/operator/RESUME.md</code> holds where things stand.</p>
 
     <div class="stack">
       <h3>What was just completed</h3>
@@ -200,8 +198,10 @@ flowchart LR
             <tr><td><b>Refine</b></td><td>Eight concepts refined from your notes. One Splat's refine and Arcade's build are not launched.</td><td><span class="chip done">Eight done</span></td></tr>
             <tr><td><b>Second walkthrough</b></td><td>Favorite: Workshop. Keep: Specimen, Molecule, Resonance, Slice, Atlas. Rework: Toy Box, Overprint. Not marked: Anagram Tiles, One Splat.</td><td><span class="chip done">Done</span></td></tr>
             <tr><td><b>Second refine</b></td><td>Overprint, Toy Box and Resonance from your round-two notes; One Splat's first refine; Arcade built in Ripple's place</td><td><span class="chip done">Done</span></td></tr>
-            <tr><td><b>Final review</b></td><td>You look at the eleven on staging, round three</td><td><span class="chip wait">Yours now</span></td></tr>
-            <tr><td><b>Publish</b></td><td>Your favorites under a Portfolio section of your personal site. Provisional: where exactly is decided then.</td><td><span class="chip">Later</span></td></tr>
+            <tr><td><b>Final review</b></td><td>You looked at the eleven on staging, round three; Slice, Atlas and Arcade got a last pass</td><td><span class="chip done">Done</span></td></tr>
+            <tr><td><b>Publish</b></td><td>All eleven on a Portfolios gallery at ryanjosephkamp.github.io/portfolios/, each at /portfolios/&lt;slug&gt;/, linked from the site's header and the blog</td><td><span class="chip done">Live</span></td></tr>
+            <tr><td><b>Templates</b></td><td>Each concept as a zip with TEMPLATE.md, DESIGN.md, the MIT LICENSE and THIRD_PARTY.md, on release templates-v1</td><td><span class="chip done">Released</span></td></tr>
+            <tr><td><b>Next concepts</b></td><td>About ten more, pushing further, then templates of those</td><td><span class="chip">Later</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -210,9 +210,8 @@ flowchart LR
     <div class="stack">
       <h3>What you need to do, and what I would choose</h3>
       <ol class="steps">
-        <li><b>Review, round three.</b><span class="rec"><strong>Open the <a href="https://claude.ai/artifact/B8TXdmLZH6r95vqsFjqVFt">walkthrough page</a>.</strong> Five cards changed: One Splat, Toy Box, Overprint, Resonance and the new Arcade.</span></li>
-        <li><b>Merges.</b><span class="rec"><strong>Done.</strong> All eleven concepts are on main, merged on October 14 at the versions the operator rechecked. No pull request is open.</span></li>
-        <li><b>Workshop as the main portfolio.</b><span class="rec"><strong>Decide what that means when we publish.</strong> Either it leads an index of your favorites, or it is the page at the portfolio address with the others one link behind it. I would do the second: it is what "main" means to a visitor.</span></li>
+        <li><b>Merges and publishing.</b><span class="rec"><strong>Done.</strong> Portfolio #18 (templates), homepage #35 (the gallery) and blog #21 (its link) merged on October 14, and release templates-v1 holds the eleven zips.</span></li>
+        <li><b>A concept changes after publishing.</b><span class="rec"><strong>Copy it to the homepage again, and rebuild the zips.</strong> The gallery holds copies, not links into this repo. <code>docs/operator/RESUME.md</code> has both steps.</span></li>
         <li><b>Two stop labels in Splashery.</b><span class="rec"><strong>Hand its operator session the prompt from the operator chat of October 13.</strong> The National Mall label is about a tenth short of the distance between the two buildings, and "16 km across" for Washington, D.C. is the side of its square, not its span. The other three labels are within their "about".</span></li>
         <li><b>Anagram Tiles.</b><span class="rec"><strong>Its caption in <a href="https://github.com/ryanjosephkamp/portfolio/pull/13">#13</a> still needs a yes or another line.</strong> It was not marked in round two.</span></li>
         <li><b>British spellings in Splashery.</b><span class="rec"><strong>Do it in a Splashery session, app and README together.</strong> The README has 24 (colour and colours 16 times, maths, synthesised, haemoglobin, recolour), and at least one is a quotation of what the app itself displays, so fixing the README alone would misquote the app. A prompt for that session is in the launch pack.</span></li><!-- us-spelling: keep -->
@@ -221,14 +220,12 @@ flowchart LR
     </div>
 
     <div class="prompt">
-      <header><span>The prompt to send next, to this operator session, after your review</span><button type="button" data-copy="next">Copy</button></header>
-      <pre id="next">My review is done. Read my round-three notes from the walkthrough page (collection review, documents r3-&lt;slug&gt;) and send any last changes to the lanes.
+      <header><span>The prompt to send next, to this operator session, when you want the next round</span><button type="button" data-copy="next">Copy</button></header>
+      <pre id="next">Let's plan the next round of concept portfolios. Read docs/CONCEPTS.md, docs/FACTS.md and docs/PLAYBOOK.md first.
 
-Merge these pull requests: (name them).
-
-Then prepare the publish step for my personal site with "Publish my favorites": Workshop is the main portfolio, and these come with it: (name them). Leave that merge to me.</pre>
+Propose about ten new concepts that go well past the eleven we have. Any tech stack is allowed. Each one takes a direction and a territory that no row in the registry has, and a signature a visitor can do something with. For each, give: the idea in two sentences, the signature, the stack, what could go wrong, and what it would take to build (effort Xhigh or Max, one to two hours or more, with or without subagents). Rank them, and wait for my picks before building anything.</pre>
     </div>
-    <p class="runwith"><b>Mode:</b> execution. The work is specified. <b>Effort:</b> High for this operator session (small, careful edits and checking other sessions' work). Refine lanes at High. Arcade's build at Xhigh: it is design work.</p>
+    <p class="runwith"><b>Mode:</b> planning first, then building. <b>Effort:</b> High for this operator session's plan. Each new concept's build at Xhigh or Max: it is design work.</p>
   </section>
 
   <section id="launch">

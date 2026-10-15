@@ -1,45 +1,61 @@
 # Resuming the operator
 
-Where the portfolio work stood on October 14, 2026, when Ryan paused to switch Claude accounts.
-A session picking the work back up reads this file, then `CLAUDE.md`, `docs/PLAYBOOK.md`,
-`docs/CONCEPTS.md` and the end of `docs/operator/walkthrough-notes.md` (round three).
+Where the portfolio work stood on October 14, 2026. A session picking the work back up reads this
+file, then `CLAUDE.md`, `docs/PLAYBOOK.md`, `docs/CONCEPTS.md` and the end of
+`docs/operator/walkthrough-notes.md` (round three).
 
 ## State
 
-Updated October 14, 2026, when the last three concepts merged.
+Updated October 14, 2026, when the gallery and the templates went live.
 
 - **All eleven concepts are on main** and no pull request is open: v1 (Anagram Tiles, the repo root),
   one-splat, specimen, toybox, workshop, overprint, molecule, resonance, slice, atlas and arcade.
   Ripple and Query were dropped; their tips are the tags `archive/ripple-1` and `archive/query-1`.
-- **Each merge was squashed at the tip the operator had rechecked**, and main was checked after each:
-  every concept folder matches its rechecked tip, and the spelling check passes on all of main.
-- **Round three is done.** Slice's section D follows the chosen scan, Atlas opens on "Field, in color"
-  with a hue dial, and Arcade's Amordle cabinet plays a real round with its walking red box removed.
-  Ryan's notes for all three rounds are in `walkthrough-notes.md`.
-- **With Ryan, for Splashery's own operator session (another account):** the stop-label prompt for
-  Atlas, which he sent on October 14, and the new-scans prompt below, if he wants more objects in
-  Slice.
+- **The Portfolios gallery is live** at https://ryanjosephkamp.github.io/portfolios/, from
+  ryanjosephkamp.github.io pull request #35. Every concept is a poster with a six-second trailer and
+  opens at `/portfolios/<slug>/` (v1 is `anagram-tiles`). A "Portfolios" link with a slowly turning
+  color sits between Home and Repositories on the homepage and the repositories page, and in the
+  blog's header and footer (blog pull request #21).
+- **The templates are released**: https://github.com/ryanjosephkamp/portfolio/releases/tag/templates-v1
+  holds `<slug>-template.zip` for all eleven, built by `tools/operator/build-templates.sh` from main
+  at 1791ce1 (pull request #18). Each zip is the concept's folder plus `TEMPLATE.md` (make it
+  yours), `DESIGN.md` (its design system, for Claude Code or any coding agent), `LICENSE` (MIT) and
+  `THIRD_PARTY.md`. The gallery's Template buttons download these; its Design links open each
+  `DESIGN.md` on main.
+- **Licensing:** MIT for Ryan's code and text. Two Atlas files are not MIT: `assets/ground.js`
+  (OpenStreetMap, ODbL) and `assets/data.js` (CC BY-SA star data). `THIRD_PARTY.md` lists the rest.
+- **With Ryan, for Splashery's own operator session (another account):** the new-scans prompt below,
+  if he wants more objects in Slice. He handles Splashery's British spellings himself. The English
+  OpenList expansion comes later; "Change a fact or link everywhere" in the Prompt Kit covers it.
 
 ## Next, in order
 
-1. Ryan's next look, if he wants one: "Set up a walkthrough" in the Prompt Kit.
+1. **About ten more concepts**, pushing further than these eleven, with any tech stack, built at
+   Xhigh or Max, then made into templates. Ryan wants to brainstorm them first; the manual's "next"
+   prompt starts that.
 2. Any further change to a concept goes on a new branch from main in that concept's worktree, as
-   `update/<slug>-<topic>`, with its own pull request.
-3. **Portfolios gallery** on ryanjosephkamp.github.io: a page called "Portfolios" that shows the
-   concepts like movie posters, ideally live, each opening its own page at its own address so any one
-   can be linked. "Main portfolio" is retired. The prompt is in the Portfolio Prompt Kit.
-4. **Templates:** blank, cloneable versions that other people can fill with their own name and
-   projects. Ryan's own pages stay as they are.
+   `update/<slug>-<topic>`, with its own pull request. After it merges, refresh the published copy
+   and the template (below).
 
-Open decisions for Ryan, with the operator's recommendation:
+## Refreshing what is published
 
-| Decision | Recommendation |
-| --- | --- |
-| Which concepts go on the Portfolios page | All eleven; he kept every one in round three |
-| The gallery's address | `ryanjosephkamp.github.io/portfolios/`, each concept at `/portfolios/<slug>/` |
-| A license for the templates | MIT, as Splashery has. The portfolio repo is public and has no license, so nobody may reuse it yet |
-| Where the templates live | One new public repository, `portfolio-templates`, a folder per concept, each filled from one data file |
-| What a template keeps | The signature and the look. Name, projects, links and interests move into the data file; the Splashery, grooph and Amordle pieces become examples a cloner replaces |
+The gallery holds copies of the concepts, not links into this repo, so a change on main reaches the
+site only when it is copied again.
+
+1. In a worktree of ryanjosephkamp.github.io on a new branch, copy the concept with
+   `rsync -a --delete --exclude tools/ concepts/<slug>/ <site>/portfolios/<slug>/` (v1: `index.html`,
+   `main.js`, `styles.css` and `assets/` into `portfolios/anagram-tiles/`). Delete `README.md`,
+   `check.mjs`, `verify.mjs`, `package.json`, `TEMPLATE.md` and `DESIGN.md` from the copy, and point
+   `og:url`, `og:image` and `canonical` at `https://ryanjosephkamp.github.io/portfolios/<slug>/`.
+2. If the change shows in the first six seconds, record a new poster with
+   `tools/operator/trailers.sh http://localhost:<port>/portfolios <slug>` while the site's worktree
+   is served, and copy `dist/trailers/<slug>.{webm,mp4,webp}` into `portfolios/assets/posters/`. The
+   script's per-concept actions (clicks, dial turns) may need updating if the first screen changed.
+3. Run the site's `npm run format:check`, `npm run lint:css` and the Playwright test
+   `tests/web-qa/portfolios.spec.mjs`, then open a pull request.
+4. Rebuild the zips with `tools/operator/build-templates.sh` and replace them on the release:
+   `gh release upload templates-v1 dist/templates/*.zip --clobber --repo ryanjosephkamp/portfolio`.
+   For a change people should notice, publish `templates-v2` instead and update the gallery's links.
 
 ## Pages
 

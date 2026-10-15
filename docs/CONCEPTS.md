@@ -20,6 +20,11 @@ concept's pull request changes only its own folder and states its row in its des
 | `atlas` | Scale, astronomy and Earth | A field star atlas: white line on black, its marks in one color (sea green as printed) that the visitor can turn; five more editions, Indigo and gilt among them | One plate that zooms from the Milky Way to a ribosome, with the planets where they are today and a true outline at every stop | `main` (merged October 14, 2026) | 4185 |
 | `arcade` | Games and interaction design | A vector arcade monitor: mint phosphor lines on black glass, one hot red ball | His name as a wall of 32 strokes in a vector brick-breaker, with three rule switches, eight rule sets and a house score to beat on each | `main` (merged October 14, 2026) | 4189 |
 
+Every built concept is published at `https://ryanjosephkamp.github.io/portfolios/<slug>/` (v1 as
+`anagram-tiles`), on the Portfolios gallery at https://ryanjosephkamp.github.io/portfolios/, and is a
+download on the `templates-v1` release. Both are copies from main, made on October 14, 2026;
+`docs/operator/RESUME.md` says how to refresh them.
+
 ## Dropped
 
 Ryan dropped these after his walkthrough on October 13, 2026. Each pull request is closed, each
