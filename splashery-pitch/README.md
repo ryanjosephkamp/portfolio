@@ -32,6 +32,15 @@ The preview is on port 4192. On a phone on the same Wi-Fi, open `http://<this Ma
 (System Settings, Wi-Fi, Details, shows the address). `npm run build` writes a static site to `dist/`
 with relative URLs; `npm run preview` serves it on the same port.
 
+## Where it's published
+
+Unlisted, at https://ryanjosephkamp.github.io/splashery-one-frame/ (ryanjosephkamp.github.io pull
+request #36, October 16, 2026). Nothing on the site links to it, and it carries `noindex`. To
+refresh it, run `npm run build` here, copy `dist/` over `splashery-one-frame/` in a branch of the
+site repo (`rsync -a --delete dist/ <site>/splashery-one-frame/`), and open a pull request. The site
+is built by GitHub Pages' Jekyll, which drops files whose names start with `_`, so
+`vite.config.js` keeps every output name free of a leading underscore.
+
 ## How it draws
 
 - **Its own WebGL2 splat renderer** (`src/gl/`). Each 3D Gaussian's covariance is carried through the
