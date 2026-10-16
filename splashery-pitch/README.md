@@ -36,7 +36,8 @@ runs the page's checks (below), and `npm run check:vendor` checks the copied Spl
 ## Where it's published
 
 Unlisted, at https://ryanjosephkamp.github.io/splashery-one-frame/ (ryanjosephkamp.github.io pull
-request #36, October 16, 2026). Nothing on the site links to it, and it carries `noindex`. To
+request #36, merged October 16, 2026). `node tools/verify.mjs --url=<address>` walks a published
+copy; the live checks of that day are in `screenshots/live/`. Nothing on the site links to it, and it carries `noindex`. To
 refresh it, run `npm run build` here, copy `dist/` over `splashery-one-frame/` in a branch of the
 site repo (`rsync -a --delete dist/ <site>/splashery-one-frame/`), and open a pull request. The site
 is built by GitHub Pages' Jekyll, which drops files whose names start with `_`, so

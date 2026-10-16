@@ -7,7 +7,11 @@
 //   - a walk through the whole page by keyboard only
 // Screenshots and results.md go to screenshots/. Exits 1 if any check fails.
 //
-//   node tools/verify.mjs [--only=desk,phone,rm,fail,keys,webkit]
+//   node tools/verify.mjs [--only=desk,phone,rm,fail,keys,webkit] [--url=https://…/]
+//
+// With --url, the walks (desk, phone, rm, webkit) run against that address instead,
+// for checking a published copy; screenshots go to screenshots/live/. The forced
+// failures need the local server, so they are skipped.
 //
 // WebKit: set PLAYWRIGHT to a Playwright package (default: Splashery's checkout) and
 // WEBKIT to a WebKit build's pw_run.sh (default: the newest in Playwright's cache).
@@ -20,10 +24,11 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(here, "../dist");
-const shots = path.resolve(here, "../screenshots");
+const remote = (process.argv.find((a) => a.startsWith("--url=")) || "").slice(6);
+const shots = path.resolve(here, remote ? "../screenshots/live" : "../screenshots");
 fs.mkdirSync(shots, { recursive: true });
 const only = (process.argv.find((a) => a.startsWith("--only=")) || "").slice(7).split(",").filter(Boolean); // prettier-ignore
-const want = (k) => !only.length || only.includes(k);
+const want = (k) => (!only.length || only.includes(k)) && !(remote && (k === "fail" || k === "keys"));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- A static server that can fail files on purpose ------------------------------------
@@ -42,7 +47,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const URL0 = `http://127.0.0.1:${server.address().port}/`;
+const URL0 = remote || `http://127.0.0.1:${server.address().port}/`;
 
 // ---- Results ---------------------------------------------------------------------------
 
@@ -271,7 +276,8 @@ async function webkit() {
   const { webkit, devices } = await import(pw);
   const browser = await webkit.launch({ executablePath: exe });
   try {
-    for (const run of ["walk", "fail"]) {
+    // A published copy can't be made to fail, so it gets the walk only.
+    for (const run of remote ? ["walk"] : ["walk", "fail"]) {
       if (run === "fail") faults.blockFirstSog = true;
       const ctx = await browser.newContext({ ...devices["iPhone 15"] });
       const page = await ctx.newPage();
