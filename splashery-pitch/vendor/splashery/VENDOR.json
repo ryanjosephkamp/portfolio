@@ -1,0 +1,87 @@
+{
+  "about": "Splashery's own files, copied unchanged from ryanjosephkamp/splashery. `npm run check:vendor` fails if any file's SHA-256 differs from the one here.",
+  "repository": "https://github.com/ryanjosephkamp/splashery",
+  "branch": "main",
+  "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+  "copied": "2026-10-16",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "vendor/splashery/LICENSE",
+      "source": "LICENSE",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "c090cc9b6b3155d41ce3872f9df4bdc1532988241b7f2bca709fa90e115d8219",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/kit.js",
+      "source": "src/kit.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "7b9a742bb7b25ca8eb9c312a9f674a893da48840d2abd2222bcbb7b90a293a73",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/generators.js",
+      "source": "src/generators.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "2caaa058fa3d86c09f1dad734c81cdc57454d43d34059f42aa954df738ee10ea",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/noise.js",
+      "source": "src/noise.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "a37bfb72691aa31fb1523ec06d8aa07f834c8cb5010d6d79e274219930c185ac",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/effects.js",
+      "source": "src/effects.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "ec5ea4938aaacf69f231ac39330b1cfaec6f9996d6458a0b8e1a02f6dfeaabd3",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/equation.js",
+      "source": "src/equation.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "4d2ee06f6a454a14c577ec983f182b3d01fe15849f7e4d98184a0e9d52015681",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/font.js",
+      "source": "src/font.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "c4be5b31cc2eb142f49597314f4b18b1a67506a0c7cb7bc58e2deb420a4d3def",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/packs/objects.js",
+      "source": "src/packs/objects.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "3f2e73fe7761cf604bbf2290d8bf49491ba21f775006e51ef3771cd2088a7377",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/packs/even.js",
+      "source": "src/packs/even.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "58a221c528f35869fc8740b8de1f128fa85072d4f18ada05bf479d4fc19e3f92",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/packs/splat-equation.js",
+      "source": "src/packs/splat-equation.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "989ed6f57a5ce51cdc1515b8031ac11d931661d70b9cb38da5953154fd1b0e10",
+      "license": "MIT"
+    },
+    {
+      "path": "vendor/splashery/src/physics/world.js",
+      "source": "src/physics/world.js",
+      "commit": "0b6f4bf26c6ca0d523dd8839ff1b1e1c33fb0bd1",
+      "sha256": "c82fb4555fb0d612962c85fd6d71dfb1853928246a310ee302d4f899f9f444db",
+      "license": "MIT"
+    }
+  ]
+}
