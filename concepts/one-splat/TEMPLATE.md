@@ -154,4 +154,5 @@ islands) and from degenerate ones (a line, a grid, one point), and asserts that:
 It prints five summary lines and exits with an error at the first failed assertion. The checks do
 not depend on the name, so swapping `NAME` needs no change here. The proof paragraph in `#lemma`
 quotes the suite's numbers (169,544 splits, 11,200 divisions); keep them in step if you change
-`verify.mjs`.
+`verify.mjs`. Its "test suite" link opens `verify.mjs` on GitHub, because the published page leaves
+the file out; point it at your own copy or repository.
