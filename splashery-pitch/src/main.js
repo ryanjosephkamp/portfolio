@@ -161,7 +161,8 @@ function setStep(id) {
   for (const el of $$("[data-for]")) el.classList.toggle("is-on", el.dataset.for.split(" ").includes(id)); // prettier-ignore
   if (prev && steps[prev]?.leave) steps[prev].leave(id);
   const v = VIEWS[id];
-  if (v) stage.view({ ...v, yaw: stage.cam.yaw + angleTo(stage.cam.yaw, v.yaw) }, 1.6);
+  // A phone's stage is short, and its HUD and tools take more of it: stand back a little.
+  if (v) stage.view({ ...v, zoom: v.zoom * (PHONE.matches ? 1.14 : 1), yaw: stage.cam.yaw + angleTo(stage.cam.yaw, v.yaw) }, 1.6); // prettier-ignore
   goTo(CLOUD[id]);
   steps[id]?.enter?.(prev);
 }
@@ -276,11 +277,18 @@ const passLegend = {
   4: ["1 splat", "on a pixel"],
 };
 
+const blendPlay = { t: 0, on: false, done: false };
+
 steps.frame = {
   enter() {
     stage.gesture = "orbit";
     const v = Number($("#blend").value);
     if (v < 1000) stage.drawCount = Math.round((v / 1000) * stage.count);
+    // The first time: build the frame from the back, once, on its own.
+    if (!blendPlay.done && !REDUCED.matches)
+      setTimeout(() => {
+        if (step === "frame" && !blendPlay.done && current === "grape") Object.assign(blendPlay, { t: 0, on: true, done: true }); // prettier-ignore
+      }, 700);
   },
   leave() {
     stage.drawCount = null;
@@ -293,7 +301,25 @@ steps.frame = {
   },
 };
 
+function setBlend(v) {
+  $("#blend").value = String(v);
+  const n = Math.round((v / 1000) * stage.count);
+  stage.drawCount = v >= 1000 ? null : n;
+  stage.spinOn = v >= 1000;
+  $("#blend-out").textContent = v >= 1000 ? "all" : fmt(n);
+}
+
+function tickBlend(dt) {
+  if (!blendPlay.on) return;
+  if (step !== "frame") return void (blendPlay.on = false);
+  blendPlay.t += dt / 3.4;
+  const k = Math.min(1, blendPlay.t);
+  setBlend(Math.round(1000 * (k < 0.08 ? 0 : easeInOut((k - 0.08) / 0.92))));
+  if (k >= 1) blendPlay.on = false;
+}
+
 $("#blend").addEventListener("input", (e) => {
+  blendPlay.on = false;
   const v = Number(e.target.value);
   const n = Math.round((v / 1000) * stage.count);
   stage.drawCount = v >= 1000 ? null : n;
@@ -520,6 +546,14 @@ steps.dial = {
         tree.value = t.levels + 1;
       })();
     }
+    if (!tree.played && !REDUCED.matches)
+      setTimeout(async () => {
+        if (step !== "dial" || tree.played) return;
+        await tree.building;
+        if (step !== "dial" || current !== "grape") return;
+        tree.played = true;
+        tree.play = { t: 0 };
+      }, 600);
   },
   leave() {
     stage.displayCount = null;
@@ -535,7 +569,28 @@ steps.dial = {
   },
 };
 
-$("#dial").addEventListener("input", (e) => setDial(Number(e.target.value)));
+$("#dial").addEventListener("input", (e) => {
+  tree.play = null;
+  setDial(Number(e.target.value));
+});
+
+// The dial on its own, the first time: merged down to one splat, held, then split
+// back up to all of them.
+function tickDial(dt) {
+  const p = tree.play;
+  if (!p) return;
+  if (step !== "dial") return void (tree.play = null);
+  if (tree.loading) return;
+  p.t += dt;
+  const top = tree.levels + 1;
+  const sm = (x) => x * x * (3 - 2 * x);
+  const t = p.t;
+  const k = clamp((t - 2.6) / 6.5, 0, 1);
+  const v = t < 1.8 ? top * (1 - sm(t / 1.8)) : t < 2.6 ? 0 : top * sm(k);
+  $("#dial").value = String(v);
+  setDial(v);
+  if (k >= 1) tree.play = null;
+}
 
 async function setDial(v) {
   tree.want = v;
@@ -839,8 +894,8 @@ function applyCut() {
   // A vertical plane facing the walnut's front: everything in front of it is cut away.
   const d = lerp(-0.85, 1.15, cut.v);
   stage.cut = cut.v >= 0.999 ? [0, 0, 0, 0] : [0, 0, -1, -d];
-  const info = clouds.get("walnut")?.info;
-  const mm = info ? ((1 - cut.v) * info.nz * info.voxel * 0.9).toFixed(1) : "";
+  const w = clouds.get("walnut");
+  const mm = w ? Math.max(0, (d - w.zmin) * w.mmPerUnit).toFixed(1) : "";
   $("#cut-out").textContent = cut.v >= 0.999 ? "whole" : `${mm} mm in`;
 }
 
@@ -910,6 +965,8 @@ let hudTick = 0;
 stage.on((frame) => {
   const dt = frame.dt;
   tickPull(dt);
+  tickBlend(dt);
+  tickDial(dt);
   tickLid(dt);
   tickProgram(dt);
   tickCut(dt);
@@ -987,11 +1044,12 @@ watchSteps();
 (async () => {
   try {
     const t0 = performance.now();
-    await goTo(CLOUD[step] || "grape");
+    goTo(CLOUD[step] || "grape");
+    // The first cloud is on stage once a flight or a load has set `current`.
+    while (!current) await new Promise((r) => setTimeout(r, 40));
     host.classList.add("is-live");
-    const g = clouds.get("grape");
-    if (g) say("load", "");
-    console.log(`first cloud in ${Math.round(performance.now() - t0)} ms`, g?.ms);
+    say("load", "");
+    console.log(`first cloud in ${Math.round(performance.now() - t0)} ms`);
     if (step === "hero")
       setTimeout(() => {
         if (!pull.used && step === "hero") demoPull(0.42, 2.8);

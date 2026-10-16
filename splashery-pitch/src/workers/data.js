@@ -80,8 +80,11 @@ const OPS = {
     const buf = await res.arrayBuffer();
     const { set, info } = readWalnut(new Uint8Array(buf), budget);
     set.transform = normalize(set, 1);
+    // The front of the scan (nearest the camera, smallest z), for the cut's depth in mm.
+    let zmin = Infinity;
+    for (let i = 0; i < set.count; i++) zmin = Math.min(zmin, set.pos[i * 3 + 2]);
     sets.set(key, set);
-    return reply(set, { key, info, bytes: buf.byteLength });
+    return reply(set, { key, info, bytes: buf.byteLength, mmPerUnit: 1 / set.transform.scale, zmin }); // prettier-ignore
   },
 
   async rename({ from, to }) {
