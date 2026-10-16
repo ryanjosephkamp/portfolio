@@ -208,7 +208,12 @@ void main() {
   col.a *= uFade;
   if (col.a < 1.0 / 255.0 && uRep.z + uRep.w == 0.0) { cull(); return; }
 
-  vec2 ext = sig * K;
+  // The quad reaches only as far as the splat can still be seen: where its alpha,
+  // a * exp(-r^2 / 2), falls to 1/255, which for a faint splat is well inside 3 sigma.
+  // (The ellipsoid, ring, and center views, and the picked splat, keep the full 3 sigma.)
+  float reach = K;
+  if (uRep.y + uRep.z + uRep.w == 0.0 && vSel == 0) reach = min(K, sqrt(max(0.0, 2.0 * log(255.0 * col.a))));
+  vec2 ext = sig * reach;
   float dotR = 2.6 * max(uRep.w, float(vSel));
   ext = max(ext, vec2(dotR + 1.0));
   ext = min(ext, vec2(2048.0));

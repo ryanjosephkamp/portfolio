@@ -1,5 +1,6 @@
 hero:a
 hero:a
+hero:button#detail-btn
 hero:a
 hero:div#stage
 hero:button[explode]

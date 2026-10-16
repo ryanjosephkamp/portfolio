@@ -5,6 +5,7 @@ import { SplatRenderer } from "./gl/renderer.js";
 import { OrbitCamera, project } from "./lib/camera.js";
 import { clamp, lerp, easeInOut, easeOut, quatAxisAngle, quatToMat3 } from "./lib/math.js";
 import SortWorker from "./workers/sort.js?worker";
+import { TIERS, pixelRatio } from "./lib/detail.js";
 import DataWorker from "./workers/data.js?worker";
 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
@@ -149,9 +150,15 @@ export class Stage {
     this.visible = true;
     this.fps = 60;
     this.sortMs = 0;
-    // Big desktop canvases start at 1.5; adapt() lowers it further if frames run late.
-    this.dpr = Math.min(devicePixelRatio || 1, matchMedia("(pointer: coarse)").matches ? 2 : 1.5);
-    this.slow = 0;
+    // Detail (see lib/detail.js): the tier sets the canvas's pixel budget and the idle spin.
+    this.tier = 2;
+    this.tierSpin = true;
+    this.software = false; // drawing without a graphics chip
+    this.keep = 1; // the share of a large cloud drawn (less than 1 only in software, on Low)
+    this.dpr = 1;
+    this.frameTimes = []; // seconds between frames that drew, the latest last
+    this.calmUntil = 0;
+    this.onStruggle = null;
 
     this.bindPointer();
     new ResizeObserver(() => this.resize()).observe(host);
@@ -175,6 +182,7 @@ export class Stage {
     const r = this.host.getBoundingClientRect();
     this.cssW = Math.max(1, r.width);
     this.cssH = Math.max(1, r.height);
+    this.dpr = pixelRatio(this.tier, this.cssW, this.cssH, this.software);
     const w = Math.round(this.cssW * this.dpr);
     const h = Math.round(this.cssH * this.dpr);
     this.gl.resize(w, h);
@@ -280,7 +288,7 @@ export class Stage {
     if (!force && same) return;
     this.lastSort = { f, morph: this.morph.t, parts: this.partKey || "" };
     this.sortBusy = true;
-    this.sorter.postMessage({ type: "sort", fwd: f, morph: this.morph.t, spread: this.morph.spread, version: this.version }); // prettier-ignore
+    this.sorter.postMessage({ type: "sort", fwd: f, morph: this.morph.t, spread: this.morph.spread, keep: this.keep, version: this.version }); // prettier-ignore
   }
 
   onOrder({ order, version, ms }) {
@@ -378,6 +386,20 @@ export class Stage {
 
   // ---- Pointer -----------------------------------------------------------------------
 
+  setDetail(tier) {
+    this.tier = tier;
+    this.tierSpin = TIERS[tier].spin;
+    // In software every splat costs time whatever its size: on Low, draw a quarter of a
+    // large cloud, each splat half again as wide to cover the gaps.
+    this.keep = this.software && tier === 1 ? 0.25 : 1;
+    this.splatScale = this.keep < 1 ? 1.5 : 1;
+    this.lastSort = null;
+    this.requestSort(true);
+    this.frameTimes.length = 0;
+    this.calmUntil = performance.now() + 4000;
+    this.resize();
+  }
+
   wake(ms = 30000) {
     this.awakeUntil = Math.max(this.awakeUntil, performance.now() + ms);
   }
@@ -461,11 +483,11 @@ export class Stage {
 
   loop(now) {
     requestAnimationFrame(this.loop);
-    const dt = Math.min(0.1, (now - this.last) / 1000);
+    const raw = (now - this.last) / 1000;
+    const dt = Math.min(0.1, raw);
     this.last = now;
     if (!this.visible || document.hidden) return;
     this.fps = this.fps * 0.95 + (1 / Math.max(dt, 1e-3)) * 0.05;
-    this.adapt(dt);
     const cam = this.cam;
     cam.fit(this.cssW / this.cssH);
 
@@ -478,7 +500,7 @@ export class Stage {
         if (tw.to[key] !== undefined) cam[key] = lerp(tw.from[key], tw.to[key], e);
       if (tw.to.target) cam.target = tw.from.target.map((v, i) => lerp(v, tw.to.target[i], e));
       if (k >= 1) this.camTween = null;
-    } else if (this.spinOn && this.awake && !this.pointer && !this.explode.frozen && !REDUCED.matches && now - this.idleAt > 2500) { // prettier-ignore
+    } else if (this.spinOn && this.tierSpin && this.awake && !this.pointer && !this.explode.frozen && !REDUCED.matches && now - this.idleAt > 2500) { // prettier-ignore
       cam.yaw += this.spin * dt;
     }
 
@@ -541,6 +563,8 @@ export class Stage {
       ...this.liftPos, this.liftScale, ...this.cut, this.overdrawMax,
     ].map(r).join(",") + `|${this.pass}|${this.drawCount}|${this.selected}|${this.partKey}|${this.partTint}|${this.serial}|${this.canvas.width}x${this.canvas.height}`; // prettier-ignore
     if (sig !== this.lastDrawn) {
+      // A frame that draws right after one that drew: its interval is the frame's cost.
+      if (this.idleFrames === 0) this.watch(raw, now);
       this.lastDrawn = sig;
       this.idleFrames = 0;
       this.gl.draw(state);
@@ -550,15 +574,21 @@ export class Stage {
     for (const fn of this.listeners) fn(this.frame);
   }
 
-  // Lowers the canvas resolution if frames keep arriving late, and raises it again
-  // when there is room.
-  adapt(dt) {
-    if (dt > 0.024) this.slow++;
-    else this.slow = Math.max(0, this.slow - 0.5);
-    if (this.slow > 45 && this.dpr > 1) {
-      this.dpr = Math.max(1, this.dpr - 0.25);
-      this.slow = 0;
-      this.resize();
+  // Calls onStruggle when the frames that draw keep coming slowly: the median of the
+  // last few (up to a dozen) is over 45 ms, under about 22 a second. A tier change gets
+  // a few seconds' grace before it is judged, and a pause of seconds (a hidden tab) is
+  // not a slow frame.
+  watch(dt, now) {
+    if (now < this.calmUntil || !this.onStruggle || dt > 5) return;
+    const f = this.frameTimes;
+    f.push(dt);
+    if (f.length > 12) f.shift();
+    const sorted = f.slice().sort((a, b) => a - b);
+    const median = sorted[sorted.length >> 1];
+    if (f.length >= 4 && median > 0.045) {
+      f.length = 0;
+      this.calmUntil = now + 4000;
+      this.onStruggle(median);
     }
   }
 
@@ -580,7 +610,8 @@ export class Stage {
     const scale = W / this.overlay.width;
     const a = e.amount;
     const K = e.slabs;
-    const per = Math.round(this.count / K);
+    const total = this.gl.orderCount || this.count; // the splats drawn, which is all of them unless thinned
+    const per = Math.round(total / K);
     const dpr = W / this.cssW;
     c.save();
     c.lineWidth = 1 * dpr;
@@ -609,8 +640,8 @@ export class Stage {
       if ((s === 0 || s === K - 1 || s === K >> 1) && ly > 70 * dpr && ly < H - 60 * dpr) {
         c.fillStyle = `rgba(232, 230, 225, ${0.75 * a})`;
         const lo = s * per;
-        const hi = Math.min(this.count, (s + 1) * per) - 1;
-        const label = s === K - 1 ? `${fmt(lo)}–${fmt(this.count - 1)} · nearest` : s === 0 ? `0–${fmt(hi)} · farthest` : `${fmt(lo)}–${fmt(hi)}`; // prettier-ignore
+        const hi = Math.min(total, (s + 1) * per) - 1;
+        const label = s === K - 1 ? `${fmt(lo)}–${fmt(total - 1)} · nearest` : s === 0 ? `0–${fmt(hi)} · farthest` : `${fmt(lo)}–${fmt(hi)}`; // prettier-ignore
         c.fillText(label, pts[3][0] + 4 * dpr, ly);
       }
     }

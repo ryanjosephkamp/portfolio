@@ -8,7 +8,7 @@
 //   await page.eval("window.stage.count");
 //   await page.shot("phone.png");
 //   await page.close();
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -18,14 +18,33 @@ const CHROME =
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function open({ width = 1440, height = 900, mobile = false, dpr, port = 9300 + Math.floor(Math.random() * 500), reducedMotion = false } = {}) {
+// macOS memory pressure: 1 normal, 2 warning, 4 critical. A test browser with a WebGL page
+// holds hundreds of megabytes, so none starts while the Mac is short of memory: it waits
+// up to two minutes for the pressure to ease, then gives up.
+function pressure() {
+  try {
+    return Number(execFileSync("sysctl", ["-n", "kern.memorystatus_vm_pressure_level"]).toString().trim()) || 1; // prettier-ignore
+  } catch {
+    return 1;
+  }
+}
+export async function memoryGuard() {
+  for (let i = 0; i < 24 && pressure() > 1; i++) await sleep(5000);
+  if (pressure() > 1) throw new Error("The Mac is short of memory; not starting a test browser.");
+}
+
+// angle: "metal" (the GPU) or "swiftshader" (software rendering, a stand-in for weak
+// hardware). cpu: a CPU slowdown factor (4 makes the page's CPU four times slower).
+export async function open({ width = 1440, height = 900, mobile = false, dpr, port = 9300 + Math.floor(Math.random() * 500), reducedMotion = false, angle = "metal", cpu = 1 } = {}) { // prettier-ignore
+  await memoryGuard();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pitch-chrome-"));
-  const proc = spawn(CHROME, [
+  // At background priority (nice 15), so the Mac's own apps come first.
+  const proc = spawn("nice", ["-n", "15", CHROME,
     "--headless=new",
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${dir}`,
-    "--use-angle=metal",
-    "--enable-gpu",
+    `--use-angle=${angle}`,
+    ...(angle === "swiftshader" ? ["--enable-unsafe-swiftshader"] : ["--enable-gpu"]),
     "--ignore-gpu-blocklist",
     "--enable-webgl",
     "--no-first-run",
@@ -98,6 +117,7 @@ export async function open({ width = 1440, height = 900, mobile = false, dpr, po
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
     });
   }
+  if (cpu > 1) await send("Emulation.setCPUThrottlingRate", { rate: cpu });
   if (reducedMotion)
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
 

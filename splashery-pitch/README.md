@@ -71,6 +71,33 @@ is built by GitHub Pages' Jekyll, which drops files whose names start with `_`, 
 Splashery itself draws with the PlayCanvas engine, on WebGPU with a WebGL2 fallback. This page draws
 the same files with its own renderer so it can take them apart.
 
+## Detail
+
+Four tiers, from the easiest to run to the hardest. Auto (the default) picks one from what the
+browser says about the device and never picks Max; the **Detail** button in the bar lets a visitor
+pick any tier, kept in this browser (`localStorage`, key `splashery-pitch-detail`). The tiers are in
+`src/lib/detail.js`.
+
+| | Low | Mid | High | Max |
+| --- | --- | --- | --- | --- |
+| Grape | lite, 100,000 splats | 300,000 | 300,000 | 300,000 |
+| Chest budget (Splashery's own tiers) | 60k | 140k | 200k | 280k |
+| Walnut | 60k | 160k | 240k | every voxel |
+| Stage pixels | 0.45 MP | 1.1 MP | 2 MP | the screen's own |
+| Idle spin | off | on | on | on |
+
+- **Auto picks:** Low for software rendering (no graphics chip) or a device with 2 GB or 2 cores;
+  Mid for phones and tablets, modest graphics (Intel HD or UHD, Mali, Adreno, PowerVR), 4 GB or 4
+  cores, and devices it knows nothing about; High otherwise.
+- **Auto steps down** a tier, and says so on the stage, when frames that draw keep coming slower
+  than about 22 a second. A tier the visitor picked is left alone.
+- **Without a graphics chip,** every splat costs time whatever its size (about 9 µs each in
+  SwiftShader), so Low also draws only a quarter of a large cloud, each splat half again as wide,
+  keeps flights short, and says the browser is drawing in software.
+- **Every tier:** each splat's quad reaches only as far as its alpha can be seen; the sort runs only
+  when the view turns by more than about half a degree; and the stage draws nothing 30 s after the
+  last touch, key, or scroll.
+
 ## Keyboard and errors
 
 - Every step's controls sit in that step's section, so Tab reaches them in reading order; focusing
@@ -83,8 +110,10 @@ the same files with its own renderer so it can take them apart.
 
 ## Tools
 
-- `tools/cdp.mjs`: drives headless Chrome over the DevTools protocol, with the GPU, device emulation,
-  touch, screenshots and a screencast.
+- `tools/cdp.mjs`: drives headless Chrome over the DevTools protocol, with the GPU (or software
+  rendering, `angle: "swiftshader"`, and a slowed CPU), device emulation, touch, screenshots, and a
+  screencast. Its browsers run at background priority, wait while macOS reports memory pressure,
+  and are killed if the script dies.
 - `tools/verify.mjs`: the page's checks, against `dist/` on its own server that can fail files on
   purpose: every step at 1440×900 and 390×844, WebKit as an iPhone, the three forced failures, and a
   keyboard-only walk. Screenshots go to `screenshots/`.

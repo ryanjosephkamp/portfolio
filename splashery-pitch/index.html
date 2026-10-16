@@ -27,7 +27,22 @@
     <header class="bar">
       <a class="mark" href="https://ryanjosephkamp.github.io/splashery/">Splashery</a>
       <span class="bar__what">real-time 3D Gaussian splatting</span>
+      <button type="button" class="bar__detail" id="detail-btn" popovertarget="detail-pop" aria-controls="detail-pop">
+        Detail <b id="detail-now">Mid</b>
+      </button>
       <a class="bar__open" href="https://ryanjosephkamp.github.io/splashery/">Open it<span aria-hidden="true"> ↗</span></a>
+      <div class="detail-pop" id="detail-pop" popover aria-labelledby="detail-title">
+        <p class="detail__title" id="detail-title">Detail</p>
+        <p class="detail__lede">How much this page asks of your device. Lower is lighter.</p>
+        <div class="detail__list" role="radiogroup" aria-labelledby="detail-title">
+          <button type="button" role="radio" aria-checked="true" data-detail="auto"><b>Auto</b><span data-hud="detail-auto">Mid, for this device</span></button>
+          <button type="button" role="radio" aria-checked="false" data-detail="1"><b>Low</b><span>The 100,000-splat grape, 60k recipes, fewer pixels, no idle spin</span></button>
+          <button type="button" role="radio" aria-checked="false" data-detail="2"><b>Mid</b><span>The 300,000-splat grape, 140k recipes</span></button>
+          <button type="button" role="radio" aria-checked="false" data-detail="3"><b>High</b><span>200k recipes, a sharper stage</span></button>
+          <button type="button" role="radio" aria-checked="false" data-detail="4"><b>Max</b><span>280k recipes, every voxel of the walnut, full resolution</span></button>
+        </div>
+        <p class="detail__note">Auto steps down if frames come slowly. Your choice is kept in this browser.</p>
+      </div>
     </header>
 
     <main class="scrolly">
@@ -47,11 +62,13 @@
             <span data-hud="count">–</span>
             <span data-hud="sort" class="wide">–</span>
             <span data-hud="fps" class="wide">–</span>
+            <span data-hud="detail" class="wide">detail</span>
           </div>
           <div class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
           <p class="hud hud-load" data-hud="load" aria-live="polite">Fetching grape-lite.sog, 1.3 MB</p>
           <p class="hud hud-keys" id="stage-keys">Arrow keys turn it</p>
+          <p class="hud hud-toast" data-hud="toast" role="status"></p>
           <span class="crosshair" aria-hidden="true"></span>
           <div class="hud-error" id="error" role="alert" hidden>
             <p class="error__head">Stopped</p>
@@ -203,6 +220,8 @@
             <div class="chips" role="radiogroup" aria-label="Budget">
               <button type="button" role="radio" aria-checked="false" data-budget="60000">60k</button>
               <button type="button" role="radio" aria-checked="true" data-budget="140000">140k</button>
+              <button type="button" role="radio" aria-checked="false" data-budget="200000">200k</button>
+              <button type="button" role="radio" aria-checked="false" data-budget="280000">280k</button>
               <button type="button" role="radio" aria-checked="false" data-budget="400000">400k</button>
             </div>
             <p class="tools__note" data-hud="built"></p>

@@ -44,8 +44,11 @@ self.onmessage = (e) => {
   }
 };
 
-function sort({ fwd, morph, spread }) {
+// keep < 1 draws only that share of a large cloud (drawing in software, where every
+// splat costs time whatever its size); small clouds are always drawn whole.
+function sort({ fwd, morph, spread, keep = 1 }) {
   const n = count;
+  const thin = keep < 1 && n > 20000;
   ensure(n);
   const depth = new Float32Array(n);
   const [fx, fy, fz] = fwd;
@@ -87,11 +90,17 @@ function sort({ fwd, morph, spread }) {
   const k = 65535 / (max - min || 1);
   const keys = keys16.buf;
   counts.fill(0);
+  let kept = 0;
   for (let i = 0; i < n; i++) {
+    if (thin && delays[i] > keep) {
+      keys[i] = 0;
+      continue;
+    }
     // Farthest first: invert the key.
     const key = 65535 - (((depth[i] - min) * k) | 0);
     keys[i] = key;
     counts[key]++;
+    kept++;
   }
   let sum = 0;
   for (let j = 0; j < 65536; j++) {
@@ -99,7 +108,10 @@ function sort({ fwd, morph, spread }) {
     counts[j] = sum;
     sum += c;
   }
-  const order = new Uint32Array(n);
-  for (let i = 0; i < n; i++) order[counts[keys[i]]++] = i;
+  const order = new Uint32Array(kept);
+  for (let i = 0; i < n; i++) {
+    if (thin && delays[i] > keep) continue;
+    order[counts[keys[i]]++] = i;
+  }
   return order;
 }

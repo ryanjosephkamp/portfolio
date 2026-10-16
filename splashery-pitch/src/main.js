@@ -5,15 +5,13 @@ import { clamp, lerp, easeInOut, easeOut, turbo, covariance } from "./lib/math.j
 import { project } from "./lib/camera.js";
 import { LiveProgram, PROGRAMS, programText, readProgram } from "./lib/equation.js";
 import { packGPU } from "./lib/splats.js";
+import { TIERS, detect, savedMode, saveMode } from "./lib/detail.js";
 import objectsSource from "../vendor/splashery/src/packs/objects.js?raw";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
-const COARSE = matchMedia("(pointer: coarse)").matches;
 const PHONE = matchMedia("(max-width: 860px)");
-const LOW = (navigator.deviceMemory || 8) <= 2 || (navigator.hardwareConcurrency || 8) <= 2;
-const BUDGET = LOW ? 60000 : COARSE ? 140000 : 200000;
 const asset = (p) => new URL(p, document.baseURI).href;
 const SPLASHERY = "https://ryanjosephkamp.github.io/splashery/";
 const GRAPE_LINK = "#s=j.eyJhcHAiOiJzcGxhc2hlcnkiLCJ2ZXJzaW9uIjozLCJ0b3kiOnsia2luZCI6ImJ1aWx0aW4iLCJpZCI6ImdyYXBlIn19"; // prettier-ignore
@@ -27,6 +25,13 @@ try {
   throw err;
 }
 window.stage = stage;
+
+// Detail: Auto's pick for this device, or the tier the visitor chose (kept in this browser).
+const detail = { mode: savedMode(), auto: detect(stage.gl.gl), tier: 2 };
+detail.tier = detail.mode === "auto" ? detail.auto.tier : detail.mode;
+stage.software = !!detail.auto.software;
+stage.setDetail(detail.tier);
+const tierNow = () => TIERS[detail.tier];
 
 const hud = Object.fromEntries($$("[data-hud]").map((el) => [el.dataset.hud, el]));
 const say = (key, text) => {
@@ -68,13 +73,13 @@ async function loadNow(key) {
     say("load", "Fetching grape-lite.sog, 1.3 MB");
     c = await stage.data.call("sog", { key, url: asset("./assets/grape-lite.sog"), upright: true }); // prettier-ignore
     FILES.grape = "grape-lite.sog";
-    if (!LOW) upgradeGrape().catch((err) => console.warn(err));
+    if (tierNow().grape === "full") upgradeGrape().catch((err) => console.warn(err));
   } else if (key === "chest") {
     c = await stage.data.call("chest", { key, count: recipe.budget, wood: recipe.wood });
     c.made = { budget: recipe.budget, wood: recipe.wood };
     recipe.result = c;
   } else if (key === "walnut") {
-    c = await stage.data.call("walnut", { key, url: asset("./assets/walnut.vol.gz"), budget: COARSE ? 160000 : 320000 }); // prettier-ignore
+    c = await stage.data.call("walnut", { key, url: asset("./assets/walnut.vol.gz"), budget: tierNow().walnut }); // prettier-ignore
   } else if (key === "eq") {
     const set = program.live.frame(0);
     await stage.data.call("raw", { key, set: cloneSet(set) });
@@ -101,12 +106,35 @@ async function upgradeGrape() {
     (current !== "grape" ||
       (!pull.frozen && !pull.auto && !pick.result && step !== "dial" && stage.drawCount == null));
   while (!quiet()) await new Promise((r) => setTimeout(r, 250));
+  // Detail went to Low while it waited: keep the lite capture.
+  if (tierNow().grape !== "full") {
+    upgraded = false;
+    return;
+  }
   await stage.data.call("rename", { from: "grape-full", to: "grape" });
   clouds.set("grape", full);
   FILES.grape = "grape.sog";
   tree.ready = false;
   tree.building = null;
   if (current === "grape") await stage.setCloud(full);
+}
+
+// Back to the lite capture (for Low), when nothing on the stage depends on the full one.
+async function downgradeGrape() {
+  if (!upgraded) return;
+  const quiet = () =>
+    !busy &&
+    (current !== "grape" ||
+      (!pull.frozen && !pull.auto && !pick.result && step !== "dial" && stage.drawCount == null));
+  while (!quiet()) await new Promise((r) => setTimeout(r, 250));
+  if (tierNow().grape === "full") return;
+  const lite = await stage.data.call("sog", { key: "grape", url: asset("./assets/grape-lite.sog"), upright: true }); // prettier-ignore
+  upgraded = false;
+  clouds.set("grape", lite);
+  FILES.grape = "grape-lite.sog";
+  tree.ready = false;
+  tree.building = null;
+  if (current === "grape") await stage.setCloud(lite);
 }
 
 function cloneSet(s) {
@@ -141,7 +169,8 @@ async function drive() {
         if (prev === "eq") await stage.data.call("raw", { key: "eq", set: cloneSet(program.live.set) }); // prettier-ignore
         const pair = await stage.data.call("pair", { from: prev, to: target });
         hudState = "flying";
-        await stage.fly(pair, { duration: 2.4, spread: 0.6, arc: 0.45 });
+        // Without a graphics chip a long flight is a slideshow; keep it short.
+        await stage.fly(pair, { duration: stage.software ? 0.8 : 2.4, spread: 0.6, arc: 0.45 });
         await stage.setCloud(clouds.get(target));
       }
       current = target;
@@ -677,7 +706,7 @@ for (const b of $$("[data-rep]"))
 
 // ---- Recipe ------------------------------------------------------------------------------
 
-const recipe = { wood: "#8a5a2b", budget: BUDGET, result: null, building: false };
+const recipe = { wood: "#8a5a2b", budget: tierNow().chest, result: null, building: false };
 
 const chestSource = (() => {
   const lines = objectsSource.split("\n");
@@ -708,19 +737,6 @@ function highlight(src) {
 
 for (const b of $$("[data-budget]"))
   b.setAttribute("aria-checked", String(Number(b.dataset.budget) === recipe.budget));
-// The budget chips include the device's own tier.
-if (!$$("[data-budget]").some((b) => Number(b.dataset.budget) === recipe.budget)) {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.setAttribute("role", "radio");
-  b.setAttribute("aria-checked", "true");
-  b.dataset.budget = String(recipe.budget);
-  b.textContent = `${recipe.budget / 1000}k`;
-  const chips = $$("[data-budget]");
-  chips.find((x) => Number(x.dataset.budget) > recipe.budget)?.before(b) || chips[0].parentNode.append(b); // prettier-ignore
-  b.addEventListener("click", () => rebuild({ budget: recipe.budget }, b));
-}
-
 steps.recipe = {
   enter() {
     stage.gesture = "orbit";
@@ -1083,15 +1099,94 @@ function updateHud(frame) {
   const state = !errBox.hidden ? "stopped" : !host.classList.contains("is-live") ? "loading" : pull.frozen ? "frozen" : hudState || (stage.morph.t < 1 && !stage.morph.manual ? "flying" : frame.idle ? "idle" : "live"); // prettier-ignore
   say("state", state);
   say("file", FILES[current] || "");
-  const n = stage.drawCount != null ? `${fmt(stage.drawCount)} of ${fmt(stage.count)} splats` : `${fmt(stage.displayCount ?? stage.count)} ${stage.displayCount === 1 ? "splat" : "splats"}`; // prettier-ignore
+  const drawn = stage.gl.orderCount;
+  const n = stage.drawCount != null ? `${fmt(Math.min(stage.drawCount, drawn))} of ${fmt(stage.count)} splats` : drawn < stage.count && stage.displayCount == null ? `${fmt(drawn)} of ${fmt(stage.count)} splats drawn` : `${fmt(stage.displayCount ?? stage.count)} ${stage.displayCount === 1 ? "splat" : "splats"}`; // prettier-ignore
   say("count", n);
   say("sort", `sort ${stage.sortMs.toFixed(1)} ms · worker`);
   say("fps", frame.idle ? "no redraws" : `${Math.round(stage.fps)} fps`);
   if (pull.frozen) {
-    const per = Math.round(stage.count / stage.explode.slabs);
-    say("frozen", `Frame frozen. ${fmt(stage.count)} splats in the order they are blended,\nshown as ${stage.explode.slabs} layers of about ${fmt(per)}.`); // prettier-ignore
+    const drawn = stage.gl.orderCount || stage.count;
+    const per = Math.round(drawn / stage.explode.slabs);
+    say("frozen", `Frame frozen. ${fmt(drawn)} splats in the order they are blended,\nshown as ${stage.explode.slabs} layers of about ${fmt(per)}.`); // prettier-ignore
   } else say("frozen", "");
 }
+
+// ---- Detail --------------------------------------------------------------------------------
+
+const detailPop = $("#detail-pop");
+const DETAIL_TEXT = { 1: "Low", 2: "Mid", 3: "High", 4: "Max" };
+
+function showDetail() {
+  const t = tierNow();
+  $("#detail-now").textContent = detail.mode === "auto" ? `${t.name}, auto` : t.name;
+  say("detail", `detail ${t.name.toLowerCase()}`);
+  say("detail-auto", `${TIERS[detail.auto.tier].name}, for this device (${detail.auto.why})`);
+  setRadio($$("[data-detail]"), String(detail.mode), "detail");
+}
+
+// Changes the tier on the spot: the canvas's pixels and spin at once, the chest and the
+// walnut rebuilt at their new budgets (now if on stage, otherwise when next shown), and
+// the grape swapped between its two captures when nothing depends on the one shown.
+function applyDetail(tier) {
+  if (tier === detail.tier) return showDetail();
+  const before = TIERS[detail.tier];
+  detail.tier = tier;
+  const t = TIERS[tier];
+  stage.setDetail(tier);
+  if (t.chest !== recipe.budget) {
+    setRadio($$("[data-budget]"), String(t.chest), "budget");
+    if (current === "chest") rebuild({ budget: t.chest });
+    else {
+      recipe.budget = t.chest;
+      if (!loading.has("chest")) clouds.delete("chest");
+    }
+  }
+  if (t.walnut !== before.walnut) {
+    if (current === "walnut" && !busy) {
+      loadNow("walnut").then((c) => {
+        clouds.set("walnut", c);
+        if (current === "walnut" && !busy) stage.setCloud(c).then(() => applyCut());
+      }).catch((err) => fail(err, () => goTo(CLOUD[step])));
+    } else if (!loading.has("walnut")) clouds.delete("walnut");
+  }
+  if (t.grape === "full") upgradeGrape().catch((err) => console.warn(err));
+  else downgradeGrape().catch((err) => console.warn(err));
+  showDetail();
+}
+
+for (const b of $$("[data-detail]"))
+  b.addEventListener("click", () => {
+    const v = b.dataset.detail;
+    detail.mode = v === "auto" ? "auto" : Number(v);
+    saveMode(detail.mode);
+    applyDetail(detail.mode === "auto" ? detail.auto.tier : detail.mode);
+  });
+
+// The popover's fallback where the Popover API is missing.
+if (!HTMLElement.prototype.togglePopover) {
+  detailPop.hidden = true;
+  $("#detail-btn").addEventListener("click", () => (detailPop.hidden = !detailPop.hidden));
+}
+
+// Auto steps down a tier when frames keep coming too slowly, and says so. A tier the
+// visitor picked is left alone.
+stage.onStruggle = (median) => {
+  if (detail.mode !== "auto" || detail.tier <= 1) return;
+  applyDetail(detail.tier - 1);
+  toast(`Frames took ${Math.round(median * 1000)} ms, so detail is now ${tierNow().name}. Change it under Detail.`); // prettier-ignore
+};
+
+let toastTimer = 0;
+function toast(text) {
+  say("toast", text);
+  hud.toast.classList.add("is-on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => hud.toast.classList.remove("is-on"), 7000);
+}
+
+showDetail();
+if (stage.software)
+  setTimeout(() => toast("This browser is drawing without a graphics chip, so the stage is at its lightest and will still be slow."), 1500); // prettier-ignore
 
 // Anything the visitor does keeps the stage awake (its idle spin, the program's play).
 for (const type of ["scroll", "keydown", "pointerdown", "input"])

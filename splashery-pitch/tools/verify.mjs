@@ -6,9 +6,11 @@
 //     data worker's script answering 404; each must show its message on the stage
 //   - a walk through the whole page by keyboard only
 //   - regressions: opening partway down, and drawing nothing when left alone
+//   - detail: Auto's pick, Low and back, a reload keeping the choice, the step-down, and
+//     software rendering (Low, thinned)
 // Screenshots and results.md go to screenshots/. Exits 1 if any check fails.
 //
-//   node tools/verify.mjs [--only=desk,phone,rm,fail,keys,regress,webkit] [--url=https://…/]
+//   node tools/verify.mjs [--only=desk,phone,rm,fail,keys,regress,detail,webkit] [--url=https://…/]
 //
 // With --url, the walks (desk, phone, rm, webkit) run against that address instead,
 // for checking a published copy; screenshots go to screenshots/live/. The forced
@@ -16,7 +18,7 @@
 //
 // WebKit: set PLAYWRIGHT to a Playwright package (default: Splashery's checkout) and
 // WEBKIT to a WebKit build's pw_run.sh (default: the newest in Playwright's cache).
-import { open } from "./cdp.mjs";
+import { open, memoryGuard } from "./cdp.mjs";
 import http from "node:http";
 import fs from "node:fs";
 import os from "node:os";
@@ -29,7 +31,7 @@ const remote = (process.argv.find((a) => a.startsWith("--url=")) || "").slice(6)
 const shots = path.resolve(here, remote ? "../screenshots/live" : "../screenshots");
 fs.mkdirSync(shots, { recursive: true });
 const only = (process.argv.find((a) => a.startsWith("--only=")) || "").slice(7).split(",").filter(Boolean); // prettier-ignore
-const want = (k) => (!only.length || only.includes(k)) && !(remote && (k === "fail" || k === "keys"));
+const want = (k) => (!only.length || only.includes(k)) && !(remote && (k === "fail" || k === "keys" || k === "detail")); // prettier-ignore
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- A static server that can fail files on purpose ------------------------------------
@@ -195,6 +197,55 @@ async function regressions() {
   }
 }
 
+// ---- Detail ------------------------------------------------------------------------------
+
+async function detailChecks() {
+  const info = "JSON.stringify({ tier: stage.tier, count: stage.count, drawn: stage.gl.orderCount, label: document.querySelector('#detail-now').textContent, saved: localStorage.getItem('splashery-pitch-detail') })"; // prettier-ignore
+  let page = await open({ width: 1280, height: 800, dpr: 1 });
+  try {
+    await page.go(URL0);
+    await page.until(`${live} && stage.count >= 300000`, 40000);
+    let st = JSON.parse(await page.eval(info));
+    check("detail: Auto picks a tier for this device", st.tier >= 2 && /auto/.test(st.label), st.label);
+    await page.eval("document.querySelector('#detail-btn').click()");
+    await sleep(300);
+    await page.shot(path.join(shots, "detail-1-menu.jpg"));
+    await page.eval("document.querySelector('[data-detail=\"1\"]').click()");
+    await page.until("stage.count === 100000", 20000);
+    st = JSON.parse(await page.eval(info));
+    check("detail: Low swaps in the 100,000-splat grape and is kept", st.tier === 1 && st.saved === "1", JSON.stringify(st)); // prettier-ignore
+    await page.go(URL0);
+    await page.until(`${live}`, 40000);
+    await sleep(1500);
+    st = JSON.parse(await page.eval(info));
+    check("detail: Low survives a reload", st.tier === 1 && st.count === 100000, JSON.stringify(st));
+    await page.eval("document.querySelector('[data-detail=auto]').click()");
+    await page.until("stage.count === 300000", 20000);
+    st = JSON.parse(await page.eval(info));
+    check("detail: back to Auto", /auto/.test(st.label) && st.saved === null, st.label);
+    await page.eval("stage.onStruggle(0.08)");
+    await sleep(400);
+    const t = await page.eval("document.querySelector('[data-hud=toast]').textContent");
+    st = JSON.parse(await page.eval(info));
+    check("detail: slow frames step Auto down a tier, with a notice", /detail is now/.test(t), `${st.label}: ${t}`); // prettier-ignore
+  } finally {
+    await page.close();
+  }
+  // No graphics chip: Auto picks Low, draws a quarter of the grape, and says so.
+  page = await open({ width: 1000, height: 700, dpr: 1, angle: "swiftshader" });
+  try {
+    await page.go(URL0);
+    await page.until(`${live}`, 60000);
+    await sleep(3000);
+    const st = JSON.parse(await page.eval(info));
+    const t = await page.eval("document.querySelector('[data-hud=toast]').textContent");
+    check("detail: software rendering gets Low, thinned", st.tier === 1 && st.drawn < st.count && /without a graphics chip/.test(t), `${st.drawn} of ${st.count} drawn`); // prettier-ignore
+    await page.shot(path.join(shots, "detail-2-software.jpg"));
+  } finally {
+    await page.close();
+  }
+}
+
 // ---- Keyboard only -----------------------------------------------------------------------
 
 async function keyboard() {
@@ -315,6 +366,7 @@ async function webkit() {
   const exe = process.env.WEBKIT || (builds[0] && path.join(cache, builds[0], "pw_run.sh"));
   if (!fs.existsSync(pw) || !exe || !fs.existsSync(exe)) return check("webkit: available", false, "no Playwright or WebKit build found"); // prettier-ignore
   const { webkit, devices } = await import(pw);
+  await memoryGuard();
   const browser = await webkit.launch({ executablePath: exe });
   try {
     // A published copy can't be made to fail, so it gets the walk only.
@@ -363,6 +415,7 @@ try {
   if (want("fail")) await failures();
   if (want("keys")) await keyboard();
   if (want("regress")) await regressions();
+  if (want("detail")) await detailChecks();
   if (want("webkit")) await webkit();
 } catch (err) {
   check("verify: ran to the end", false, err.message);
