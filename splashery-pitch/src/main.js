@@ -47,8 +47,21 @@ let wanted = null;
 let busy = false;
 let live = null; // the running equation, when the program is on stage
 
-async function load(key) {
-  if (clouds.has(key)) return clouds.get(key);
+// Loads (or builds) a cloud once: a second caller while it is on its way gets the same
+// promise. (Opening the page partway down used to start the grape twice, and its two
+// swaps to the full capture then left the data thread without a grape.)
+const loading = new Map();
+function load(key) {
+  if (clouds.has(key)) return Promise.resolve(clouds.get(key));
+  if (!loading.has(key))
+    loading.set(
+      key,
+      loadNow(key).finally(() => loading.delete(key)),
+    );
+  return loading.get(key);
+}
+
+async function loadNow(key) {
   let c;
   if (key === "grape") {
     // The lighter capture first (1.3 MB, 100,000 splats), then the full one swaps in.
@@ -71,7 +84,10 @@ async function load(key) {
   return c;
 }
 
+let upgraded = false;
 async function upgradeGrape() {
+  if (upgraded) return;
+  upgraded = true;
   let full;
   try {
     full = await stage.data.call("sog", { key: "grape-full", url: asset("./assets/grape.sog"), upright: true }); // prettier-ignore
@@ -153,6 +169,7 @@ function leaveCloud(key) {
 function enterCloud(key) {
   if (key === "chest") {
     applyLid(lid.angle);
+    showBuilt();
     chestCatchUp();
   }
   if (key === "eq") live = program.live;
@@ -166,8 +183,9 @@ const VIEWS = {
   frame: { yaw: 0.9, pitch: 0.25, zoom: 1.22, target: [0, 0, 0] },
   splat: { yaw: 0.2, pitch: 0.12, zoom: 1.3, target: [0, 0, 0] },
   dial: { yaw: -0.8, pitch: 0.3, zoom: 1.25, target: [0, 0, 0] },
-  recipe: { yaw: 0.6, pitch: 0.45, zoom: 1.5, target: [0, 0, 0] },
-  parts: { yaw: 0.35, pitch: 0.38, zoom: 1.55, target: [0, 0, 0] },
+  // The chest's recipe puts its front (the latch) toward +z, so these look from +z.
+  recipe: { yaw: Math.PI - 0.55, pitch: 0.45, zoom: 1.5, target: [0, 0, 0] },
+  parts: { yaw: Math.PI - 0.4, pitch: 0.38, zoom: 1.55, target: [0, 0, 0] },
   equation: { yaw: 0.4, pitch: 0.55, zoom: 1.3, target: [0, 0, 0] },
   walnut: { yaw: 0.0, pitch: 0.12, zoom: 1.32, target: [0, 0, 0] },
   link: { yaw: -0.4, pitch: 0.2, zoom: 1.28, target: [0, 0, 0] },
@@ -183,6 +201,7 @@ function setStep(id) {
   const prev = step;
   step = id;
   host.dataset.step = id;
+  stage.wake();
   keyHint();
   for (const el of $$("[data-for]")) el.classList.toggle("is-on", el.dataset.for.split(" ").includes(id)); // prettier-ignore
   if (prev && steps[prev]?.leave) steps[prev].leave(id);
@@ -873,7 +892,8 @@ steps.equation = {
 };
 
 function tickProgram(dt) {
-  if (!live || current !== "eq" || busy) return;
+  // The program plays while someone is here; left alone for 30 s it holds still.
+  if (!live || current !== "eq" || busy || !stage.awake) return;
   if (!REDUCED.matches) program.t = (program.t + (dt * Math.PI * 2) / 8) % (Math.PI * 2);
   const set = live.frame(program.t);
   stage.liveSet(live.gpu, set.pos, set.count);
@@ -1060,18 +1080,22 @@ let hudAt = 0;
 function updateHud(frame) {
   if (frame.now - hudAt < 250) return;
   hudAt = frame.now;
-  const state = !errBox.hidden ? "stopped" : !host.classList.contains("is-live") ? "loading" : pull.frozen ? "frozen" : hudState || (stage.morph.t < 1 && !stage.morph.manual ? "flying" : "live"); // prettier-ignore
+  const state = !errBox.hidden ? "stopped" : !host.classList.contains("is-live") ? "loading" : pull.frozen ? "frozen" : hudState || (stage.morph.t < 1 && !stage.morph.manual ? "flying" : frame.idle ? "idle" : "live"); // prettier-ignore
   say("state", state);
   say("file", FILES[current] || "");
   const n = stage.drawCount != null ? `${fmt(stage.drawCount)} of ${fmt(stage.count)} splats` : `${fmt(stage.displayCount ?? stage.count)} ${stage.displayCount === 1 ? "splat" : "splats"}`; // prettier-ignore
   say("count", n);
   say("sort", `sort ${stage.sortMs.toFixed(1)} ms · worker`);
-  say("fps", `${Math.round(stage.fps)} fps`);
+  say("fps", frame.idle ? "no redraws" : `${Math.round(stage.fps)} fps`);
   if (pull.frozen) {
     const per = Math.round(stage.count / stage.explode.slabs);
     say("frozen", `Frame frozen. ${fmt(stage.count)} splats in the order they are blended,\nshown as ${stage.explode.slabs} layers of about ${fmt(per)}.`); // prettier-ignore
   } else say("frozen", "");
 }
+
+// Anything the visitor does keeps the stage awake (its idle spin, the program's play).
+for (const type of ["scroll", "keydown", "pointerdown", "input"])
+  addEventListener(type, () => stage.wake(), { passive: true, capture: true });
 
 // ---- Keyboard ------------------------------------------------------------------------------
 

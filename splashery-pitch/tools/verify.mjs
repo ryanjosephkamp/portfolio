@@ -5,9 +5,10 @@
 //   - three forced failures: the first SOG blocked, the walnut answering 404, and the
 //     data worker's script answering 404; each must show its message on the stage
 //   - a walk through the whole page by keyboard only
+//   - regressions: opening partway down, and drawing nothing when left alone
 // Screenshots and results.md go to screenshots/. Exits 1 if any check fails.
 //
-//   node tools/verify.mjs [--only=desk,phone,rm,fail,keys,webkit] [--url=https://…/]
+//   node tools/verify.mjs [--only=desk,phone,rm,fail,keys,regress,webkit] [--url=https://…/]
 //
 // With --url, the walks (desk, phone, rm, webkit) run against that address instead,
 // for checking a published copy; screenshots go to screenshots/live/. The forced
@@ -150,6 +151,46 @@ async function failures() {
     check("failure: Reload after the worker comes back", true);
   } finally {
     faults.breakWorker = false;
+    await page.close();
+  }
+}
+
+// ---- Regressions -------------------------------------------------------------------------
+
+async function regressions() {
+  // Opening the page partway down (a reload keeps the scroll) used to load the grape twice;
+  // the second swap to the full capture left the data thread without a grape, and the next
+  // flight failed with "Cannot read properties of undefined (reading 'count')".
+  let page = await open({ width: 1440, height: 900, dpr: 1 });
+  try {
+    await page.go(URL0 + "#h-dial");
+    await sleep(6000);
+    await page.scrollTo("[data-step=frame]");
+    await sleep(5000);
+    await page.scrollTo("[data-step=recipe]");
+    await sleep(5000);
+    const st = JSON.parse(await page.eval(`JSON.stringify({ step: stage.host.dataset.step, count: stage.count, err: ${errorText} })`)); // prettier-ignore
+    check("regress: opened partway down, then on to the recipe", st.step === "recipe" && st.count > 100000 && !st.err, st.err || `${st.count} splats`); // prettier-ignore
+    await page.shot(path.join(shots, "regress-1-deep-link.jpg"));
+  } finally {
+    await page.close();
+  }
+  // Left alone, the stage stops spinning and stops drawing.
+  page = await open({ width: 1440, height: 900, dpr: 1 });
+  try {
+    await page.go(URL0);
+    await page.until(`${live} && stage.count >= 300000`, 40000);
+    await page.eval("window.__d = 0; const d = stage.gl.draw.bind(stage.gl); stage.gl.draw = (s) => (window.__d++, d(s));"); // prettier-ignore
+    await sleep(36000);
+    await page.eval("window.__d = 0");
+    await sleep(4000);
+    const idle = await page.eval("window.__d");
+    check("regress: left alone, the stage stops drawing", idle === 0, `${idle} draws in 4 s after 36 s alone`); // prettier-ignore
+    await page.eval("document.querySelector('#stage').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))"); // prettier-ignore
+    await sleep(4000);
+    const woke = await page.eval("window.__d");
+    check("regress: a touch wakes it", woke > 30, `${woke} draws in 4 s after a touch`);
+  } finally {
     await page.close();
   }
 }
@@ -321,6 +362,7 @@ try {
   if (want("rm")) await walk("reduced", { width: 1280, height: 800, reducedMotion: true });
   if (want("fail")) await failures();
   if (want("keys")) await keyboard();
+  if (want("regress")) await regressions();
   if (want("webkit")) await webkit();
 } catch (err) {
   check("verify: ran to the end", false, err.message);

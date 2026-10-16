@@ -142,6 +142,13 @@ export class SplatRenderer {
     }
   }
 
+  releaseFbo() {
+    if (!this.fbo) return;
+    this.gl.deleteFramebuffer(this.fbo.f);
+    this.gl.deleteTexture(this.fbo.t);
+    this.fbo = null;
+  }
+
   ensureFbo(w, h) {
     const gl = this.gl;
     if (this.fbo && this.fbo.w === w && this.fbo.h === h) return this.fbo;

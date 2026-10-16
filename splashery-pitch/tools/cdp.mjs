@@ -35,6 +35,14 @@ export async function open({ width = 1440, height = 900, mobile = false, dpr, po
     `--window-size=${Math.max(width, 500)},${height}`,
     "about:blank",
   ], { stdio: "ignore" });
+  // If the script dies before close(), don't leave a headless browser running the page.
+  const reap = () => {
+    try {
+      proc.kill("SIGKILL");
+    } catch {}
+  };
+  process.on("exit", reap);
+  for (const sig of ["SIGINT", "SIGTERM"]) process.once(sig, () => (reap(), process.exit(1)));
   let targets;
   for (let i = 0; i < 80; i++) {
     try {
@@ -187,6 +195,7 @@ export async function open({ width = 1440, height = 900, mobile = false, dpr, po
       try {
         ws.close();
       } catch {}
+      process.off("exit", reap);
       proc.kill("SIGKILL");
       await sleep(200);
       fs.rmSync(dir, { recursive: true, force: true });

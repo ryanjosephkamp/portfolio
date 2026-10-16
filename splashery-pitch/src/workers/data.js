@@ -25,6 +25,12 @@ function turn(set, q) {
 }
 
 const sets = new Map();
+// A cloud the page asks for by name; says so plainly if it isn't here.
+const need = (key) => {
+  const set = sets.get(key);
+  if (!set) throw new Error(`The data thread has no "${key}" cloud.`);
+  return set;
+};
 const fileName = (url) => decodeURIComponent(new URL(url).pathname.split("/").pop());
 
 // Downloads a file, and says which file and why when it can't.
@@ -112,7 +118,7 @@ const OPS = {
   },
 
   async rename({ from, to }) {
-    sets.set(to, sets.get(from));
+    sets.set(to, need(from));
     sets.delete(from);
     trees.delete(to);
     return { result: true };
@@ -124,7 +130,7 @@ const OPS = {
   },
 
   async tree({ key }) {
-    const set = sets.get(key);
+    const set = need(key);
     const t0 = performance.now();
     const tree = buildTree(set);
     trees.set(key, tree);
@@ -134,7 +140,8 @@ const OPS = {
   // The flight from level L to level L + 1 of the tree (the last level is the set itself).
   async level({ key, level }) {
     const tree = trees.get(key);
-    const { from, to } = levelPair(tree, sets.get(key), level);
+    if (!tree) throw new Error(`The data thread has no tree for "${key}".`);
+    const { from, to } = levelPair(tree, need(key), level);
     const a = packGPU(from);
     const b = packGPU(to);
     const pa = from.pos.slice();
@@ -146,8 +153,8 @@ const OPS = {
   },
 
   async pair({ from, to }) {
-    const A = sets.get(from);
-    const B = sets.get(to);
+    const A = need(from);
+    const B = need(to);
     const { a, b } = pairSets(A, B);
     const ga = packGPU(a);
     const gb = packGPU(b);
@@ -161,7 +168,7 @@ const OPS = {
   },
 
   async pick({ key, view, focal, w, h, shift, x, y }) {
-    const set = sets.get(key);
+    const set = need(key);
     return { result: pickSplat(set, view, focal, w, h, shift, x, y) };
   },
 };

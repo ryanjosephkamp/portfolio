@@ -125,6 +125,12 @@ export class Stage {
     this.fade = 1;
     this.fadeTarget = 1;
     this.morph = { t: 1, dur: 1, spread: 0.5, arc: 0, done: null, start: 0, manual: false };
+    this.serial = 0; // bumps when the drawn splats or their order change
+    this.lastDrawn = ""; // what the last drawn frame showed; equal means skip the draw
+    this.idleFrames = 0;
+    // The idle spin runs for 30 s after the last touch, key, scroll or step, then stops,
+    // so a page left open costs nothing.
+    this.awakeUntil = performance.now() + 30000;
     this.lift = 0;
     this.liftPos = [0, 0, 0];
     this.liftScale = 1;
@@ -226,6 +232,7 @@ export class Stage {
   liveSet(gpu, pos, count) {
     if (this.pending || count !== this.count) return;
     this.gl.upload("b", gpu, count);
+    this.serial++;
     this.sorter.postMessage({ type: "set", to: pos.slice(), count });
     this.requestSort(true);
   }
@@ -261,9 +268,17 @@ export class Stage {
     if (!this.pending && !this.count) return;
     const v = this.cam.view();
     const f = v.fwd;
-    const key = `${f[0].toFixed(4)},${f[1].toFixed(4)},${f[2].toFixed(4)},${this.morph.t.toFixed(3)},${this.partKey || ""}`;
-    if (!force && key === this.lastSort) return;
-    this.lastSort = key;
+    // Sort again only when the view has turned by more than about half a degree, a
+    // flight has moved on, or a part has moved: a smaller turn can't change the order
+    // anyone could see, and a 300,000-splat sort is the costliest thing on the page.
+    const last = this.lastSort;
+    const same =
+      last &&
+      f[0] * last.f[0] + f[1] * last.f[1] + f[2] * last.f[2] > 0.99996 &&
+      Math.abs(this.morph.t - last.morph) < 0.004 &&
+      (this.partKey || "") === last.parts;
+    if (!force && same) return;
+    this.lastSort = { f, morph: this.morph.t, parts: this.partKey || "" };
     this.sortBusy = true;
     this.sorter.postMessage({ type: "sort", fwd: f, morph: this.morph.t, spread: this.morph.spread, version: this.version }); // prettier-ignore
   }
@@ -275,6 +290,7 @@ export class Stage {
       return;
     }
     this.sortMs = this.sortMs ? this.sortMs * 0.8 + ms * 0.2 : ms;
+    this.serial++;
     if (this.pending && version === this.pending.version) {
       this.gl.setOrder(order);
       const p = this.pending;
@@ -362,8 +378,17 @@ export class Stage {
 
   // ---- Pointer -----------------------------------------------------------------------
 
+  wake(ms = 30000) {
+    this.awakeUntil = Math.max(this.awakeUntil, performance.now() + ms);
+  }
+
+  get awake() {
+    return performance.now() < this.awakeUntil;
+  }
+
   bindPointer() {
     const el = this.host;
+    for (const type of ["pointerdown", "pointermove", "keydown", "wheel"]) el.addEventListener(type, () => this.wake(), { passive: true }); // prettier-ignore
     el.addEventListener("pointerdown", (e) => {
       if (e.button !== 0 || !e.isPrimary) return;
       if (e.target.closest("button, a, input, label, .hud-interactive")) return;
@@ -453,7 +478,7 @@ export class Stage {
         if (tw.to[key] !== undefined) cam[key] = lerp(tw.from[key], tw.to[key], e);
       if (tw.to.target) cam.target = tw.from.target.map((v, i) => lerp(v, tw.to.target[i], e));
       if (k >= 1) this.camTween = null;
-    } else if (this.spinOn && !this.pointer && !this.explode.frozen && !REDUCED.matches && now - this.idleAt > 2500) {
+    } else if (this.spinOn && this.awake && !this.pointer && !this.explode.frozen && !REDUCED.matches && now - this.idleAt > 2500) { // prettier-ignore
       cam.yaw += this.spin * dt;
     }
 
@@ -508,9 +533,20 @@ export class Stage {
       drawCount: this.drawCount,
       overdrawMax: this.overdrawMax,
     };
-    this.gl.draw(state);
-    this.frame = { view: v, focal, now, dt };
-    this.drawOverlay(v, focal);
+    // Draw only when something on the stage changed since the last drawn frame.
+    if (this.pass !== 4 && this.gl.fbo) this.gl.releaseFbo();
+    const r = (x) => Math.round(x * 1e5);
+    const sig = [
+      ...v.m, focal, ...this.shift, m.t, e.amount, ...this.rep, this.dim, this.fade, this.lift,
+      ...this.liftPos, this.liftScale, ...this.cut, this.overdrawMax,
+    ].map(r).join(",") + `|${this.pass}|${this.drawCount}|${this.selected}|${this.partKey}|${this.partTint}|${this.serial}|${this.canvas.width}x${this.canvas.height}`; // prettier-ignore
+    if (sig !== this.lastDrawn) {
+      this.lastDrawn = sig;
+      this.idleFrames = 0;
+      this.gl.draw(state);
+      this.drawOverlay(v, focal);
+    } else this.idleFrames++;
+    this.frame = { view: v, focal, now, dt, idle: this.idleFrames > 30 };
     for (const fn of this.listeners) fn(this.frame);
   }
 
