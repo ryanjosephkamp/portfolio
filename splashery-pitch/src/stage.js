@@ -9,26 +9,54 @@ import DataWorker from "./workers/data.js?worker";
 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
 
+// Calls into a worker, each answered by id. If the worker fails to start, throws, or
+// sends something that can't be read, every call still waiting is rejected with that
+// error, and so is every call after it.
 class RPC {
-  constructor(worker) {
+  constructor(worker, name, onFail) {
     this.w = worker;
+    this.name = name;
     this.n = 0;
     this.wait = new Map();
+    this.dead = null;
     worker.onmessage = (e) => {
-      const { id, ok, result, error } = e.data;
+      const { id, ok, result, error, stack } = e.data;
       const p = this.wait.get(id);
+      if (!p) return;
       this.wait.delete(id);
-      if (ok) p.resolve(result);
-      else p.reject(new Error(error));
+      if (ok) return p.resolve(result);
+      // The page shows the message; the console keeps where it came from.
+      if (stack) console.debug(`${name}:`, stack);
+      p.reject(new Error(error));
     };
+    const die = (why) => {
+      if (this.dead) return;
+      this.dead = new Error(why);
+      for (const p of this.wait.values()) p.reject(this.dead);
+      this.wait.clear();
+      onFail(this.dead);
+    };
+    worker.onerror = (e) => {
+      e.preventDefault?.();
+      die(workerMessage(name, e));
+    };
+    worker.onmessageerror = () => die(`The ${name} sent a message this page could not read.`);
   }
   call(op, args = {}, transfer = []) {
+    if (this.dead) return Promise.reject(this.dead);
     const id = ++this.n;
     return new Promise((resolve, reject) => {
       this.wait.set(id, { resolve, reject });
       this.w.postMessage({ id, op, args }, transfer);
     });
   }
+}
+
+// A worker's error event has a message when its code threw, and none when its script
+// could not be loaded at all.
+function workerMessage(name, e) {
+  if (e && e.message) return `The ${name} stopped: ${e.message.replace(/^Uncaught (Error: )?/, "")}`;
+  return `The ${name} could not start: its script did not load.`;
 }
 
 export class Stage {
@@ -46,9 +74,30 @@ export class Stage {
     this.gl = new SplatRenderer(this.canvas);
     this.cam = new OrbitCamera();
     this.cam.zoom = 1.15;
-    this.data = new RPC(new DataWorker());
+    // Anything that stops a thread or the drawing context ends here; the page shows it.
+    this.broken = false;
+    this.onError = (err) => console.error(err);
+    const broke = (err) => {
+      this.broken = true;
+      if (this.pending) {
+        const p = this.pending;
+        this.pending = null;
+        p.reject(err);
+      }
+      this.onError(err);
+    };
+    this.data = new RPC(new DataWorker(), "data thread", broke);
     this.sorter = new SortWorker();
     this.sorter.onmessage = (e) => this.onOrder(e.data);
+    this.sorter.onerror = (e) => {
+      e.preventDefault?.();
+      broke(new Error(workerMessage("sort thread", e)));
+    };
+    this.sorter.onmessageerror = () => broke(new Error("The sort thread sent a message this page could not read.")); // prettier-ignore
+    this.canvas.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      broke(new Error("The graphics chip dropped this page's drawing context."));
+    });
     this.version = 0; // version of the data the sort worker holds
     this.shown = 0; // version currently drawn
     this.pending = null; // { version, commit() }
@@ -134,9 +183,11 @@ export class Stage {
     const v = ++this.version;
     this.sorter.postMessage({ type: "set", to: pos.slice(), count, parts: parts ? parts.slice() : null }); // prettier-ignore
     this.gl.upload("nextB", gpu, count);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if (this.broken) return reject(new Error("The page's threads have stopped."));
       this.pending = {
         version: v,
+        reject,
         commit: () => {
           this.gl.commit(false);
           this.count = count;
@@ -156,9 +207,11 @@ export class Stage {
     this.gl.upload("nextB", to, count);
     this.gl.upload("nextA", from, count);
     if (REDUCED.matches) duration = 0.35;
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if (this.broken) return reject(new Error("The page's threads have stopped."));
       this.pending = {
         version: v,
+        reject,
         commit: () => {
           this.gl.commit(true);
           this.count = count;
@@ -183,9 +236,11 @@ export class Stage {
     this.sorter.postMessage({ type: "set", from: posFrom, to: posTo, count }, [posFrom.buffer, posTo.buffer]); // prettier-ignore
     this.gl.upload("nextB", to, count);
     this.gl.upload("nextA", from, count);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if (this.broken) return reject(new Error("The page's threads have stopped."));
       this.pending = {
         version: v,
+        reject,
         commit: () => {
           this.gl.commit(true);
           this.count = count;

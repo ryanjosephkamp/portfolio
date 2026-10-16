@@ -25,6 +25,33 @@ function turn(set, q) {
 }
 
 const sets = new Map();
+const fileName = (url) => decodeURIComponent(new URL(url).pathname.split("/").pop());
+
+// Downloads a file, and says which file and why when it can't.
+async function get(url) {
+  const name = fileName(url);
+  let res;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new Error(`${name} did not load: the network request failed (${url}).`);
+  }
+  if (!res.ok) throw new Error(`${name} did not load: HTTP ${res.status}${res.statusText ? " " + res.statusText : ""} (${url}).`); // prettier-ignore
+  try {
+    return await res.arrayBuffer();
+  } catch {
+    throw new Error(`${name} did not load: the download stopped partway (${url}).`);
+  }
+}
+
+// Reads a downloaded file, and names the file if it can't be read.
+async function read(url, fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    throw new Error(`${fileName(url)} could not be read: ${err.message}`);
+  }
+}
 const trees = new Map();
 
 function reply(set, extra = {}) {
@@ -40,11 +67,9 @@ function reply(set, extra = {}) {
 const OPS = {
   async sog({ key, url, upright }) {
     const t0 = performance.now();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Could not load ${url}`);
-    const buf = await res.arrayBuffer();
+    const buf = await get(url);
     const t1 = performance.now();
-    const { set, meta } = await readSOG(buf);
+    const { set, meta } = await read(url, () => readSOG(buf));
     const t2 = performance.now();
     // The grape's capture lies along z with its stem toward -z; stand it stem up.
     if (upright) turn(set, quatAxisAngle([1, 0, 0], Math.PI / 2));
@@ -76,9 +101,8 @@ const OPS = {
   },
 
   async walnut({ key, url, budget }) {
-    const res = await fetch(url);
-    const buf = await res.arrayBuffer();
-    const { set, info } = readWalnut(new Uint8Array(buf), budget);
+    const buf = await get(url);
+    const { set, info } = await read(url, () => readWalnut(new Uint8Array(buf), budget));
     set.transform = normalize(set, 1);
     // The front of the scan (nearest the camera, smallest z), for the cut's depth in mm.
     let zmin = Infinity;
@@ -121,7 +145,7 @@ const OPS = {
     };
   },
 
-  async pair({ from, to, fromParts, toParts }) {
+  async pair({ from, to }) {
     const A = sets.get(from);
     const B = sets.get(to);
     const { a, b } = pairSets(A, B);
@@ -148,6 +172,6 @@ self.onmessage = async (e) => {
     const r = await OPS[op](args);
     self.postMessage({ id, ok: true, result: r.result }, r.transfer || []);
   } catch (err) {
-    self.postMessage({ id, ok: false, error: String(err?.stack || err) });
+    self.postMessage({ id, ok: false, error: err?.message || String(err), stack: err?.stack || "" });
   }
 };

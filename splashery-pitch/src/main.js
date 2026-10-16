@@ -55,9 +55,10 @@ async function load(key) {
     say("load", "Fetching grape-lite.sog, 1.3 MB");
     c = await stage.data.call("sog", { key, url: asset("./assets/grape-lite.sog"), upright: true }); // prettier-ignore
     FILES.grape = "grape-lite.sog";
-    if (!LOW) upgradeGrape();
+    if (!LOW) upgradeGrape().catch((err) => console.warn(err));
   } else if (key === "chest") {
     c = await stage.data.call("chest", { key, count: recipe.budget, wood: recipe.wood });
+    c.made = { budget: recipe.budget, wood: recipe.wood };
     recipe.result = c;
   } else if (key === "walnut") {
     c = await stage.data.call("walnut", { key, url: asset("./assets/walnut.vol.gz"), budget: COARSE ? 160000 : 320000 }); // prettier-ignore
@@ -71,7 +72,14 @@ async function load(key) {
 }
 
 async function upgradeGrape() {
-  const full = await stage.data.call("sog", { key: "grape-full", url: asset("./assets/grape.sog"), upright: true }); // prettier-ignore
+  let full;
+  try {
+    full = await stage.data.call("sog", { key: "grape-full", url: asset("./assets/grape.sog"), upright: true }); // prettier-ignore
+  } catch (err) {
+    // The lite capture stays on stage; the page works without the full one.
+    console.warn("The full grape did not load; keeping the lite one.", err);
+    return;
+  }
   const quiet = () =>
     !busy &&
     (current !== "grape" ||
@@ -89,10 +97,20 @@ function cloneSet(s) {
   return { count: s.count, pos: s.pos.slice(), scale: s.scale.slice(), rot: s.rot.slice(), color: s.color.slice(), part: s.part.slice() }; // prettier-ignore
 }
 
-// Flies the cloud to `key`. Calls made during a flight collapse into the latest.
-async function goTo(key) {
+// Flies the cloud to `key`. Calls made during a flight join it: every caller gets the
+// same promise, which settles when the cloud reaches the latest key asked for, or
+// rejects with the error that stopped it.
+let run = null;
+function goTo(key) {
   wanted = key;
-  if (busy) return;
+  if (!run)
+    run = drive().finally(() => {
+      run = null;
+    });
+  return run;
+}
+
+async function drive() {
   busy = true;
   try {
     while (wanted !== current) {
@@ -112,10 +130,14 @@ async function goTo(key) {
       }
       current = target;
       hudState = null;
+      host.classList.add("is-live");
+      errBox.hidden = true;
+      host.classList.remove("is-stopped");
       enterCloud(target);
     }
   } finally {
     busy = false;
+    hudState = null;
   }
 }
 
@@ -129,7 +151,10 @@ function leaveCloud(key) {
 }
 
 function enterCloud(key) {
-  if (key === "chest") applyLid(lid.angle);
+  if (key === "chest") {
+    applyLid(lid.angle);
+    chestCatchUp();
+  }
   if (key === "eq") live = program.live;
   if (key === "walnut") applyCut();
 }
@@ -158,12 +183,13 @@ function setStep(id) {
   const prev = step;
   step = id;
   host.dataset.step = id;
+  keyHint();
   for (const el of $$("[data-for]")) el.classList.toggle("is-on", el.dataset.for.split(" ").includes(id)); // prettier-ignore
   if (prev && steps[prev]?.leave) steps[prev].leave(id);
   const v = VIEWS[id];
   // A phone's stage is short, and its HUD and tools take more of it: stand back a little.
   if (v) stage.view({ ...v, zoom: v.zoom * (PHONE.matches ? 1.14 : 1), yaw: stage.cam.yaw + angleTo(stage.cam.yaw, v.yaw) }, 1.6); // prettier-ignore
-  goTo(CLOUD[id]);
+  goTo(CLOUD[id]).catch((err) => fail(err, () => goTo(CLOUD[step])));
   steps[id]?.enter?.(prev);
 }
 
@@ -690,12 +716,15 @@ function showBuilt() {
 }
 
 async function rebuild(change, btn) {
-  if (recipe.building || current !== "chest") return;
   Object.assign(recipe, change);
+  // Mid-flight or mid-build, the choice is kept and built when the chest is on stage.
+  if (recipe.building || current !== "chest" || busy) return;
   recipe.building = true;
   say("built", "Building on this device…");
   try {
-    const next = await stage.data.call("chest", { key: "chest-next", count: recipe.budget, wood: recipe.wood }); // prettier-ignore
+    const made = { budget: recipe.budget, wood: recipe.wood };
+    const next = await stage.data.call("chest", { key: "chest-next", count: made.budget, wood: made.wood }); // prettier-ignore
+    next.made = made;
     const pair = await stage.data.call("pair", { from: "chest", to: "chest-next" });
     await stage.data.call("rename", { from: "chest-next", to: "chest" });
     clouds.set("chest", next);
@@ -708,18 +737,24 @@ async function rebuild(change, btn) {
   } finally {
     recipe.building = false;
   }
+  if (current === "chest") chestCatchUp();
   void btn;
+}
+
+// Builds again if the wood or the budget was changed while the chest couldn't.
+function chestCatchUp() {
+  const m = clouds.get("chest")?.made;
+  if (m && (m.wood !== recipe.wood || m.budget !== recipe.budget)) setTimeout(() => rebuild({}), 0);
 }
 
 for (const b of $$("[data-wood]"))
   b.addEventListener("click", () => {
-    if (recipe.building) return;
     setRadio($$("[data-wood]"), b.dataset.wood, "wood");
     rebuild({ wood: b.dataset.wood });
   });
 for (const b of $$("[data-budget]"))
   b.addEventListener("click", () => {
-    if (recipe.building || Number(b.dataset.budget) === recipe.budget) return;
+    if (Number(b.dataset.budget) === recipe.budget) return;
     setRadio($$("[data-budget]"), b.dataset.budget, "budget");
     rebuild({ budget: Number(b.dataset.budget) });
   });
@@ -747,8 +782,9 @@ steps.parts = {
   },
 };
 
+// The lid's state changes at once; if the chest is still flying in, it opens on arrival.
 function toggleLid(auto) {
-  if (current !== "chest") return;
+  if (auto && current !== "chest") return;
   if (!auto) lid.touched = true;
   lid.target = lid.target ? 0 : 1;
   setPressed("lid", !!lid.target);
@@ -890,10 +926,9 @@ function tickCut(dt) {
 }
 
 function applyCut() {
-  if (current !== "walnut") return;
   // A vertical plane facing the walnut's front: everything in front of it is cut away.
   const d = lerp(-0.85, 1.15, cut.v);
-  stage.cut = cut.v >= 0.999 ? [0, 0, 0, 0] : [0, 0, -1, -d];
+  if (current === "walnut") stage.cut = cut.v >= 0.999 ? [0, 0, 0, 0] : [0, 0, -1, -d];
   const w = clouds.get("walnut");
   const mm = w ? Math.max(0, (d - w.zmin) * w.mmPerUnit).toFixed(1) : "";
   $("#cut-out").textContent = cut.v >= 0.999 ? "whole" : `${mm} mm in`;
@@ -1025,7 +1060,7 @@ let hudAt = 0;
 function updateHud(frame) {
   if (frame.now - hudAt < 250) return;
   hudAt = frame.now;
-  const state = pull.frozen ? "frozen" : hudState || (stage.morph.t < 1 && !stage.morph.manual ? "flying" : "live"); // prettier-ignore
+  const state = !errBox.hidden ? "stopped" : !host.classList.contains("is-live") ? "loading" : pull.frozen ? "frozen" : hudState || (stage.morph.t < 1 && !stage.morph.manual ? "flying" : "live"); // prettier-ignore
   say("state", state);
   say("file", FILES[current] || "");
   const n = stage.drawCount != null ? `${fmt(stage.drawCount)} of ${fmt(stage.count)} splats` : `${fmt(stage.displayCount ?? stage.count)} ${stage.displayCount === 1 ? "splat" : "splats"}`; // prettier-ignore
@@ -1038,29 +1073,191 @@ function updateHud(frame) {
   } else say("frozen", "");
 }
 
+// ---- Keyboard ------------------------------------------------------------------------------
+
+// Where the stage is, for the controls fixed over it.
+function measureStage() {
+  const r = $(".stage-col").getBoundingClientRect();
+  const root = document.documentElement.style;
+  root.setProperty("--stage-left", `${Math.round(r.left)}px`);
+  root.setProperty("--stage-width", `${Math.round(r.width)}px`);
+}
+addEventListener("resize", measureStage);
+measureStage();
+
+// Focus entering a step that isn't on (Tab onto its controls, say) scrolls it on.
+for (const el of $$(".step"))
+  el.addEventListener("focusin", () => {
+    if (el.dataset.step === step) return;
+    const top = el.getBoundingClientRect().top + scrollY;
+    const stageH = PHONE.matches ? $(".stage-col").getBoundingClientRect().height : 0;
+    window.scrollTo({ top: Math.max(0, top - stageH), behavior: "instant" });
+    setStep(el.dataset.step);
+  });
+
+// Sliders: arrows move a useful step (the dial one level), Page Up and Page Down a big
+// one, Home and End to the ends.
+function keySteps(input, small, big, snap = false) {
+  input.addEventListener("keydown", (e) => {
+    const min = +input.min;
+    const max = +input.max;
+    const v = snap ? Math.round(+input.value) : +input.value;
+    const n = { ArrowRight: v + small, ArrowUp: v + small, ArrowLeft: v - small, ArrowDown: v - small, PageUp: v + big, PageDown: v - big, Home: min, End: max }[e.key]; // prettier-ignore
+    if (n === undefined) return;
+    e.preventDefault();
+    input.value = String(clamp(n, min, max));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+keySteps($("#blend"), 20, 100);
+keySteps($("#cut"), 20, 100);
+keySteps($("#dial"), 1, 4, true);
+
+// Radio groups: one tab stop each, arrows (and Home, End) move the choice.
+function roving(group) {
+  const items = () => $$('[role="radio"]', group);
+  const sync = () => {
+    const its = items();
+    const on = its.find((b) => b.getAttribute("aria-checked") === "true") || its[0];
+    for (const b of its) b.tabIndex = b === on ? 0 : -1;
+  };
+  group.addEventListener("keydown", (e) => {
+    const its = items();
+    const i = its.indexOf(document.activeElement);
+    if (i < 0) return;
+    const n = its.length;
+    const j = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: n - 1 }[e.key]; // prettier-ignore
+    if (j === undefined) return;
+    e.preventDefault();
+    const b = its[(j + n) % n];
+    b.focus();
+    b.click();
+  });
+  sync();
+  new MutationObserver(sync).observe(group, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-checked"] }); // prettier-ignore
+}
+$$('[role="radiogroup"]').forEach(roving);
+
+// The stage itself: arrows turn the camera; Enter or Space does the step's own
+// thing (picks the splat under the crosshair, takes the frame apart, opens the lid);
+// Escape lets the picked splat go.
+const KEY_HINT = {
+  hero: "Arrow keys turn it · Enter takes the frame apart",
+  splat: "Arrows turn it · Enter picks at the crosshair · Esc lets go",
+  parts: "Arrow keys turn it · Enter opens or closes the lid",
+};
+const keyHint = () => say("stage-keys", KEY_HINT[step] || "Arrow keys turn it");
+hud["stage-keys"] = $("#stage-keys");
+
+// From a step's controls, "Use the stage with the keys" moves focus onto the stage;
+// Tab from the stage then carries on from where it came, not from the top of the page.
+let stageFrom = null;
+for (const b of $$("[data-act=to-stage]"))
+  b.addEventListener("click", () => {
+    stageFrom = b;
+    host.focus();
+  });
+
+const focusables = () =>
+  $$('a[href], button:not([disabled]), input:not([disabled]), textarea, summary, [tabindex="0"]').filter(
+    (el) => el.tabIndex >= 0 && el.getClientRects().length && getComputedStyle(el).visibility !== "hidden",
+  );
+
+host.addEventListener("keydown", (e) => {
+  if (e.target !== host || e.key !== "Tab" || !stageFrom) return;
+  const list = focusables();
+  const i = list.indexOf(stageFrom);
+  const next = list[i + (e.shiftKey ? 0 : 1)] || stageFrom;
+  stageFrom = null;
+  e.preventDefault();
+  next.focus();
+});
+host.addEventListener("focusout", () => {
+  // Leaving the stage any other way (a click, the error's button) forgets where it came from.
+  setTimeout(() => {
+    if (document.activeElement !== host) stageFrom = null;
+  }, 0);
+});
+
+host.addEventListener("keydown", (e) => {
+  if (e.target !== host || e.altKey || e.ctrlKey || e.metaKey) return;
+  const cam = stage.cam;
+  const turn = { ArrowLeft: [-0.16, 0], ArrowRight: [0.16, 0], ArrowUp: [0, 0.1], ArrowDown: [0, -0.1] }[e.key]; // prettier-ignore
+  if (turn) {
+    e.preventDefault();
+    stage.camTween = null;
+    stage.idleAt = performance.now();
+    cam.yaw += turn[0];
+    cam.pitch = clamp(cam.pitch + turn[1], -1.2, 1.2);
+    return;
+  }
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    if (step === "splat") pickAt(0.5, 0.5);
+    else if (step === "hero") {
+      pull.used = true;
+      $(".hud-hint").classList.add("is-used");
+      demoPull(0.9, 4.2);
+    } else if (step === "parts") toggleLid();
+  } else if (e.key === "Escape" && pick.result) {
+    e.preventDefault();
+    clearPick();
+  }
+});
+
+// ---- Errors -------------------------------------------------------------------------------
+
+// One place for anything that stops the page: a file that won't load, a thread that
+// won't start or dies, a lost drawing context. It says what failed, and Retry tries
+// again (or reloads the page when a thread or the context is gone).
+const errBox = $("#error");
+let retryWith = null;
+
+function fail(err, retry) {
+  const message = (err && (err.message || String(err))) || "Something stopped the page.";
+  console.error(err);
+  $("#error-msg").textContent = message.replace(/^Error: /, "");
+  retryWith = stage.broken ? () => location.reload() : retry;
+  $("#error-retry").textContent = stage.broken ? "Reload the page" : "Retry";
+  errBox.hidden = false;
+  host.classList.add("is-stopped");
+  say("load", "");
+}
+
+$("#error-retry").addEventListener("click", () => {
+  errBox.hidden = true;
+  host.classList.remove("is-stopped");
+  const r = retryWith;
+  retryWith = null;
+  if (r) r();
+});
+
+stage.onError = (err) => fail(err, () => location.reload());
+
 // ---- Boot ----------------------------------------------------------------------------------------
 
-watchSteps();
-(async () => {
+async function boot() {
+  errBox.hidden = true;
+  const t0 = performance.now();
   try {
-    const t0 = performance.now();
-    goTo(CLOUD[step] || "grape");
-    // The first cloud is on stage once a flight or a load has set `current`.
-    while (!current) await new Promise((r) => setTimeout(r, 40));
-    host.classList.add("is-live");
-    say("load", "");
-    console.log(`first cloud in ${Math.round(performance.now() - t0)} ms`);
-    if (step === "hero")
-      setTimeout(() => {
-        if (!pull.used && step === "hero") demoPull(0.42, 2.8);
-      }, 900);
-    // Warm the next clouds while the visitor reads.
-    setTimeout(() => load("chest").then(() => load("walnut")), 1500);
+    await goTo(CLOUD[step] || "grape");
   } catch (err) {
-    say("load", "The grape could not be loaded.");
-    console.error(err);
+    fail(err, boot);
+    return;
   }
-})();
+  host.classList.add("is-live");
+  say("load", "");
+  console.log(`first cloud in ${Math.round(performance.now() - t0)} ms`);
+  if (step === "hero")
+    setTimeout(() => {
+      if (!pull.used && step === "hero") demoPull(0.42, 2.8);
+    }, 900);
+  // Warm the next clouds while the visitor reads; a failure here shows when its step comes.
+  setTimeout(() => load("chest").then(() => load("walnut")).catch(() => {}), 1500);
+}
+
+watchSteps();
+boot();
 
 // For checks from the console and the clip tool.
 window.pitch = { demoPull, pull, goTo, setStep, pickAt, setDial, toggleLid, animateCut, decode };

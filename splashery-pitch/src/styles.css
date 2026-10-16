@@ -60,6 +60,14 @@ a:hover {
   outline-offset: 3px;
   border-radius: 2px;
 }
+.chips button:focus-visible {
+  outline-offset: -3px;
+}
+.stage:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -4px;
+  border-radius: 0;
+}
 
 i {
   font-family: "STIX Two Text", "Iowan Old Style", Georgia, serif;
@@ -161,7 +169,6 @@ i {
   grid-column: 1;
   grid-row: 1;
   position: relative;
-  z-index: 2;
   padding: 0 clamp(20px, 3vw, 44px) 0 var(--gutter);
 }
 
@@ -283,6 +290,9 @@ i {
   background: var(--faint);
   font-size: 0;
 }
+.is-stopped .live i {
+  background: #ff9a7a;
+}
 .is-live .live i {
   background: #6fe08a;
   box-shadow: 0 0 8px rgb(111 224 138 / 0.7);
@@ -320,6 +330,10 @@ i {
     opacity 0.35s var(--ease),
     transform 0.35s var(--ease),
     visibility 0s 0.35s;
+}
+.hud-tools[data-for]:not(.is-on) {
+  visibility: visible;
+  pointer-events: none;
 }
 [data-for].is-on {
   opacity: 1;
@@ -374,6 +388,84 @@ i {
   white-space: pre-line;
 }
 
+/* A skip link into the stage, shown only when it has keyboard focus. */
+.to-stage:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The keyboard: a one-line hint and a crosshair where Enter picks, both shown only
+   while the stage has keyboard focus. */
+.hud-keys {
+  margin: 0;
+  left: 32px;
+  top: calc(var(--bar) + 44px);
+  padding: 6px 10px;
+  border: 1px solid var(--signal);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--ink);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+.stage:focus-visible .hud-keys {
+  opacity: 1;
+}
+.crosshair {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--signal), var(--signal)) center / 1px 100% no-repeat,
+    linear-gradient(var(--signal), var(--signal)) center / 100% 1px no-repeat;
+}
+.stage:focus-visible[data-step="splat"] .crosshair {
+  opacity: 0.9;
+}
+
+.hud-error {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(420px, calc(100% - 32px));
+  padding: 16px 18px;
+  border: 1px solid #ff9a7a;
+  border-radius: 4px;
+  background: var(--panel-solid);
+  font: 450 0.78rem/1.5 var(--mono);
+  color: var(--ink);
+}
+.hud-error[hidden] {
+  display: none;
+}
+.error__head {
+  margin: 0 0 6px;
+  color: #ff9a7a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+}
+.error__msg {
+  margin: 0 0 12px;
+  word-break: break-word;
+}
+
 .hud-credit {
   margin: 0;
   right: 32px;
@@ -384,9 +476,15 @@ i {
   pointer-events: none;
 }
 
+/* Each step's controls sit in that step's section, so Tab reaches them in reading
+   order, and are fixed over the stage's lower edge, so they look like part of it.
+   --stage-left and --stage-width come from main.js. A step's controls can take focus
+   before the step is on: focusing one brings its step on. */
 .hud-tools {
-  left: 32px;
-  right: 32px;
+  position: fixed;
+  z-index: 6;
+  left: calc(var(--stage-left, 50vw) + 32px);
+  width: calc(var(--stage-width, 50vw) - 64px);
   bottom: 42px;
   display: flex;
   flex-wrap: wrap;
@@ -1071,9 +1169,16 @@ h2 {
   }
   .hud-tools {
     left: 12px;
-    right: 12px;
-    bottom: 12px;
+    width: calc(100vw - 24px);
+    bottom: auto;
+    top: calc(var(--stage-h) - 12px);
+    translate: 0 -100%;
     gap: 8px;
+  }
+  .hud-keys {
+    left: 12px;
+    top: calc(var(--bar) + 26px);
+    font-size: 0.6rem;
   }
   .hud-hint {
     bottom: 22px;

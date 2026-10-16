@@ -120,9 +120,19 @@ export async function open({ width = 1440, height = 900, mobile = false, dpr, po
     },
     sleep,
     async shot(file, { full = false } = {}) {
-      const r = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: full });
+      const jpeg = file.endsWith(".jpg");
+      const r = await send("Page.captureScreenshot", { format: jpeg ? "jpeg" : "png", quality: jpeg ? 82 : undefined, captureBeyondViewport: full }); // prettier-ignore
       fs.writeFileSync(file, Buffer.from(r.data, "base64"));
       return file;
+    },
+    // A key press: key is a DOM key name ("Tab", "Enter", "ArrowRight", " ").
+    async key(key, { shift = false } = {}) {
+      const codes = { Tab: [9, "Tab"], Enter: [13, "Enter"], Escape: [27, "Escape"], " ": [32, "Space"], ArrowLeft: [37, "ArrowLeft"], ArrowUp: [38, "ArrowUp"], ArrowRight: [39, "ArrowRight"], ArrowDown: [40, "ArrowDown"], Home: [36, "Home"], End: [35, "End"] }; // prettier-ignore
+      const [code, name] = codes[key] || [0, key];
+      const base = { key, code: name, windowsVirtualKeyCode: code, nativeVirtualKeyCode: code, modifiers: shift ? 8 : 0 }; // prettier-ignore
+      const text = key === "Enter" ? "\r" : key === " " ? " " : undefined;
+      await send("Input.dispatchKeyEvent", { type: text ? "keyDown" : "rawKeyDown", text, ...base });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", ...base });
     },
     async touch(type, x, y) {
       await send("Input.dispatchTouchEvent", {
