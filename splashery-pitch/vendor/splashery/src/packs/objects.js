@@ -1,0 +1,3099 @@
+// Things that open: toys with hinged parts you tap to open and close.
+// Loaded on demand.
+
+import {
+  mix,
+  shade,
+  smoothstep,
+  clamp,
+  quatAxisAngle,
+  quatMul,
+  quatFromTo,
+  quatRotate,
+} from "../kit.js";
+import {
+  evenBox,
+  evenCylinder,
+  evenEllipsoid,
+  evenTorus as evenTorusOut,
+  evenTube,
+} from "./even.js";
+import { inked } from "../font.js";
+import { surfacePoints } from "../physics/world.js"; // lane Hands-on H3
+
+const easeInOut = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+
+const TAU = Math.PI * 2;
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+const len = (a) => Math.hypot(a[0], a[1], a[2]);
+const unit = (a) => mul(a, 1 / (len(a) || 1));
+const keep = (c, size) => ({ c, keep: true, size });
+const ease3 = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+// The music box's tune by hand (lane Hands engine B): one note for each
+// click of the crank (12 a turn), as the tap plays it ("-" a rest).
+const MUSIC_TUNE = "E6 D6 C6 D6 E6 E6 E6 - D6 D6 D6 - E6 G6 G6 -".split(" ");
+const MUSIC_CLICKS = 12;
+// The dancer's turn by hand, and where her splats were last sorted: splats
+// sort in the pose they were built in, so a turned dancer would draw her
+// back (and her turntable's underside) over her front and seem to tip back.
+const MUSIC_HAND = { a: null, lid: 0, slot: null, again: false };
+// Lane Hands-on H3: the alarm clock set by hand. `a0` and `h0` are the
+// minute and hour hands' angles when the minute hand was taken (its dial's
+// start), so the hour hand follows through the clock's gears.
+const CLOCK_HAND = { a0: 0, h0: 0 };
+// Lane Hands-on H3: the gift box's lid by hand. `off` is how far the lid
+// is from its place (recipe units, from Hands-on); `pop` the star's spring
+// (its height 0..1 and speed), stepped by drive() on the toy's clock.
+const GIFT_HAND = { off: 0, pop: 0, v: 0, t: null };
+const GIFT_LID = { type: "box", half: [0.535, 0.08, 0.535] };
+const GIFT_BOX = { type: "box", half: [0.5, 0.39, 0.5] };
+// Lane Hands-on H3: the umbrella's runner, the sleeve on the shaft that
+// opens it. Each rib is held up by a stretcher of fixed length from the
+// runner to a point on the rib (as on a real umbrella), so the runner's
+// height and the canopy's fold go together: `umbrellaRunner(th)` is the
+// runner's move (recipe units, from open) with the panels turned down by
+// th, and `umbrellaFold(off)` the turn for a runner moved by off.
+const UMB = (() => {
+  const R = 1.05;
+  const top = 0.72;
+  const droop = 0.42;
+  const tt = 0.45;
+  const r0 = tt * R * 0.93;
+  const dy0 = -droop * Math.pow(tt, 1.7) + 0.06 * tt * (1 - tt) - 0.012;
+  const ry = -0.05; // (low on the stick, in sight below the canopy's rim)
+  const L = Math.hypot(r0, top + dy0 - ry);
+  return { R, top, droop, r0, dy0, ry, L, shut: 1.18 };
+})();
+function umbrellaRunner(th) {
+  const { r0, dy0, top, L, ry } = UMB;
+  const r = r0 * Math.cos(th) + dy0 * Math.sin(th);
+  const y = top - r0 * Math.sin(th) + dy0 * Math.cos(th);
+  return y - Math.sqrt(Math.max(0, L * L - r * r)) - ry;
+}
+function umbrellaFold(off) {
+  let lo = 0;
+  let hi = UMB.shut;
+  for (let i = 0; i < 24; i++) {
+    const m = (lo + hi) / 2;
+    if (umbrellaRunner(m) > off) lo = m;
+    else hi = m;
+  }
+  return (lo + hi) / 2;
+}
+// Lane Hands-on H3: the desk fan's head tilted by hand; drive() keeps its
+// swing and the blades' spin here, so the tilt rides on them.
+const FAN_HAND = { yaw: 0, spin: 0 };
+// Lane Hands-on H3: the desk lamp's arms bent by hand. Its joints (the
+// base's, the elbow's and the head's) as built, the light's direction and
+// the pool of light it throws on the desk; `light` is the Light control.
+const LAMP = (() => {
+  const base = [0, 0.06, -0.1];
+  const elbow = [-0.05, 0.9, -0.35];
+  const joint = [0.42, 1.22, -0.05];
+  const dir = unit([0.35, -1, 0.35]);
+  const head = add(joint, mul(dir, 0.14));
+  const bulbAt = add(head, mul(dir, 0.07));
+  const pool = add(bulbAt, mul(dir, (0 - bulbAt[1]) / dir[1]));
+  return { base, elbow, joint, dir, head, bulbAt, pool };
+})();
+const LAMP_HAND = { light: 1 };
+// Lane Hands-on H3: the potion bottle's cork by hand. `off` is how far the
+// cork is from its place; `t0` when it popped (drive() starts the puff).
+const POTION_HAND = { off: 0, out: false, t0: -1e9 };
+const POTION_CORK = { type: "ellipsoid", r: [0.12, 0.1, 0.12] };
+const POTION_FLASK = { type: "sphere", r: 0.5 };
+const easeOutBack = (x) => {
+  const k = 1.70158;
+  return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2);
+};
+const bump = (x) => (x <= 0 || x >= 1 ? 0 : Math.sin(Math.PI * x));
+const window01 = (x, a, b) => clamp((x - a) / (b - a), 0, 1);
+// A torus in the XZ plane (like k.torus) as a parametric surface, so it
+// can take even: true (k.torus places its splats at random).
+function evenTorus(k, R, r, grid = 96) {
+  return k.param(
+    (u, v) => {
+      const a = TAU * u;
+      const b = TAU * v;
+      const w = R + r * Math.cos(b);
+      return [w * Math.cos(a), r * Math.sin(b), w * Math.sin(a)];
+    },
+    { grid, thick: r },
+  );
+}
+// The i-th point of an even (low-discrepancy) sequence in `dims` dimensions,
+// for clouds that should cover an area smoothly instead of in clumps.
+function evenPoint(i, dims) {
+  let g = 2;
+  for (let k = 0; k < 20; k++) g = Math.pow(1 + g, 1 / (dims + 1));
+  const out = [];
+  for (let k = 0; k < dims; k++) {
+    const v = 0.5 + i / Math.pow(g, k + 1);
+    out.push(v - Math.floor(v));
+  }
+  return out;
+}
+
+// Baked light from above, front and right, with a sheen toward the viewer.
+const LIGHT = unit([0.4, 0.85, 0.55]);
+const VIEW = unit([0.5, 0.35, 0.8]);
+const HALF = unit(add(LIGHT, VIEW));
+function lit(col, n, { amb = 0.62, dif = 0.45, spec = 0.25, pow = 28 } = {}) {
+  const d = Math.max(0, dot(n, LIGHT));
+  let c = shade(col, amb + dif * d);
+  if (spec > 0) c = mix(c, [1, 1, 1], spec * Math.pow(Math.max(0, dot(n, HALF)), pow));
+  return c;
+}
+// Polished metal: the room reflected (bright above, dark horizon, warm floor).
+function chrome(n, tint = null) {
+  const r = sub(mul(n, 2 * dot(n, VIEW)), VIEW);
+  const y = r[1];
+  let c =
+    y > 0
+      ? mix("#9aa3ad", "#f7f9fc", Math.pow(y, 0.5))
+      : mix("#6d5a48", "#2e2723", Math.pow(-y, 0.6));
+  c = mix(c, "#262a31", 0.7 * smoothstep(0.22, 0, Math.abs(y + 0.04)));
+  if (tint) c = mix(c, shade(tint, 0.6 + 0.6 * c[1]), 0.65);
+  return mix(c, [1, 1, 1], Math.pow(Math.max(0, dot(n, HALF)), 60));
+}
+
+function hsv(h, s, v) {
+  const f = (n) => {
+    const k = (n + h * 6) % 6;
+    return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+  };
+  return [f(5), f(3), f(1)];
+}
+
+// Per-toy memory for drive(), keyed by the control state (new per load).
+const MEM = new WeakMap();
+function mem(c) {
+  let m = MEM.get(c);
+  if (!m) MEM.set(c, (m = {}));
+  return m;
+}
+function integrate(m, key, t, rate) {
+  const last = m["t_" + key];
+  m["t_" + key] = t;
+  const dt = last === undefined ? 0 : clamp(t - last, 0, 0.25);
+  m[key] = (m[key] ?? 0) + dt * rate;
+  return m[key];
+}
+
+// A box with rounded edges, sampled evenly. Flat faces carry `face` (0..5
+// for +X, -X, +Y, -Y, +Z, -Z) and face u, v; rounded parts carry face -1.
+// `top: false` / `bottom: false` leave out those flat faces (open boxes,
+// things on the floor).
+function roundBox(sx, sy, sz, r, { top = true, bottom = true, even2d = false } = {}) {
+  const h = [sx / 2 - r, sy / 2 - r, sz / 2 - r];
+  const L = [h[0] * 2, h[1] * 2, h[2] * 2];
+  const parts = [];
+  const faceN = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1],
+  ];
+  faceN.forEach((n, f) => {
+    if ((!bottom && f === 3) || (!top && f === 2)) return;
+    const ax = f >> 1;
+    parts.push({ area: L[(ax + 1) % 3] * L[(ax + 2) % 3], kind: 0, f, n, ax });
+  });
+  for (let ax = 0; ax < 3; ax++)
+    for (const s1 of [-1, 1])
+      for (const s2 of [-1, 1])
+        parts.push({ area: (Math.PI / 2) * r * L[ax], kind: 1, ax, s1, s2 });
+  for (const a of [-1, 1])
+    for (const b of [-1, 1])
+      for (const c of [-1, 1]) parts.push({ area: (Math.PI / 2) * r * r, kind: 2, sg: [a, b, c] });
+  let total = 0;
+  for (const q of parts) q.cum = total += q.area;
+  // even2d: a 2D even layout for even: true (a is spread over the pieces by
+  // area, b across each), so the faces don't hatch.
+  const sampleEven = (a, b) => {
+    const x = Math.min(a, 1 - 1e-9) * total;
+    let q = parts[parts.length - 1];
+    for (const it of parts)
+      if (x < it.cum) {
+        q = it;
+        break;
+      }
+    const f = Math.min(1, Math.max(0, (x - (q.cum - q.area)) / q.area));
+    const p = [0, 0, 0];
+    if (q.kind === 0) {
+      const a1 = (q.ax + 1) % 3;
+      const a2 = (q.ax + 2) % 3;
+      p[q.ax] = q.n[q.ax] * (h[q.ax] + r);
+      p[a1] = (f - 0.5) * L[a1];
+      p[a2] = (b - 0.5) * L[a2];
+      return { p, n: q.n, u: f, v: b, face: q.f };
+    }
+    if (q.kind === 1) {
+      const a1 = (q.ax + 1) % 3;
+      const a2 = (q.ax + 2) % 3;
+      const an = b * (Math.PI / 2);
+      const n = [0, 0, 0];
+      n[a1] = q.s1 * Math.cos(an);
+      n[a2] = q.s2 * Math.sin(an);
+      p[q.ax] = (f - 0.5) * L[q.ax];
+      p[a1] = q.s1 * h[a1] + n[a1] * r;
+      p[a2] = q.s2 * h[a2] + n[a2] * r;
+      return { p, n, u: 0, v: 0, face: -1 };
+    }
+    const z = f;
+    const ph = b * (Math.PI / 2);
+    const w = Math.sqrt(Math.max(0, 1 - z * z));
+    const d = [w * Math.cos(ph), w * Math.sin(ph), z];
+    const n = [0, 1, 2].map((i) => d[i] * q.sg[i]);
+    for (let i = 0; i < 3; i++) p[i] = q.sg[i] * h[i] + n[i] * r;
+    return { p, n, u: 0, v: 0, face: -1 };
+  };
+  return {
+    area: total,
+    thick: Math.min(sx, sy, sz) / 2,
+    sampleEven: even2d ? sampleEven : undefined,
+    sample(rand) {
+      const x = rand() * total;
+      let q = parts[parts.length - 1];
+      for (const it of parts)
+        if (x < it.cum) {
+          q = it;
+          break;
+        }
+      const p = [0, 0, 0];
+      if (q.kind === 0) {
+        const a1 = (q.ax + 1) % 3;
+        const a2 = (q.ax + 2) % 3;
+        const u = rand();
+        const v = rand();
+        p[q.ax] = q.n[q.ax] * (h[q.ax] + r);
+        p[a1] = (u - 0.5) * L[a1];
+        p[a2] = (v - 0.5) * L[a2];
+        return { p, n: q.n, u, v, face: q.f };
+      }
+      if (q.kind === 1) {
+        const a1 = (q.ax + 1) % 3;
+        const a2 = (q.ax + 2) % 3;
+        const a = rand() * (Math.PI / 2);
+        const n = [0, 0, 0];
+        n[a1] = q.s1 * Math.cos(a);
+        n[a2] = q.s2 * Math.sin(a);
+        p[q.ax] = (rand() - 0.5) * L[q.ax];
+        p[a1] = q.s1 * h[a1] + n[a1] * r;
+        p[a2] = q.s2 * h[a2] + n[a2] * r;
+        return { p, n, u: 0, v: 0, face: -1 };
+      }
+      let d;
+      let dl;
+      do {
+        d = [rand() * 2 - 1, rand() * 2 - 1, rand() * 2 - 1];
+        dl = Math.hypot(d[0], d[1], d[2]);
+      } while (dl < 1e-3 || dl > 1);
+      const n = [0, 1, 2].map((i) => (Math.abs(d[i]) / dl) * q.sg[i]);
+      for (let i = 0; i < 3; i++) p[i] = q.sg[i] * h[i] + n[i] * r;
+      return { p, n, u: 0, v: 0, face: -1 };
+    },
+  };
+}
+
+// A flat rectangle in the XZ plane facing up (+1) or down (-1); samples
+// carry face 2 or 3 like a box's top or bottom, and u, v across it.
+function quad(sx, sz, up = 1) {
+  const n = [0, up, 0];
+  return {
+    area: sx * sz,
+    thick: 0.01,
+    dims: 2,
+    sample(rand) {
+      const u = rand();
+      const v = rand();
+      return { p: [(u - 0.5) * sx, 0, (v - 0.5) * sz], n, u, v, face: up > 0 ? 2 : 3 };
+    },
+  };
+}
+
+// A flat triangle, sampled evenly.
+function triShape(a, b, c) {
+  const cr = cross(sub(b, a), sub(c, a));
+  const n = unit(cr);
+  return {
+    area: 0.5 * len(cr),
+    thick: 0.02,
+    sample(rand) {
+      const r1 = Math.sqrt(rand());
+      const r2 = rand();
+      const wa = 1 - r1;
+      const wb = r1 * (1 - r2);
+      const wc = r1 * r2;
+      return {
+        p: [
+          a[0] * wa + b[0] * wb + c[0] * wc,
+          a[1] * wa + b[1] * wb + c[1] * wc,
+          a[2] * wa + b[2] * wb + c[2] * wc,
+        ],
+        n,
+        u: wb,
+        v: wc,
+      };
+    },
+  };
+}
+
+// A blocky stroke font for numbers: segments in a 1 x 2 box.
+const GLYPHS = {
+  0: [
+    [0, 0, 1, 0],
+    [1, 0, 1, 2],
+    [1, 2, 0, 2],
+    [0, 2, 0, 0],
+  ],
+  1: [[0.5, 0, 0.5, 2]],
+  2: [
+    [0, 2, 1, 2],
+    [1, 2, 1, 1],
+    [1, 1, 0, 1],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+  ],
+  3: [
+    [0, 2, 1, 2],
+    [1, 2, 1, 0],
+    [1, 0, 0, 0],
+    [0.25, 1, 1, 1],
+  ],
+  4: [
+    [0, 2, 0, 1],
+    [0, 1, 1, 1],
+    [1, 2, 1, 0],
+  ],
+  5: [
+    [1, 2, 0, 2],
+    [0, 2, 0, 1],
+    [0, 1, 1, 1],
+    [1, 1, 1, 0],
+    [1, 0, 0, 0],
+  ],
+  6: [
+    [1, 2, 0, 2],
+    [0, 2, 0, 0],
+    [0, 0, 1, 0],
+    [1, 0, 1, 1],
+    [1, 1, 0, 1],
+  ],
+  7: [
+    [0, 2, 1, 2],
+    [1, 2, 0.4, 0],
+  ],
+  8: [
+    [0, 0, 1, 0],
+    [1, 0, 1, 2],
+    [1, 2, 0, 2],
+    [0, 2, 0, 0],
+    [0, 1, 1, 1],
+  ],
+  9: [
+    [1, 1, 0, 1],
+    [0, 1, 0, 2],
+    [0, 2, 1, 2],
+    [1, 2, 1, 0],
+    [1, 0, 0, 0],
+  ],
+};
+function segDist(x, y, s) {
+  const dx = s[2] - s[0];
+  const dy = s[3] - s[1];
+  const t = clamp(((x - s[0]) * dx + (y - s[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+  return Math.hypot(x - s[0] - dx * t, y - s[1] - dy * t);
+}
+// Distance from (x, y) to a number drawn centered at the origin, 2 units tall.
+function textDist(str, x, y) {
+  const adv = 1.5;
+  const w = (str.length - 1) * adv + 1;
+  let best = Infinity;
+  for (let i = 0; i < str.length; i++) {
+    const gx = x + w / 2 - i * adv;
+    const gy = y + 1;
+    if (gx < -0.6 || gx > 1.6) continue;
+    for (const s of GLYPHS[str[i]] || []) best = Math.min(best, segDist(gx, gy, s));
+  }
+  return best;
+}
+
+// A five-pointed star outline (for the gift's surprise).
+function starPoints(R, r, n = 5) {
+  const pts = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a = (i / (n * 2)) * TAU;
+    const rr = i % 2 ? r : R;
+    pts.push([Math.sin(a) * rr, Math.cos(a) * rr]);
+  }
+  return pts;
+}
+
+// ---- Book, music box, clock and friends: shared layouts ------------------------------
+
+const BOOK = { W: 1, H: 1.36, ct: 0.045, leaves: 10, lt: 0.013 };
+
+const STORY =
+  "ONCE UPON A TIME, IN A TOY BOX AT THE END OF A LONG HALL, THERE LIVED A SMALL " +
+  "SPLAT CALLED PIP. PIP WAS NOT A BALL AND NOT A BLOCK. PIP WAS A SOFT LITTLE " +
+  "CLOUD OF COLOR THAT COULD BE ANYTHING AT ALL. ON MONDAY PIP WAS A RED APPLE. " +
+  "ON TUESDAY PIP WAS A BLUE WHALE. ON WEDNESDAY PIP TRIED TO BE THE MOON, AND " +
+  "EVERY TOY IN THE BOX CAME TO LOOK. WHAT WILL YOU BE TOMORROW? ASKED THE OLD " +
+  "TEDDY BEAR. PIP THOUGHT FOR A WHILE. I THINK, SAID PIP, I WILL BE A STORY. " +
+  "AND SO PIP BECAME THIS BOOK, AND NOW YOU ARE READING IT. THE END. ";
+// Word-wraps the story into lines of at most n characters, starting a few
+// words in so that each page reads differently.
+function storyLines(n, start, count) {
+  const words = STORY.trim().split(/\s+/);
+  const lines = [];
+  let line = "";
+  for (let i = 0; lines.length < count; i++) {
+    const w = words[(start + i) % words.length];
+    if (line && line.length + 1 + w.length > n) {
+      lines.push(line);
+      line = w;
+    } else line = line ? `${line} ${w}` : w;
+  }
+  return lines;
+}
+BOOK.pb = 0.27;
+BOOK.T = BOOK.pb + 2 * BOOK.ct;
+
+const LAPTOP = { W: 1.5, D: 1.0, hb: 0.06, hl: 0.035, open: 1.85 };
+
+// The laptop's keys: id (what it types), label, center and size on the deck.
+const LAPTOP_KEYS = (() => {
+  const rows = [
+    ["1234567890", [["DEL", 0.16]]],
+    ["QWERTYUIOP", []],
+    ["ASDFGHJKL", [["ENTER", 0.16]]],
+    ["ZXCVBNM,.", []],
+  ];
+  const keys = [];
+  const pitch = 0.105;
+  const size = 0.088;
+  rows.forEach(([chars, extra], r) => {
+    const z = -0.35 + r * 0.095;
+    const items = [...chars].map((ch) => [ch, size]).concat(extra);
+    const total = items.reduce((sum, [, w]) => sum + w, 0) + (items.length - 1) * (pitch - size);
+    let x = -total / 2;
+    for (const [label, w] of items) {
+      keys.push({ id: label, label, x: x + w / 2, z, w, d: size });
+      x += w + (pitch - size);
+    }
+  });
+  keys.push({ id: "SPACE", label: "", x: 0, z: 0.03, w: 0.52, d: size });
+  return keys;
+})();
+const PAD = { x: 0, z: 0.3, w: 0.44, d: 0.26 };
+const onPad = (p) => Math.abs(p[0] - PAD.x) < PAD.w / 2 && Math.abs(p[2] - PAD.z) < PAD.d / 2;
+const padUV = (p) => [clamp((p[0] - PAD.x) / PAD.w + 0.5, 0.02, 0.94), clamp((p[2] - PAD.z) / PAD.d + 0.5, 0.02, 0.9)]; // prettier-ignore
+
+function keyFor(ch) {
+  const id =
+    ch === " " ? "SPACE" : ch === "Backspace" ? "DEL" : ch === "Enter" ? "ENTER" : ch.length === 1 ? ch.toUpperCase() : ""; // prettier-ignore
+  return LAPTOP_KEYS.findIndex((k) => k.id === id);
+}
+
+// What is on the laptop's screen (one laptop is shown at a time).
+const laptopStart = () => ({
+  text: "Hello! Tap the keys,\nor type on your own\nkeyboard.\n",
+  pointer: [0.78, 0.7],
+  target: [0.78, 0.7],
+  clickAt: -99,
+  pressKey: -1,
+  pressAt: -99,
+  queue: [],
+  dragFrom: null,
+  lastTime: null,
+  open: true,
+});
+const LAPTOP_STATE = laptopStart();
+
+function typeInto(st, key, typed) {
+  if (key.id === "DEL") st.text = st.text.slice(0, -1);
+  else if (key.id === "ENTER") st.text += "\n";
+  else if (key.id === "SPACE") st.text += " ";
+  else st.text += typed ?? key.id.toLowerCase();
+  // Keep the last few lines.
+  const lines = st.text.split("\n");
+  if (lines.length > 6) st.text = lines.slice(-6).join("\n");
+  if (st.text.length > 240) st.text = st.text.slice(-240);
+}
+
+// The laptop's display: a wallpaper, a notes window with the typed text and a
+// blinking caret, and the pointer.
+function drawLaptopScreen(g, time) {
+  const st = LAPTOP_STATE;
+  const W = g.canvas.width;
+  const H = g.canvas.height;
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#2b1b6b");
+  sky.addColorStop(0.55, "#ff5e98");
+  sky.addColorStop(1, "#ff9a62");
+  g.fillStyle = sky;
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = "rgba(18, 194, 181, 0.55)";
+  g.beginPath();
+  g.moveTo(0, H);
+  for (let x = 0; x <= W; x += 16) g.lineTo(x, H * 0.8 + 18 * Math.sin(x / 70));
+  g.lineTo(W, H);
+  g.fill();
+  // The notes window.
+  const x0 = W * 0.06;
+  const y0 = H * 0.08;
+  const w = W * 0.88;
+  const h = H * 0.8;
+  g.fillStyle = "rgba(0,0,0,0.35)";
+  g.fillRect(x0 + 6, y0 + 8, w, h);
+  g.fillStyle = "#fbfaf6";
+  g.fillRect(x0, y0, w, h);
+  g.fillStyle = "#d9dde4";
+  g.fillRect(x0, y0, w, 40);
+  for (const [i, col] of ["#ff5f57", "#febc2e", "#28c840"].entries()) {
+    g.fillStyle = col;
+    g.beginPath();
+    g.arc(x0 + 22 + i * 24, y0 + 20, 8, 0, Math.PI * 2);
+    g.fill();
+  }
+  g.fillStyle = "#3a3f47";
+  g.font = "bold 22px sans-serif";
+  g.textAlign = "center";
+  g.fillText("Notes", x0 + w / 2, y0 + 28);
+  g.textAlign = "left";
+  g.fillStyle = "#1f2329";
+  g.font = "bold 36px sans-serif";
+  const lines = st.text.split("\n");
+  const lh = 44;
+  lines.forEach((line, i) => g.fillText(line, x0 + 20, y0 + 84 + i * lh));
+  // The caret after the last character.
+  if (Math.floor(time * 2) % 2 === 0) {
+    const last = lines[lines.length - 1];
+    const cx = x0 + 22 + g.measureText(last).width;
+    const cy = y0 + 84 + (lines.length - 1) * lh;
+    g.fillStyle = "#2f6bff";
+    g.fillRect(cx, cy - 32, 4, 40);
+  }
+  // A click ripple, then the pointer (an arrow).
+  const age = time - st.clickAt;
+  const px = st.pointer[0] * W;
+  const py = st.pointer[1] * H;
+  if (age >= 0 && age < 0.5) {
+    g.strokeStyle = `rgba(47,107,255,${1 - age / 0.5})`;
+    g.lineWidth = 5;
+    g.beginPath();
+    g.arc(px, py, 10 + 50 * age, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.fillStyle = "#ffffff";
+  g.strokeStyle = "#111111";
+  g.lineWidth = 3;
+  g.beginPath();
+  g.moveTo(px, py);
+  g.lineTo(px, py + 34);
+  g.lineTo(px + 9, py + 26);
+  g.lineTo(px + 16, py + 40);
+  g.lineTo(px + 22, py + 37);
+  g.lineTo(px + 15, py + 23);
+  g.lineTo(px + 26, py + 23);
+  g.closePath();
+  g.fill();
+  g.stroke();
+}
+
+const FAN = { yawAt: [0, 0.62, -0.12], hub: [0, 0.62, 0.2] };
+
+const TELE = { dir: unit([0.72, 0.5, -0.3]), mount: [0, 0.2, 0] };
+
+const NOTE_PATHS = [0, 1, 2].map((i) => ({ x: -0.25 + i * 0.25, z: 0.1 - i * 0.08, phase: i / 3 }));
+
+// Lane Fix5: the clock's time zones (IANA names; "local" is this device's
+// own) and the hours, minutes and seconds it is there now.
+const CLOCK_ZONES = [
+  ["local", "This device"],
+  ["UTC", "UTC"],
+  ["America/Los_Angeles", "Los Angeles"],
+  ["America/Denver", "Denver"],
+  ["America/Chicago", "Chicago"],
+  ["America/New_York", "New York"],
+  ["America/Sao_Paulo", "São Paulo"],
+  ["Europe/London", "London"],
+  ["Europe/Paris", "Paris"],
+  ["Africa/Cairo", "Cairo"],
+  ["Asia/Dubai", "Dubai"],
+  ["Asia/Kolkata", "Mumbai"],
+  ["Asia/Shanghai", "Beijing"],
+  ["Asia/Tokyo", "Tokyo"],
+  ["Australia/Sydney", "Sydney"],
+  ["Pacific/Auckland", "Auckland"],
+];
+const zoneFormats = new Map();
+function clockTime(d, zone) {
+  if (!zone) return [d.getHours(), d.getMinutes(), d.getSeconds()];
+  let f = zoneFormats.get(zone);
+  if (f === undefined) {
+    try {
+      f = new Intl.DateTimeFormat("en-US", {
+        timeZone: zone,
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hourCycle: "h23",
+      });
+    } catch {
+      f = null; // an unknown zone: this device's time
+    }
+    zoneFormats.set(zone, f);
+  }
+  if (!f) return [d.getHours(), d.getMinutes(), d.getSeconds()];
+  const parts = f.formatToParts(d);
+  const part = (type) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return [part("hour") % 24, part("minute"), part("second")];
+}
+
+export const RECIPES = {
+  chest: {
+    alive: true,
+    options: [{ key: "wood", label: "Wood", type: "color", default: "#8a5a2b" }],
+    controls: [{ key: "open", label: "Open", type: "toggle", default: 0, ease: 1.1 }],
+    action: { key: "open", label: "Open or close" },
+    // Hands-on (lane Hands engine B): lift the lid on its hinge. Let go
+    // past upright and it stays open; lower, it drops shut with a thud.
+    hands: {
+      joints: [
+        {
+          type: "hinge",
+          part: "lid",
+          pivot: [0, 0.1, -0.37],
+          axis: [-1, 0, 0],
+          min: 0,
+          max: 1.95,
+          bounce: 0.15,
+          start: (c) => 1.95 * easeInOut(c.open),
+          pos: [0, 0.24, 0],
+          pick: [0.66, 0.24, 0.44],
+          sound: (ev, vol) =>
+            ev.v < 1
+              ? [{ voice: "thud", f: 90, vol }, { voice: "wood", f: 220, decay: 0.5, vol: vol * 0.6 }] // prettier-ignore
+              : { voice: "wood", f: 300, decay: 0.4, vol: vol * 0.5 },
+        },
+      ],
+    },
+    drive(t, c, out) {
+      const o = easeInOut(c.open);
+      out.parts.lid = { angle: -1.95 * o };
+      out.amount = o;
+    },
+    build(k, o) {
+      const W = 1.2;
+      const H = 0.6;
+      const D = 0.74;
+      const top = H / 2 - 0.2;
+      const wood = o.wood;
+      const gold = "#d4a63c";
+      const planks = (c) => {
+        const band = Math.abs((((c.p[1] + 1) * 7.5) % 1) - 0.5) > 0.46;
+        const grain = c.fbm(c.p[0] * 2, c.p[1] * 12, c.p[2] * 2);
+        return shade(mix(wood, shade(wood, 0.72), 0.5 + 0.35 * grain), band ? 0.55 : 1);
+      };
+      // The body: an open-topped box (the top face is left out).
+      k.add(evenBox(W, H, D), {
+        even: true,
+        opacity: 1,
+        jitter: 0.012,
+        pos: [0, -0.2, 0],
+        flat: 0.2,
+        color: (c) => (c.s.face === 2 ? null : planks(c)),
+      });
+      // Metal bands and corners.
+      for (const x of [-0.36, 0.36]) {
+        k.add(evenBox(0.08, H + 0.02, D + 0.02), {
+          even: true,
+          opacity: 1,
+          jitter: 0.012,
+          pos: [x, -0.2, 0],
+          flat: 0.2,
+          weight: 1.5,
+          color: (c) =>
+            c.s.face === 2
+              ? null
+              : lit(mix(gold, "#8a6a1f", 0.25 + 0.12 * c.fbm(c.p[0] * 6, c.p[1] * 6, 0)), c.n),
+        });
+      }
+      // The lid: a half cylinder along X, hinged at the back edge.
+      const lid = k.part("lid", { pivot: [0, top, -D / 2], axis: [1, 0, 0] });
+      const R = D / 2;
+      const arc = k.param(
+        (u, v) => {
+          const a = v * Math.PI;
+          return [(u - 0.5) * W, top + Math.sin(a) * R * 0.75, Math.cos(a) * R];
+        },
+        { grid: 48, flip: true },
+      );
+      k.add(arc, { even: true, opacity: 1, jitter: 0.012, part: lid, flat: 0.2, color: planks });
+      for (const x of [-0.36, 0.36]) {
+        const strap = k.param(
+          (u, v) => {
+            const a = v * Math.PI;
+            const rr = R + 0.012;
+            return [x + (u - 0.5) * 0.08, top + Math.sin(a) * rr * 0.75, Math.cos(a) * rr];
+          },
+          { grid: 24, flip: true },
+        );
+        k.add(strap, {
+          even: true,
+          opacity: 1,
+          jitter: 0.012,
+          part: lid,
+          flat: 0.2,
+          weight: 1.5,
+          color: gold,
+        });
+      }
+      for (const side of [-1, 1]) {
+        const end = k.param(
+          (u, v) => {
+            const a = u * Math.PI;
+            return [(side * W) / 2, top + Math.sin(a) * R * 0.75 * v, Math.cos(a) * R * v];
+          },
+          { grid: 24 },
+        );
+        k.add(end, { even: true, opacity: 1, jitter: 0.012, part: lid, flat: 0.2, color: planks });
+      }
+      // The lid's flat underside, so the open lid is not hollow.
+      k.add(evenBox(W, 0.01, D), {
+        even: true,
+        opacity: 1,
+        jitter: 0.012,
+        pos: [0, top + 0.005, 0],
+        part: lid,
+        flat: 0.2,
+        color: shade(wood, 0.7),
+      });
+      // The lock plate on the front of the lid.
+      k.add(evenBox(0.16, 0.2, 0.03), {
+        even: true,
+        opacity: 1,
+        jitter: 0.012,
+        pos: [0, top - 0.02, D / 2 + 0.01],
+        part: lid,
+        flat: 0.2,
+        weight: 2,
+        color: gold,
+      });
+      k.add(evenBox(0.12, 0.08, 0.03), {
+        even: true,
+        opacity: 1,
+        jitter: 0.012,
+        pos: [0, top - 0.16, D / 2 + 0.01],
+        flat: 0.2,
+        weight: 2,
+        color: shade(gold, 0.85),
+      });
+      // Treasure heaped inside: coins that glint and gems that sparkle when open.
+      k.cloud({ share: 0.1, size: 0.9, flat: 0.15 }, (rand) => {
+        const x = (rand() - 0.5) * (W - 0.12);
+        const z = (rand() - 0.5) * (D - 0.1);
+        const heap = 0.08 * (1 - (x / (W / 2)) ** 2) * (1 - (z / (D / 2)) ** 2);
+        const tilt = [(rand() - 0.5) * 0.8, 1, (rand() - 0.5) * 0.8];
+        return {
+          p: [x, top - 0.05 + heap * (0.3 + 0.7 * rand()), z],
+          n: tilt,
+          color: mix("#f2c94c", "#b8860b", rand() * 0.5),
+          pattern: false,
+          kind: "glint",
+          params: [0.7, 0],
+        };
+      });
+      const gems = ["#e0115f", "#2ecc71", "#3a7bd5", "#9b59b6", "#f1c40f"];
+      for (let i = 0; i < 9; i++) {
+        const x = (k.rand() - 0.5) * (W - 0.3);
+        const z = (k.rand() - 0.5) * (D - 0.25);
+        const s = 0.035 + k.rand() * 0.03;
+        k.add(k.ellipsoid(s, s * 0.8, s), {
+          pos: [x, top + 0.03, z],
+          weight: 3,
+          flat: 0.3,
+          pattern: false,
+          kind: "twinkle",
+          params: [0.9, k.rand() * 6],
+          color: (c) => mix(gems[i % gems.length], "#ffffff", 0.35 * smoothstep(0.3, 1, c.n[1])),
+        });
+      }
+      // Room for the open lid.
+      k.reach([0, top + D * 0.95, -D / 2 - 0.1]);
+    },
+  },
+
+  book: {
+    alive: true,
+    options: [{ key: "color", label: "Cover", type: "color", default: "#7a2432" }],
+    controls: [{ key: "open", label: "Open", type: "toggle", default: 1, ease: 2 }],
+    action: { key: "open", label: "Open or close" },
+    drive(t, c, out, info) {
+      const o = c.open;
+      // Splats sort in the pose they were built in (the book closed), so a
+      // turned leaf would draw its paper over its words, and the turned
+      // cover and leaves over the pages they lie on. They are sorted where
+      // they stand on the first frame and every hundredth of a turn, and
+      // again on the frame after (the sort uses the pose the frame starts
+      // with) (lane Sharpness A).
+      const d = info?.data;
+      const slot = Math.round(o * 100);
+      if (d && (slot !== d.sortSlot || d.sortAgain)) {
+        d.sortAgain = slot !== d.sortSlot;
+        d.sortSlot = slot;
+        out.resortPose = true;
+      }
+      const lift = [0, 0, 0, 0, 0, 0, 0, 0.012, 0.03, 0.06];
+      const cover = Math.PI * ease3(window01(o, 0, 0.42));
+      out.parts.cover = { angle: cover };
+      out.parts.coverTop = { angle: cover, visible: 1 - smoothstep(0.3, 0.4, o) };
+      out.parts.spine = {
+        angle: (Math.PI / 2) * ease3(window01(o, 0, 0.42)),
+        visible: 1 - smoothstep(0.3, 0.4, o),
+      };
+      // Splats keep the draw order of the closed book, where the front cover
+      // and the first leaves lie above the last leaf. Once a leaf has landed
+      // on the left, the one it covers (and the cover's inside, under them
+      // all) hides, so the page on top reads cleanly.
+      const turned = (i) => ease3(window01(o, 0.1 + i * 0.05, 0.5 + i * 0.05));
+      const landed = (i) => (i < BOOK.leaves ? smoothstep(0.9, 1, turned(i)) : 0);
+      out.parts.coverIn = { angle: cover, visible: 1 - landed(0) };
+      // Stands in for the hidden leaves at the left pile's edges.
+      out.parts.pile = { visible: landed(1) };
+      for (let i = 0; i < BOOK.leaves; i++) {
+        out.parts["leaf" + i] = {
+          angle: (Math.PI - lift[i]) * turned(i),
+          visible: 1 - landed(i + 1),
+        };
+      }
+    },
+    build(k, o) {
+      const { W, H, ct, leaves, lt, T } = BOOK;
+      k.data = {}; // drive() keeps its sort state here
+      const cover = o.color;
+      const gold = "#d9b45a";
+      const paper = "#f6efdf";
+      const endpaper = mix(cover, "#f3e6cf", 0.72);
+      const pivot = [0, T / 2, 0];
+      const coverPart = k.part("cover", { pivot, axis: [0, 0, 1] });
+      const spinePart = k.part("spine", { pivot, axis: [0, 0, 1] });
+      // Book cloth: a fine, even weave (lit, no random speckle).
+      const cloth = (c) => {
+        const weave = 0.985 + 0.02 * Math.sin(c.p[0] * 260) * Math.sin(c.p[2] * 260);
+        return lit(shade(cover, weave), c.n, { amb: 0.66, dif: 0.42, spec: 0.12 });
+      };
+      // The page block's edge: soft cream with faint, even page lines (at a
+      // spacing splats can show, so they read as paper, not noise).
+      const pageEdge = (y) => shade(paper, 0.86 + 0.05 * Math.sin(y * 260));
+      // Words on a page. x is measured from the spine, z across the page
+      // (the top of the page is at -z). A page that faces down while the
+      // book is closed reads the right way once its leaf has turned over, so
+      // its lines run from the outer edge toward the spine.
+      const PX = 0.0082; // one font pixel
+      const margin = 0.1;
+      const perLine = Math.floor((W - 2 * margin) / (6 * PX));
+      const pages = new Map();
+      const pageText = (seed, picture) => {
+        const key = `${seed}${picture}`;
+        if (!pages.has(key)) {
+          const rows = Math.floor((H - 2 * 0.12) / (10 * PX));
+          const skip = picture ? Math.ceil((H / 2 - 0.12 + 0.03) / (10 * PX)) : 0;
+          pages.set(key, { lines: storyLines(perLine, seed * 23, rows - skip), skip });
+        }
+        return pages.get(key);
+      };
+      const text = (x, z, seed, flipped, picture) => {
+        const ax = Math.abs(x);
+        const s = (flipped ? W - margin - ax : ax - margin) / PX;
+        const page = pageText(seed, picture);
+        const t = (z + H / 2 - 0.12) / PX - page.skip * 10;
+        return inked(page.lines, s, t);
+      };
+      const ink = "#2f2a26";
+      const pageCol = (c, x, z, seed, picture = false, flipped = false, dots = false) => {
+        if (
+          picture &&
+          Math.abs(x) > 0.18 &&
+          Math.abs(x) < W - 0.14 &&
+          z > -H / 2 + 0.16 &&
+          z < -0.02
+        ) {
+          // A little picture: sun, sky and hills.
+          const u = (Math.abs(x) - 0.18) / (W - 0.32);
+          const v = (z + H / 2 - 0.16) / (H / 2 - 0.18);
+          const hill = 0.62 + 0.12 * Math.sin(u * 7) + 0.06 * Math.sin(u * 15 + 1);
+          let col = mix("#7fc8f8", "#fef3c7", v);
+          if (Math.hypot(u - 0.72, v - 0.3) < 0.12) col = "#ffb627";
+          if (v > hill) col = mix("#5aa469", "#2f7a4a", (v - hill) * 3);
+          const edge = Math.min(u, 1 - u, v, 1 - v);
+          return keep(edge < 0.02 ? "#5b4a3a" : col);
+        }
+        // Pages seen only mid-turn have few, large splats: their words are a
+        // soft gray, so they read as lines of print rather than black blots.
+        if (!dots && text(x, z, seed, flipped, picture)) return keep(mix(ink, paper, 0.45), 0.8);
+        // A turned page is lit as it lies once turned over.
+        const n = flipped ? [-c.n[0], -c.n[1], c.n[2]] : c.n;
+        return lit(shade(paper, 0.985 + 0.015 * c.noise(x * 12, z * 12, seed)), n, {
+          amb: 0.8,
+          dif: 0.25,
+          spec: 0,
+        });
+      };
+      // Back cover, spine and front cover.
+      k.add(roundBox(W, ct, H, 0.012), {
+        pos: [W / 2, ct / 2, 0],
+        flat: 0.15,
+        weight: 2.4,
+        even: true,
+        jitter: 0.01,
+        size: 0.8,
+        color: (c) => (c.s.face === 2 ? lit(endpaper, c.n, { spec: 0 }) : cloth(c)),
+      });
+      k.add(
+        k.param(
+          (u, v) => {
+            const a = Math.PI / 2 + u * Math.PI;
+            return [Math.cos(a) * 0.07, T / 2 + Math.sin(a) * (T / 2), (v - 0.5) * H];
+          },
+          { grid: 32 },
+        ),
+        {
+          part: spinePart,
+          flat: 0.15,
+          weight: 2,
+          even: true,
+          jitter: 0.01,
+          size: 0.8,
+          color: (c) => {
+            const z = Math.abs(c.p[2]);
+            if (Math.abs(z - H * 0.38) < 0.015 || Math.abs(z - H * 0.3) < 0.01) return keep(gold);
+            return cloth(c);
+          },
+        },
+      );
+      // The front cover: its cloth face is a part of its own that hides once
+      // the cover lies open (splats keep the order of the closed book).
+      k.add(roundBox(W, ct, H, 0.012, { top: false, bottom: false }), {
+        pos: [W / 2, T - ct / 2, 0],
+        part: coverPart,
+        flat: 0.15,
+        weight: 4,
+        even: true,
+        jitter: 0.01,
+        size: 0.8,
+        color: cloth,
+      });
+      // The cover's inside, its own part so it can hide under the turned pages.
+      const coverIn = k.part("coverIn", { pivot, axis: [0, 0, 1] });
+      k.add(quad(W - 0.024, H - 0.024, -1), {
+        pos: [W / 2, T - ct, 0],
+        part: coverIn,
+        flat: 0.15,
+        color: (c) => lit(endpaper, c.n, { spec: 0 }),
+      });
+      const coverTop = k.part("coverTop", { pivot, axis: [0, 0, 1] });
+      k.add(quad(W - 0.024, H - 0.024), {
+        pos: [W / 2, T, 0],
+        part: coverTop,
+        flat: 0.15,
+        weight: 5,
+        even: true,
+        jitter: 0.01,
+        size: 0.8,
+        color: (c) => {
+          // Gold border, title bands and an emblem on the front.
+          const x = c.p[0] - W / 2;
+          const z = c.p[2];
+          const bx = W / 2 - 0.07 - Math.abs(x);
+          const bz = H / 2 - 0.07 - Math.abs(z);
+          if (Math.abs(Math.min(bx, bz)) < 0.008) return keep(lit(gold, c.n, { spec: 0.5 }));
+          const r = Math.hypot(x, z - 0.12);
+          if (Math.abs(r - 0.16) < 0.012 || r < 0.05) return keep(lit(gold, c.n, { spec: 0.5 }));
+          if (
+            Math.abs(x) < 0.26 &&
+            (Math.abs(z + 0.25) < 0.02 || (Math.abs(z + 0.33) < 0.012 && Math.abs(x) < 0.17))
+          )
+            return keep(lit(gold, c.n, { spec: 0.5 }));
+          return cloth(c);
+        },
+      });
+      // The pages that stay on the right, with a picture on top. The two
+      // pages seen when the book lies open (this one and the underside of the
+      // last leaf) get most of the splats, so their words stay sharp; hidden
+      // page faces get few.
+      const PW = W - 0.035;
+      const PH = H - 0.05;
+      const block = BOOK.pb - leaves * lt;
+      const sides = (face) => (face === 2 || face === 3 ? null : keep(shade(paper, 0.84)));
+      k.add(evenBox(PW, block, PH), {
+        pos: [PW / 2 + 0.005, ct + block / 2, 0],
+        flat: 0.15,
+        weight: 2.4,
+        even: true,
+        jitter: 0,
+        size: 1,
+        color: (c) => {
+          if (c.s.face === 2 || c.s.face === 3) return null;
+          if (c.s.face === 1) return shade(paper, 0.8);
+          return keep(pageEdge(c.p[1]));
+        },
+      });
+      k.add(quad(PW, PH), {
+        pos: [PW / 2 + 0.005, ct + block, 0],
+        flat: 0.15,
+        weight: 6,
+        even: true,
+        jitter: 0.01,
+        size: 1.25,
+        color: (c) => pageCol(c, c.p[0], c.p[2], 3, true, false, true),
+      });
+      // The words on the two pages seen while the book lies open (lane
+      // Sharpness A): every font pixel is a 2 x 2 grid of small ink dots
+      // laid exactly on it, just off the paper, like the laptop's keys
+      // (random splats on the page blurred the letters).
+      const inkDots = (seed, picture, flipped, y, part) => {
+        const page = pageText(seed, picture);
+        const dots = [];
+        page.lines.forEach((line, r) => {
+          for (let s0 = 0; s0 < 6 * line.length; s0++)
+            for (let gy = 0; gy < 7; gy++) {
+              const t0 = r * 10 + gy;
+              if (!inked(page.lines, s0 + 0.5, t0 + 0.5)) continue;
+              for (let a2 = 0; a2 < 2; a2++)
+                for (let b2 = 0; b2 < 2; b2++) {
+                  const sp = (s0 + (a2 + 0.5) / 2) * PX;
+                  const ax = flipped ? W - margin - sp : margin + sp;
+                  const z = (t0 + page.skip * 10 + (b2 + 0.5) / 2) * PX - H / 2 + 0.12;
+                  dots.push([ax, y, z]);
+                }
+            }
+        });
+        const r = PX * 0.6;
+        k.cloud({ count: dots.length, pattern: false, part }, (rand, j, n) => {
+          const d = dots[Math.floor((j * dots.length) / n)];
+          const m = Math.sqrt(Math.max(1, dots.length / n));
+          return {
+            p: d,
+            scales: [r * m, r * 0.15, r * m],
+            quat: [0, 0, 0, 1],
+            color: ink,
+            opacity: 1,
+          };
+        });
+      };
+      inkDots(3, true, false, ct + block + 0.0012, undefined);
+      // Leaves that flip one after another.
+      for (let i = 0; i < leaves; i++) {
+        const part = k.part("leaf" + i, { pivot, axis: [0, 0, 1] });
+        const y = T - ct - (i + 0.5) * lt;
+        const pos = [PW / 2 + 0.005, y, 0];
+        k.add(evenBox(PW, lt * 0.8, PH), {
+          pos,
+          part,
+          flat: 0.15,
+          weight: 0.25,
+          even: true,
+          jitter: 0,
+          size: 0.6,
+          color: (c) => sides(c.s.face),
+        });
+        for (const up of [1, -1]) {
+          const last = i === leaves - 1;
+          // The last leaf's upper face would draw over its turned-up
+          // underside, so it is left out (it only shows mid-turn).
+          if (last && up > 0) continue;
+          const shown = up < 0 && last;
+          k.add(quad(PW, PH, up), {
+            pos: [pos[0], y + up * lt * 0.4, 0],
+            part,
+            flat: 0.15,
+            weight: shown ? 6 : 0.35,
+            even: true,
+            jitter: 0.01,
+            size: 1.25,
+            color: (c) =>
+              pageCol(c, c.p[0], c.p[2], i * 2 + (up < 0 ? 1 : 0), false, up < 0, shown),
+          });
+          if (shown) inkDots(i * 2 + 1, false, true, y + up * lt * 0.4 - 0.0012, part);
+        }
+      }
+      // The left pile's edges, shown once the leaves under the top one hide.
+      const pileH = (leaves - 1) * lt;
+      k.add(evenBox(PW, pileH, PH), {
+        pos: [-PW / 2 - 0.005, ct + pileH / 2, 0],
+        part: k.part("pile"),
+        flat: 0.15,
+        weight: 1,
+        even: true,
+        jitter: 0,
+        size: 1.1,
+        color: (c) => {
+          if (c.s.face === 2 || c.s.face === 3) return null;
+          return keep(pageEdge(c.p[1]));
+        },
+      });
+      k.reach([-W, 0, H / 2]);
+      k.reach([-W, 0, -H / 2]);
+    },
+  },
+
+  // A laptop you can use: tap its keys (or type on your own keyboard) and the
+  // letters appear on the screen; tap or drag on the trackpad to move the
+  // pointer. Tap anywhere else to close or open the lid.
+  laptop: {
+    alive: true,
+    options: [{ key: "color", label: "Case", type: "color", default: "#b9bec6" }],
+    controls: [
+      { key: "open", label: "Open", type: "toggle", default: 1, ease: 1.3 },
+      { key: "type", label: "Type", type: "pulse", ease: 0.2 },
+      { key: "pad", label: "Trackpad", type: "pulse", ease: 0.3 },
+    ],
+    action: {
+      key: "open",
+      label: "Open or close",
+      quiet: ["type", "pad"],
+      at(p, c) {
+        if (c.open < 0.9 || Math.abs(p[1] - LAPTOP.hb) > 0.05) return null;
+        const i = LAPTOP_KEYS.findIndex((k) => Math.abs(p[0] - k.x) < k.w / 2 + 0.008 && Math.abs(p[2] - k.z) < k.d / 2 + 0.008); // prettier-ignore
+        // Taps queue up, so quick typing never loses a key between frames.
+        if (i >= 0) {
+          LAPTOP_STATE.queue.push({ pick: i });
+          return { key: "type", pick: i };
+        }
+        if (onPad(p)) {
+          LAPTOP_STATE.queue.push({ pad: p.slice() });
+          return { key: "pad" };
+        }
+        return null;
+      },
+    },
+    typeKey(ch) {
+      if (!LAPTOP_STATE.open) return null;
+      const i = keyFor(ch);
+      if (i < 0) return null;
+      LAPTOP_STATE.queue.push({ pick: i, typed: ch.length === 1 ? ch : null });
+      return { key: "type", pick: i };
+    },
+    drag: {
+      at: (p) => LAPTOP_STATE.open && onPad(p),
+      start(p) {
+        LAPTOP_STATE.dragFrom = p;
+      },
+      move(p) {
+        const st = LAPTOP_STATE;
+        if (!st.dragFrom) return;
+        // Relative, like a real trackpad: the pointer moves with the finger.
+        st.target = [
+          clamp(st.target[0] + ((p[0] - st.dragFrom[0]) / PAD.w) * 1.2, 0.02, 0.94),
+          clamp(st.target[1] + ((p[2] - st.dragFrom[2]) / PAD.d) * 1.2, 0.02, 0.9),
+        ];
+        st.dragFrom = p;
+      },
+      end() {
+        LAPTOP_STATE.dragFrom = null;
+      },
+    },
+    screen: {
+      width: 640,
+      height: 396,
+      reset() {
+        Object.assign(LAPTOP_STATE, laptopStart());
+      },
+      version(time) {
+        const st = LAPTOP_STATE;
+        const blink = Math.floor(time * 2) % 2;
+        const ripple = time - st.clickAt < 0.5 ? Math.floor(time * 30) : -1;
+        return `${st.text}|${st.pointer[0].toFixed(3)},${st.pointer[1].toFixed(3)}|${blink}|${ripple}`;
+      },
+      draw(g, time) {
+        drawLaptopScreen(g, time);
+      },
+    },
+    drive(t, c, out, info) {
+      const st = LAPTOP_STATE;
+      st.open = c.open > 0.9;
+      // modeled open; closing turns the lid back down onto the keys.
+      const a = LAPTOP.open * (1 - ease3(c.open));
+      out.parts.lid = { angle: a };
+      out.parts.bezel = { angle: a, visible: smoothstep(0.02, 0.3, c.open) };
+      out.parts.screen = { angle: a, visible: smoothstep(0.72, 1, c.open) };
+      out.parts.deck = { visible: smoothstep(0.02, 0.2, c.open) };
+      for (const ev of st.queue.splice(0)) {
+        if (ev.pick !== undefined) {
+          const k = LAPTOP_KEYS[ev.pick];
+          typeInto(st, k, ev.typed);
+          st.pressKey = ev.pick;
+          st.pressAt = info.time;
+          out.cues.push(k.id === "SPACE" ? { voice: "keytap", f: 1500, vol: 0.9 } : { voice: "keytap", f: 2200 + 60 * (ev.pick % 7) }); // prettier-ignore
+        } else if (ev.pad) {
+          // A tap on the trackpad: the pointer jumps to the matching spot
+          // and clicks there.
+          st.target = padUV(ev.pad);
+          st.clickAt = info.time + 0.2;
+          out.cues.push({ voice: "click", f: 900, decay: 1.5, vol: 0.8 });
+        }
+      }
+      // The pointer glides to its target.
+      const k = 1 - Math.exp(-(info.time - (st.lastTime ?? info.time)) * 14);
+      st.lastTime = info.time;
+      st.pointer = [st.pointer[0] + (st.target[0] - st.pointer[0]) * k, st.pointer[1] + (st.target[1] - st.pointer[1]) * k]; // prettier-ignore
+      const since = info.time - st.pressAt;
+      if (since >= 0 && since < 0.2) out.press = st.pressKey + 0.999 * Math.sin((Math.PI * since) / 0.2); // prettier-ignore
+    },
+    build(k, o) {
+      const alu = o.color;
+      const { W, D, hb, hl } = LAPTOP;
+      // Bead-blasted aluminum: smooth, lit, a faint soft grain (no speckle).
+      const metal = (c) => {
+        const grain = 0.985 + 0.02 * c.noise(c.p[0] * 20, c.p[1] * 20, c.p[2] * 20);
+        return lit(shade(alu, grain), c.n, { amb: 0.66, dif: 0.4, spec: 0.35, pow: 20 });
+      };
+      const shell = { flat: 0.15, even: true, size: 1.1, jitter: 0.006 };
+      // Base; the deck with the keys is its own part so it can hide under
+      // the closed lid (splats are ordered by their modeled positions).
+      // Thin sides get small, dense splats so the edges stay crisp.
+      k.add(roundBox(W, hb, D, 0.02, { bottom: false, top: false }), {
+        ...shell,
+        even: false,
+        size: 1.4,
+        weight: 3,
+        opacity: 1,
+        pos: [0, hb / 2, 0],
+        color: metal,
+      });
+      const deck = k.part("deck", { pivot: [0, hb, 0] });
+      k.add(quad(W - 0.04, D - 0.04), {
+        ...shell,
+        pos: [0, hb, 0],
+        part: deck,
+        weight: 1.3,
+        color: (c) => {
+          const [x, , z] = c.p;
+          // Under a key there is nothing (the key covers it); round the keys,
+          // the dark well they sit in.
+          for (const key of LAPTOP_KEYS) {
+            if (Math.abs(x - key.x) < key.w / 2 - 0.004 && Math.abs(z - key.z) < key.d / 2 - 0.004) return null; // prettier-ignore
+          }
+          if (Math.abs(x) < 0.66 && z > -0.41 && z < 0.08) return keep(lit("#50555d", c.n, { spec: 0.05 }), 0.8); // prettier-ignore
+          if (onPad(c.p)) {
+            const e = Math.min(PAD.w / 2 - Math.abs(x - PAD.x), PAD.d / 2 - Math.abs(z - PAD.z));
+            return keep(e < 0.006 ? shade(metal(c), 0.8) : lit(shade(alu, 1.03), c.n, { amb: 0.7, spec: 0.15 }), 1.1); // prettier-ignore
+          }
+          return metal(c);
+        },
+      });
+      // Key caps: dark and raised. Each one goes down when pressed
+      // (behavior "key").
+      const legendDots = [];
+      LAPTOP_KEYS.forEach((key, i) => {
+        const legend = key.label;
+        k.add(k.box(key.w, 0.012, key.d), {
+          pos: [key.x, hb + 0.006, key.z],
+          part: deck,
+          kind: "key",
+          params: [i, 0],
+          flat: 0.15,
+          even: true,
+          weight: 3.2,
+          size: 0.8,
+          jitter: 0,
+          pattern: false,
+          color: (c) => {
+            if (c.n[1] < -0.5) return null;
+            const cap = "#2a2d33";
+            if (c.n[1] > 0.5) return keep(lit(cap, c.n, { amb: 0.9, dif: 0.25, spec: 0.12 }), 0.9); // prettier-ignore
+            return keep(lit(shade(cap, 0.8), c.n, { amb: 0.9, dif: 0.25, spec: 0 }));
+          },
+        });
+        // Its letters' pixels (5 x 7 font), each filled by a 3 x 3 grid of
+        // dots, just above the cap.
+        if (!legend) return;
+        const gp = Math.min(0.006, (0.78 * key.w) / (6 * legend.length - 1));
+        const gw = (6 * legend.length - 1) * gp;
+        for (let t = 0; t < 7; t++) {
+          for (let s = 0; s < 6 * legend.length; s++) {
+            if (!inked([legend], s + 0.5, t + 0.5)) continue;
+            for (let a = 0; a < 3; a++) {
+              for (let b = 0; b < 3; b++) {
+                legendDots.push({
+                  key: i,
+                  x: key.x - gw / 2 + (s + (a + 0.5) / 3) * gp,
+                  z: key.z - 3.5 * gp + (t + (b + 0.5) / 3) * gp,
+                });
+              }
+            }
+          }
+        }
+      });
+      // The letters: sharp because every dot sits on its pixel (random
+      // splats on the caps made them blurry). A dot is about a third of a
+      // font pixel across (0.0022 / the laptop's base splat size, which
+      // goes as 1 / sqrt(budget)); on a small budget there are fewer dots
+      // (the list is sampled) and they are bigger.
+      const dotSize = 0.0022 / (0.0056 * Math.sqrt(200000 / k.count));
+      k.cloud({ count: legendDots.length, pattern: false, part: deck }, (rand, j, n) => {
+        const dot = legendDots[Math.floor((j * legendDots.length) / n)];
+        return {
+          p: [dot.x, hb + 0.0126, dot.z],
+          n: [0, 1, 0],
+          flat: 0.2,
+          color: "#eef1f5",
+          opacity: 1,
+          size: dotSize * Math.sqrt(Math.max(1, legendDots.length / n)),
+          kind: "key",
+          params: [dot.key, 0],
+        };
+      });
+      // The lid, hinged along the back edge and modeled standing open.
+      const pivot = [0, hb + hl / 2, -D / 2 + 0.01];
+      const q = quatAxisAngle([1, 0, 0], -LAPTOP.open);
+      const place = (p) => add(pivot, quatRotate(q, sub(p, pivot)));
+      const lid = k.part("lid", { pivot, axis: [1, 0, 0] });
+      const bezel = k.part("bezel", { pivot, axis: [1, 0, 0] });
+      const screen = k.part("screen", { pivot, axis: [1, 0, 0] });
+      const lidY = hb + hl / 2 + 0.002;
+      k.add(roundBox(W, hl, D, 0.012, { bottom: false }), {
+        ...shell,
+        even: false,
+        size: 1.3,
+        weight: 1.6,
+        opacity: 1,
+        pos: place([0, lidY, 0]),
+        quat: q,
+        part: lid,
+        color: metal,
+      });
+      const SW = W - 0.14;
+      const SD = D - 0.16;
+      // The black bezel only round the screen: under the screen there is
+      // nothing, so the two never sort through each other (that was the
+      // speckle on the old screen).
+      k.add(quad(W - 0.03, D - 0.03, -1), {
+        pos: place([0, lidY - hl / 2 - 0.001, 0]),
+        quat: q,
+        part: bezel,
+        flat: 0.12,
+        even: true,
+        size: 1.1,
+        jitter: 0,
+        pattern: false,
+        color: (c) => {
+          const [x, , z] = c.lp;
+          if (Math.abs(x) < SW / 2 - 0.004 && Math.abs(z - 0.005) < SD / 2 - 0.004) return null;
+          if (Math.hypot(x, z - (D - 0.03) / 2 + 0.035) < 0.01) return keep("#3a4250");
+          // Smaller splats at the outer edge, so the bezel stops at the case.
+          const inner = Math.max(Math.abs(x) - SW / 2, Math.abs(z - 0.005) - SD / 2);
+          const edge = Math.min(
+            (W - 0.03) / 2 - Math.abs(x),
+            (D - 0.03) / 2 - Math.abs(z),
+            inner + 0.004,
+          );
+          const col = mix("#0b0e13", "#1a1f27", 0.5 + 0.4 * (z / D));
+          return keep(col, 0.35 + 0.65 * clamp(edge / 0.03, 0, 1));
+        },
+      });
+      // The screen: every splat shows the live picture (behavior "screen").
+      k.add(quad(SW, SD, -1), {
+        pos: place([0, lidY - hl / 2 - 0.002, 0.005]),
+        quat: q,
+        part: screen,
+        kind: "screen",
+        params: (c) => [c.u, 1 - c.v],
+        flat: 0.08,
+        even: true,
+        weight: 7,
+        size: 1.05,
+        jitter: 0,
+        pattern: false,
+        color: () => keep("#202838"),
+      });
+    },
+  },
+
+  "music-box": {
+    alive: true,
+    options: [{ key: "wood", label: "Wood", type: "color", default: "#8a4526" }],
+    controls: [{ key: "open", label: "Open", type: "toggle", default: 1, ease: 1.4 }],
+    action: { key: "open", label: "Open or close" },
+    // Hands-on (lane Hands engine B): lift the lid on its hinge, and turn
+    // the crank by dragging round it: each click of the crank plays the
+    // tune's next note, and the dancer turns with it.
+    hands: {
+      joints: [
+        {
+          type: "hinge",
+          part: "lid",
+          pivot: [0, 0.5, -0.38],
+          axis: [-1, 0, 0],
+          min: 0,
+          max: 1.95,
+          bounce: 0.15,
+          start: (c) => 1.95 * ease3(c.open),
+          pos: [0, 0.55, 0],
+          pick: [0.6, 0.12, 0.42],
+          sound: (ev, vol) => (ev.v < 1 ? { voice: "wood", f: 450, decay: 1.1, vol: vol * 0.9 } : { voice: "wood", f: 600, decay: 0.4, vol: vol * 0.4 }), // prettier-ignore
+          // The lid's top hides once it stands open (the mirror shows), and
+          // the dancer rises out of the box as it opens.
+          also: (a, parts) => {
+            if (parts.lid) parts.lidTop = { ...parts.lid, visible: 1 - smoothstep(1.15, 1.6, a) };
+            parts.dancer = { ...parts.dancer, offset: [0, -0.34 * (1 - smoothstep(0.7, 1.95, a)), 0] }; // prettier-ignore
+            // The floating notes only while it stands open.
+            if (a < 1.3) NOTE_PATHS.forEach((n, i) => (parts["note" + i] = { visible: 0 }));
+            MUSIC_HAND.lid = a;
+          },
+        },
+        {
+          type: "dial",
+          part: "crank",
+          pivot: [0.58, 0.25, 0],
+          axis: [1, 0, 0],
+          detents: MUSIC_CLICKS,
+          drag: 2.5,
+          // (Small on a phone: a press on the box's side near it finds it.)
+          pos: [0.6, 0.3, 0],
+          pick: [0.12, 0.22, 0.24],
+          sound: (ev) => {
+            if (ev.kind !== "detent") return null;
+            const n = MUSIC_TUNE[((ev.n % MUSIC_TUNE.length) + MUSIC_TUNE.length) % MUSIC_TUNE.length]; // prettier-ignore
+            return n === "-" ? null : { voice: "tine", f: n, vol: 0.7 };
+          },
+          also: (a, parts) => {
+            parts.dancer = { ...parts.dancer, angle: 0.5 * a };
+            MUSIC_HAND.a = 0.5 * a;
+          },
+        },
+      ],
+    },
+    drive(t, c, out) {
+      const m = mem(c);
+      // Turned by hand (Hands-on): sorted again every quarter radian she (or
+      // the lid) turns, and once more on the frame after (lane Hands engine B).
+      if (MUSIC_HAND.a !== null) {
+        const slot = Math.round(MUSIC_HAND.a / 0.25) * 64 + Math.round(MUSIC_HAND.lid / 0.25);
+        if (slot !== MUSIC_HAND.slot || MUSIC_HAND.again) {
+          MUSIC_HAND.again = slot !== MUSIC_HAND.slot;
+          MUSIC_HAND.slot = slot;
+          out.resortPose = true;
+        }
+      }
+      const o = ease3(c.open);
+      out.parts.lid = { angle: -1.95 * o };
+      out.parts.lidTop = { angle: -1.95 * o, visible: 1 - smoothstep(0.55, 0.8, c.open) };
+      out.parts.dancer = {
+        angle: integrate(m, "spin", t, 2.4 * c.open),
+        offset: [0, -0.34 * (1 - smoothstep(0.35, 1, c.open)), 0],
+      };
+      out.parts.crank = { angle: integrate(m, "crank", t, 3 * c.open) };
+      NOTE_PATHS.forEach((n, i) => {
+        const s = (t * 0.28 + n.phase) % 1;
+        out.parts["note" + i] = {
+          offset: [0.12 * Math.sin(s * 5 + i), s * 0.75, 0],
+          visible:
+            smoothstep(0.6, 1, c.open) * smoothstep(0, 0.12, s) * (1 - smoothstep(0.75, 1, s)),
+        };
+      });
+    },
+    build(k, o) {
+      const wood = o.wood;
+      const gold = "#d8b25a";
+      const velvet = "#9e1b32";
+      const W = 1.1;
+      const H = 0.5;
+      const D = 0.76;
+      const top = H;
+      // Polished wood like the Enigma machine's case (lane Sharpness A):
+      // broad, soft grain bands and a sheen, no fine noise.
+      const grain = (c) => {
+        const g =
+          0.5 +
+          0.5 * Math.sin(c.p[1] * 22 + c.p[2] * 9 + c.p[0] * 4 + Math.sin(c.p[0] * 3.1) * 1.4);
+        return keep(
+          lit(mix(wood, shade(wood, 0.84), g), c.n, {
+            amb: 0.66,
+            dif: 0.42,
+            spec: 0.3,
+          }),
+        );
+      };
+      k.add(roundBox(W, H, D, 0.03, { top: false, bottom: false, even2d: true }), {
+        even: true,
+        opacity: 1,
+        jitter: 0.008,
+        weight: 1.8,
+        pos: [0, H / 2, 0],
+        flat: 0.15,
+        color: (c) => {
+          if (Math.abs(c.p[1] - 0.12) < 0.012 || Math.abs(c.p[1] - (H - 0.05)) < 0.01)
+            return keep(lit(gold, c.n, { spec: 0.5 }));
+          return grain(c);
+        },
+      });
+      // Velvet lining and the floor the dancer stands on.
+      k.add(evenBox(W - 0.07, H - 0.06, D - 0.07), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, H / 2 + 0.03, 0],
+        flat: 0.3,
+        color: (c) => (c.s.face === 2 ? null : shade(velvet, 0.78 + 0.08 * c.rand())),
+      });
+      // The lid with a mirror inside, hinged at the back. Its top is a part
+      // of its own that hides while the lid stands open, so the mirror shows
+      // (splats keep the order of the closed box).
+      const lid = k.part("lid", { pivot: [0, top, -D / 2], axis: [1, 0, 0] });
+      const lidTop = k.part("lidTop", { pivot: [0, top, -D / 2], axis: [1, 0, 0] });
+      k.add(roundBox(W, 0.1, D, 0.03, { top: false, even2d: true }), {
+        even: true,
+        opacity: 1,
+        jitter: 0.008,
+        weight: 1.8,
+        pos: [0, top + 0.05, 0],
+        part: lid,
+        flat: 0.15,
+        color: (c) => {
+          const [x, , z] = c.p;
+          if (c.s.face === 3) {
+            const inM = Math.abs(x) < W / 2 - 0.1 && Math.abs(z) < D / 2 - 0.1;
+            if (inM) return keep(mix("#c9d3de", "#f4f7fb", 0.5 + 0.5 * Math.sin((x - z) * 5)));
+            return shade(velvet, 0.8);
+          }
+          return grain(c);
+        },
+      });
+      k.add(quad(W - 0.06, D - 0.06), {
+        even: true,
+        opacity: 1,
+        jitter: 0.008,
+        weight: 1.8,
+        pos: [0, top + 0.1, 0],
+        part: lidTop,
+        flat: 0.15,
+        color: (c) => {
+          const [x, , z] = c.p;
+          const r = Math.hypot(x, z);
+          if (
+            Math.abs(r - 0.2) < 0.012 ||
+            Math.abs(Math.max(Math.abs(x) / (W / 2 - 0.08), Math.abs(z) / (D / 2 - 0.08)) - 1) <
+              0.02
+          )
+            return keep(lit(gold, c.n, { spec: 0.5 }));
+          return grain(c);
+        },
+      });
+      // The dancer on her turntable (she rises as the lid opens).
+      const base = 0.06;
+      const dancer = k.part("dancer", { pivot: [0, base, 0.02] });
+      const skin = "#f3cfb3";
+      const pink = "#ff8fb8";
+      const d = (shape, opts) =>
+        k.add(shape, {
+          opacity: 1,
+          jitter: 0.015,
+          part: dancer,
+          flat: 0.25,
+          weight: 2.2,
+          pattern: false,
+          ...opts,
+        });
+      d(k.cylinder(0.12, 0.02), {
+        pos: [0, top - 0.05, 0.02],
+        color: (c) => lit(gold, c.n, { spec: 0.5 }),
+      });
+      for (const s of [-1, 1])
+        d(k.cylinder(0.011, 0.2, { caps: false }), {
+          pos: [s * 0.015, top + 0.06, 0.02],
+          rot: [0, 0, s * 4],
+          color: (c) => lit(skin, c.n),
+        });
+      d(k.cone(0.13, 0.02, 0.06), {
+        pos: [0, top + 0.17, 0.02],
+        color: (c) =>
+          lit(mix(pink, "#ffffff", 0.3 * ((c.u * 18) % 1 < 0.5)), c.n, { amb: 0.75, dif: 0.35 }),
+      });
+      d(k.ellipsoid(0.035, 0.06, 0.03), {
+        pos: [0, top + 0.23, 0.02],
+        color: (c) => lit(pink, c.n),
+      });
+      d(k.sphere(0.033), { pos: [0, top + 0.315, 0.02], color: (c) => lit(skin, c.n) });
+      d(k.sphere(0.018), { pos: [0, top + 0.35, 0.005], color: (c) => lit("#4a2c1d", c.n) });
+      d(
+        k.tube(
+          (tt) => {
+            const a = Math.PI * (0.1 + 0.8 * tt);
+            return [Math.cos(a) * 0.07, top + 0.26 + Math.sin(a) * 0.13, 0.02];
+          },
+          0.008,
+          { samples: 48, grid: 24 },
+        ),
+        { color: (c) => lit(skin, c.n) },
+      );
+      // The crank on the side.
+      const crank = k.part("crank", { pivot: [W / 2 + 0.03, H / 2, 0], axis: [1, 0, 0] });
+      k.add(evenCylinder(0.02, 0.02, 0.06), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [W / 2 + 0.03, H / 2, 0],
+        rot: [0, 0, 90],
+        part: crank,
+        weight: 2,
+        color: (c) => lit(gold, c.n, { spec: 0.5 }),
+      });
+      k.add(evenCylinder(0.015, 0.015, 0.14), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [W / 2 + 0.06, H / 2 + 0.06, 0],
+        part: crank,
+        weight: 2,
+        color: (c) => lit(gold, c.n, { spec: 0.5 }),
+      });
+      k.add(k.sphere(0.03), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [W / 2 + 0.06, H / 2 + 0.13, 0],
+        part: crank,
+        weight: 2,
+        color: (c) => lit("#f4efe6", c.n),
+      });
+      // Musical notes that float up while it plays.
+      NOTE_PATHS.forEach((n, i) => {
+        const part = k.part("note" + i, { pivot: [n.x, top + 0.2, n.z] });
+        const col = ["#f2c14e", "#ff8fb8", "#8ecae6"][i];
+        const at = [n.x, top + 0.25, n.z];
+        k.add(evenEllipsoid(k, 0.04, 0.03, 0.02), {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          pos: at,
+          rot: [0, 0, 25],
+          part,
+          weight: 3,
+          pattern: false,
+          color: (c) => keep(lit(col, c.n, { spec: 0.5 })),
+        });
+        k.add(evenCylinder(0.008, 0.008, 0.14, false), {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          pos: [at[0] + 0.035, at[1] + 0.07, at[2]],
+          part,
+          weight: 3,
+          pattern: false,
+          color: col,
+        });
+        k.add(evenEllipsoid(k, 0.035, 0.012, 0.01), {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          pos: [at[0] + 0.06, at[1] + 0.125, at[2]],
+          rot: [0, 0, -30],
+          part,
+          weight: 3,
+          pattern: false,
+          color: col,
+        });
+      });
+      k.reach([0, top + 1.0, 0]);
+    },
+  },
+
+  clock: {
+    alive: true,
+    options: [
+      { key: "color", label: "Color", type: "color", default: "#d6453d" },
+      // Lane Fix5: the time zone the hands show (this device's own by
+      // default, read by the browser with no permission needed).
+      {
+        key: "zone",
+        label: "Time zone",
+        type: "select",
+        default: "local",
+        choices: CLOCK_ZONES.map(([id, label]) => ({ id, label })),
+      },
+    ],
+    controls: [{ key: "ring", label: "Ring", type: "pulse", ease: 2.2 }],
+    action: { key: "ring", label: "Ring the bell" },
+    // Hands-on (lane Hands-on H3): drag round the face to set the time. The
+    // minute hand turns under the finger, clicking at each minute, and the
+    // hour hand follows a twelfth as fast; the second hand keeps ticking.
+    // (Twelve turns either way at most; ↺ winds back to the real time.)
+    hands: {
+      joints: (d) => [
+        {
+          type: "dial",
+          part: "minute",
+          pivot: [0, 0, 0],
+          axis: [0, 0, 1],
+          min: -13 * TAU,
+          max: 13 * TAU,
+          detents: 60,
+          drag: 9,
+          start: () => {
+            const [hh, mm, ss] = clockTime(new Date(), d?.zone);
+            const m = mm + ss / 60;
+            CLOCK_HAND.a0 = (-m / 60) * TAU;
+            CLOCK_HAND.h0 = (-((hh % 12) + m / 60) / 12) * TAU;
+            return CLOCK_HAND.a0;
+          },
+          pos: [0, 0, 0.2],
+          pick: [0.74, 0.74, 0.3],
+          sound: (ev, vol) =>
+            ev.kind === "detent" ? { voice: "click", f: 2400, decay: 0.03, vol: 0.12 + 0.2 * Math.min(1, vol) } : null, // prettier-ignore
+          also: (a, parts) => {
+            parts.hour = { angle: CLOCK_HAND.h0 + (a - CLOCK_HAND.a0) / 12 };
+          },
+        },
+      ],
+    },
+    drive(t, c, out, info) {
+      // The hands show the real time, in this device's zone or the one
+      // picked in the Toy tab.
+      const d = new Date();
+      const [hh, mm, ss] = clockTime(d, info?.data?.zone);
+      const s = ss + d.getMilliseconds() / 1000;
+      const m = mm + s / 60;
+      const h = (hh % 12) + m / 60;
+      const tick = Math.floor(s) + ease3(clamp((s % 1) / 0.18, 0, 1));
+      out.parts.hour = { angle: (-h / 12) * TAU };
+      out.parts.minute = { angle: (-m / 60) * TAU };
+      out.parts.second = { angle: (-tick / 60) * TAU };
+      // Splats sort in the pose they were built in (the hands at 12), so a
+      // hand turned round would sort as if it still pointed up and the dial
+      // could draw over it. Sort the hands where they stand each time the
+      // second hand has ticked (lane Fix4).
+      const kd = info?.data;
+      const now = Math.floor(h * 3600 - 0.2);
+      if (kd && now !== kd.handsSorted) {
+        kd.handsSorted = now;
+        out.resortPose = true;
+      }
+      const r = c.ring;
+      const time = info?.time ?? t;
+      out.parts.hammer = { angle: r > 0 ? 0.5 * Math.sin(time * 70) * Math.min(1, r * 2) : 0 };
+      out.body = {
+        quat: [
+          0,
+          0,
+          Math.sin(0.025 * Math.sin(time * 55) * r),
+          Math.cos(0.025 * Math.sin(time * 55) * r),
+        ],
+        offset: [0, 0.015 * Math.abs(Math.sin(time * 40)) * r, 0],
+      };
+    },
+    build(k, o) {
+      // drive() keeps when it last sorted the hands here, and reads the
+      // time zone (lane Fix5).
+      k.data = { zone: o.zone && o.zone !== "local" ? o.zone : null };
+      const body = o.color;
+      const R = 0.8;
+      const Dp = 0.34;
+      const zf = Dp / 2;
+      const dial = "#fbf8f0";
+      // Body: a drum facing the viewer.
+      k.add(k.cylinder(R, Dp, { caps: "bottom" }), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        rot: [90, 0, 0],
+        flat: 0.15,
+        interior: 0.06,
+        core: "#6a6f78",
+        color: (c) => lit(body, c.n, { amb: 0.64, dif: 0.45, spec: 0.45, pow: 26 }),
+      });
+      k.add(evenTorus(k, R, 0.055), {
+        opacity: 1,
+        jitter: 0.015,
+        even: true,
+        pos: [0, 0, zf],
+        rot: [90, 0, 0],
+        flat: 0.2,
+        weight: 1.3,
+        color: (c) => chrome(c.n),
+      });
+      // The dial: ticks, numbers and a maker's line.
+      // The dial: one face only, spread evenly, so no splats are wasted on
+      // its back and the case never shows through as speckle.
+      const dialR = R - 0.03;
+      const dialShape = k.param(
+        (u, v) => [dialR * v * Math.sin(TAU * u), dialR * v * Math.cos(TAU * u), 0],
+        { grid: 96 },
+      );
+      k.add(dialShape, {
+        opacity: 1,
+        jitter: 0.01,
+        even: true,
+        pos: [0, 0, zf + 0.002],
+        flat: 0.12,
+        pattern: false,
+        color: (c) => {
+          const x = c.p[0];
+          const y = c.p[1];
+          const r = Math.hypot(x, y);
+          const a = (Math.atan2(x, y) / TAU + 1) % 1;
+          const mm = a * 60;
+          const md = Math.abs(mm - Math.round(mm));
+          const hour = Math.round(mm) % 5 === 0;
+          if (
+            r > 0.6 &&
+            r < 0.72 &&
+            md * ((r * TAU) / 60) < (hour ? 0.018 : 0.006) &&
+            (hour || r > 0.66)
+          )
+            return keep("#1d1d22");
+          const hn = Math.round(a * 12) || 12;
+          const ha = (hn / 12) * TAU;
+          const cx = Math.sin(ha) * 0.49;
+          const cy = Math.cos(ha) * 0.49;
+          const sz = 0.05;
+          if (
+            Math.hypot(x - cx, y - cy) < 0.12 &&
+            textDist(String(hn), (x - cx) / sz, (y - cy) / sz) < 0.24
+          )
+            return keep("#1d1d22");
+          return keep(shade(dial, 0.97 + 0.03 * (1 - r)));
+        },
+      });
+      // Hands (parts turning about the center). Each is a thin, flat blade
+      // with a round boss, stacked on a visible arbor a few millimetres apart
+      // like a real clock's: high enough above the dial that the dial's big,
+      // flat splats never sort in front of a hand (lane Fix4).
+      const HAND_Z = { hour: 0.04, minute: 0.055, second: 0.07 };
+      const hand = (name, len, w, col, back = 0, tip = 0.5) => {
+        const part = k.part(name, { pivot: [0, 0, 0], axis: [0, 0, 1] });
+        const z = zf + HAND_Z[name];
+        const look = {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          part,
+          flat: 0.15,
+          weight: 3,
+          pattern: false,
+          color: (c) => keep(lit(col, [0, 0, 1], { spec: 0.4 })),
+        };
+        // The blade: full width at the center, tapering to a point.
+        const blade = k.param(
+          (u, v) => {
+            const y = -back + v * (len + back);
+            const f = y < 0 ? 1 : 1 - (1 - tip) * (y / len);
+            const pt = y > len - w ? (len - y) / w : 1;
+            return [(u - 0.5) * w * f * Math.max(0, pt), y, 0];
+          },
+          { grid: 48 },
+        );
+        k.add(blade, { ...look, pos: [0, 0, z] });
+        // The boss round the arbor.
+        k.add(k.disc(w * 0.85 + 0.012), { ...look, pos: [0, 0, z + 0.001], rot: [90, 0, 0] });
+        return part;
+      };
+      hand("hour", 0.36, 0.055, "#1d1d22", 0.05, 0.55);
+      hand("minute", 0.55, 0.04, "#1d1d22", 0.06, 0.45);
+      const sec = hand("second", 0.6, 0.012, "#d62828", 0.16, 0.8);
+      k.add(k.disc(0.035), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, -0.11, zf + HAND_Z.second + 0.001],
+        rot: [90, 0, 0],
+        part: sec,
+        weight: 3,
+        pattern: false,
+        color: (c) => keep(lit("#d62828", [0, 0, 1], { spec: 0.4 })),
+      });
+      // The arbor the hands turn on, from the dial up through them, and the
+      // little cap nut that holds them on.
+      k.add(k.cylinder(0.014, HAND_Z.second + 0.01, { caps: false }), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, 0, zf + (HAND_Z.second + 0.01) / 2],
+        rot: [90, 0, 0],
+        weight: 3,
+        pattern: false,
+        color: (c) => chrome(c.n, "#c9a45c"),
+      });
+      k.add(k.sphere(0.022), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, 0, zf + HAND_Z.second + 0.008],
+        scale: [1, 1, 0.55],
+        weight: 3,
+        pattern: false,
+        color: (c) => chrome(c.n, "#c9a45c"),
+      });
+      // Bells, a handle and a hammer between them.
+      for (const s of [-1, 1]) {
+        k.add(
+          k.lathe(
+            [
+              [0.3, 0],
+              [0.29, 0.06],
+              [0.24, 0.16],
+              [0.14, 0.23],
+              [0, 0.25],
+            ],
+            { grid: 64 },
+          ),
+          {
+            even: true,
+            opacity: 1,
+            jitter: 0.015,
+            pos: [s * 0.46, 0.66, 0],
+            rot: [0, 0, s * -32],
+            flat: 0.15,
+            color: (c) => chrome(c.n, "#e8c06a"),
+          },
+        );
+        k.add(k.cylinder(0.035, 0.18), {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          pos: [s * 0.42, -0.83, 0],
+          rot: [0, 0, s * 22],
+          weight: 2,
+          color: (c) => chrome(c.n),
+        });
+      }
+      k.add(
+        k.tube(
+          (tt) => {
+            const a = Math.PI * (0.12 + 0.76 * tt);
+            return [Math.cos(a) * 0.55, 0.66 + Math.sin(a) * 0.42, -0.02];
+          },
+          0.028,
+          { samples: 64, grid: 32 },
+        ),
+        { opacity: 1, jitter: 0.015, flat: 0.2, weight: 1.5, color: (c) => chrome(c.n) },
+      );
+      const hammer = k.part("hammer", { pivot: [0, 0.8, 0], axis: [0, 0, 1] });
+      k.add(k.cylinder(0.012, 0.22), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, 0.9, 0.02],
+        part: hammer,
+        weight: 2,
+        color: (c) => chrome(c.n),
+      });
+      k.add(k.sphere(0.04), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, 1.01, 0.02],
+        part: hammer,
+        weight: 2,
+        color: (c) => chrome(c.n),
+      });
+    },
+  },
+
+  "gift-box": {
+    // Lane Any pose: turned over in Hands-on, its rising splats keep to the
+    // toy's own frame (the confetti bursts out of the open lid), not the
+    // world's up.
+    gravity: false,
+    alive: true,
+    options: [
+      { key: "paper", label: "Paper", type: "color", default: "#e8435a" },
+      { key: "ribbon", label: "Ribbon", type: "color", default: "#f6c343" },
+    ],
+    controls: [{ key: "open", label: "Open", type: "toggle", default: 0, ease: 1 }],
+    action: { key: "open", label: "Open the present" },
+    // Hands-on (lane Hands-on H3): lift the lid off and the star springs up
+    // out of the box, with the confetti; set the lid back on (near its
+    // place, or point at its place) and it clicks home, pushing the star
+    // back down. The box itself stays put, so the lid can rest on it.
+    hands: {
+      floor: 0,
+      pieces: () => [
+        { part: "lid", pos: [0, 0.81, 0], pivot: [0, 0.81, -0.5], solid: GIFT_LID, points: surfacePoints(GIFT_LID, 1), pick: [0.6, 0.24, 0.6], mass: 0.3, friction: 0.7, restitution: 0.2 }, // prettier-ignore
+        // The box: ground for the lid, never picked up.
+        { pos: [0, 0.39, 0], solid: GIFT_BOX, pick: [1e-3, 1e-3, 1e-3] },
+      ],
+      joints: [
+        {
+          type: "socket",
+          part: "lid",
+          snap: 0.3,
+          sound: () => ({ voice: "hollow", f: 180, decay: 0.2, vol: 0.5 }),
+          also: (v, parts) => {
+            const o = parts.lid?.offset;
+            GIFT_HAND.off = o ? len(o) : 0;
+          },
+        },
+      ],
+      sound: (hit, vol) => ({ voice: "hollow", f: 140, decay: 0.15, vol: vol * 0.7 }),
+    },
+    drive(t, c, out) {
+      const o = c.open;
+      // By hand: the star springs up once the lid is off, and back down as
+      // it goes on (a spring stepped on the toy's clock; lane Hands-on H3).
+      const g = GIFT_HAND;
+      const dt = g.t === null ? 0 : clamp(t - g.t, 0, 0.05);
+      g.t = t;
+      const want = smoothstep(0.35, 0.6, g.off);
+      g.v += (90 * (want - g.pop) - 9 * g.v) * dt;
+      g.pop += g.v * dt;
+      if (want === 0 && g.pop < 0.002 && Math.abs(g.v) < 0.01) g.pop = g.v = 0;
+      const up = easeOutBack(clamp(o / 0.7, 0, 1));
+      out.parts.lid = { offset: [0, 0.55 * up, -0.45 * ease3(o)], angle: -0.9 * ease3(o) };
+      const star = Math.max(easeOutBack(window01(o, 0.25, 1)), g.pop);
+      out.parts.star = {
+        offset: [0, 0.82 * star, 0],
+        angle: 0.5 * Math.sin(t * 1.2) * Math.max(o, clamp(g.pop, 0, 1)),
+      };
+      out.parts.confetti = { visible: Math.max(smoothstep(0.25, 0.6, o), smoothstep(0.3, 0.8, g.pop)) }; // prettier-ignore
+      out.amount = 0.6 + 0.6 * o;
+    },
+    build(k, o) {
+      const paper = o.paper;
+      const ribbon = o.ribbon;
+      const S = 1;
+      const H = 0.78;
+      const band = 0.085;
+      const wrap = (c, faceUp) => {
+        const [x, y, z] = c.p;
+        const f = c.s.face;
+        const onX = Math.abs(x) < band && f !== 0 && f !== 1;
+        const onZ = Math.abs(z) < band && f !== 4 && f !== 5;
+        if (onX || onZ || (faceUp && (Math.abs(x) < band || Math.abs(z) < band)))
+          return lit(ribbon, c.n, { amb: 0.7, dif: 0.35, spec: 0.5, pow: 20 });
+        // Polka dots.
+        const g = 0.16;
+        const a = f < 2 ? z : x;
+        const b = f === 2 || f === 3 ? z : y;
+        const du = ((((a / g) % 1) + 1) % 1) - 0.5;
+        const dv = ((((b / g + 0.5 * (Math.floor(a / g) % 2)) % 1) + 1) % 1) - 0.5;
+        const dot2 = Math.hypot(du, dv) < 0.2;
+        return lit(dot2 ? mix(paper, "#ffffff", 0.75) : paper, c.n, {
+          amb: 0.66,
+          dif: 0.42,
+          spec: 0.18,
+        });
+      };
+      k.add(roundBox(S, H, S, 0.025, { top: false, bottom: false, even2d: true }), {
+        even: true,
+        opacity: 1,
+        jitter: 0.01,
+        pos: [0, H / 2, 0],
+        flat: 0.15,
+        color: (c) => wrap(c, false),
+      });
+      k.add(evenBox(S - 0.03, H - 0.02, S - 0.03), {
+        even: true,
+        opacity: 1,
+        jitter: 0.01,
+        pos: [0, H / 2 + 0.01, 0],
+        flat: 0.2,
+        color: (c) => (c.s.face === 2 ? null : shade(paper, 0.45)),
+      });
+      // The lid, with the bow on top.
+      const lidY = H + 0.03;
+      const lid = k.part("lid", { pivot: [0, lidY, -S / 2], axis: [1, 0, 0] });
+      k.add(roundBox(S + 0.07, 0.16, S + 0.07, 0.03, { even2d: true }), {
+        even: true,
+        opacity: 1,
+        jitter: 0.01,
+        pos: [0, lidY, 0],
+        part: lid,
+        flat: 0.15,
+        color: (c) => (c.s.face === 3 ? shade(paper, 0.55) : wrap(c, c.s.face === 2)),
+      });
+      const bowY = lidY + 0.08;
+      for (const s of [-1, 1]) {
+        k.add(evenTorusOut(k, 0.13, 0.04), {
+          even: true,
+          opacity: 1,
+          jitter: 0.01,
+          pos: [s * 0.13, bowY + 0.1, 0],
+          rot: [90, 0, s * -30],
+          scale: [1.15, 1, 0.7],
+          part: lid,
+          flat: 0.2,
+          weight: 1.4,
+          color: (c) => lit(ribbon, c.n, { amb: 0.66, dif: 0.42, spec: 0.5, pow: 20 }),
+        });
+        k.add(evenBox(0.09, 0.012, 0.3), {
+          even: true,
+          opacity: 1,
+          jitter: 0.01,
+          pos: [s * 0.06, bowY + 0.005, 0.2],
+          rot: [0, s * 25, 0],
+          part: lid,
+          flat: 0.15,
+          weight: 1.4,
+          color: (c) => lit(ribbon, c.n, { spec: 0.4 }),
+        });
+      }
+      k.add(k.sphere(0.06), {
+        even: true,
+        opacity: 1,
+        jitter: 0.01,
+        pos: [0, bowY + 0.04, 0],
+        part: lid,
+        weight: 2,
+        flat: 0.2,
+        color: (c) => lit(ribbon, c.n, { spec: 0.5 }),
+      });
+      // The surprise: a golden star on a spring, and confetti.
+      const star = k.part("star", { pivot: [0, H * 0.55, 0] });
+      const pts = starPoints(0.3, 0.13);
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i];
+        const b = pts[(i + 1) % pts.length];
+        for (const z of [-0.04, 0.04])
+          k.add(
+            triShape(
+              [0, H * 0.55, z * 1.6],
+              [a[0], H * 0.55 + a[1], z],
+              [b[0], H * 0.55 + b[1], z],
+            ),
+            {
+              part: star,
+              weight: 2,
+              flat: 0.2,
+              pattern: false,
+              color: (c) =>
+                keep(
+                  lit("#ffd23f", c.n[2] * z > 0 ? c.n : mul(c.n, -1), {
+                    amb: 0.75,
+                    dif: 0.4,
+                    spec: 0.6,
+                  }),
+                ),
+            },
+          );
+      }
+      k.add(
+        k.tube(
+          (tt) => [
+            0.06 * Math.cos(tt * 30),
+            0.05 + tt * (H * 0.55 - 0.3),
+            0.06 * Math.sin(tt * 30),
+          ],
+          0.01,
+          { samples: 200, grid: 32 },
+        ),
+        { part: star, weight: 2, flat: 0.3, color: (c) => chrome(c.n) },
+      );
+      const confetti = k.part("confetti", { pivot: [0, H, 0] });
+      const cols = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93", "#ff8fab"];
+      k.cloud({ share: 0.025, size: 1.8, part: confetti, pattern: false }, (rand) => ({
+        p: [(rand() - 0.5) * 0.7, H - 0.1 + rand() * 0.2, (rand() - 0.5) * 0.7],
+        n: [rand() - 0.5, rand() - 0.5, rand() - 0.5],
+        flat: 0.1,
+        color: cols[Math.floor(rand() * cols.length)],
+        opacity: 1,
+        kind: "rise",
+        params: [0.9 + 0.8 * rand(), rand()],
+      }));
+      k.reach([0, H + 1.05, 0]);
+    },
+  },
+
+  umbrella: {
+    alive: true,
+    options: [
+      {
+        key: "style",
+        label: "Canopy",
+        type: "select",
+        default: "rainbow",
+        choices: [
+          { id: "rainbow", label: "Rainbow" },
+          { id: "stripes", label: "Stripes" },
+          { id: "plain", label: "Plain" },
+        ],
+      },
+      { key: "color", label: "Color", type: "color", default: "#d7263d" },
+    ],
+    controls: [{ key: "open", label: "Open", type: "toggle", default: 1, ease: 1.1 }],
+    action: { key: "open", label: "Open or close" },
+    // Hands-on (lane Hands-on H3): slide the runner down the shaft to close
+    // it and up to open it; the ribs fold and spread with it. Open, the
+    // runner is caught by the top latch: a firm pull frees it with a click.
+    hands: {
+      joints: [
+        {
+          type: "slider",
+          part: "runner",
+          pivot: [0, UMB.ry, 0],
+          axis: [0, 1, 0],
+          min: umbrellaRunner(UMB.shut),
+          max: 0,
+          stick: 0.05,
+          gravity: false,
+          friction: 3,
+          damping: 8,
+          bounce: 0.05,
+          start: (c) => umbrellaRunner(UMB.shut * (1 - ease3(c.open))),
+          pos: [0, UMB.ry, 0],
+          pick: [0.2, 0.3, 0.2],
+          sound: (ev, vol) =>
+            ev.kind === "free" || ev.v > -0.01
+              ? { voice: "click", f: 1800, decay: 0.05, vol: 0.5 }
+              : { voice: "rustle", vol: vol * 0.6 },
+          also: (v, parts) => {
+            const th = umbrellaFold(v);
+            for (let i = 0; i < 8; i++) parts["panel" + i] = { angle: th };
+          },
+        },
+      ],
+    },
+    drive(t, c, out) {
+      const close = 1 - ease3(c.open);
+      for (let i = 0; i < 8; i++) out.parts["panel" + i] = { angle: UMB.shut * close };
+      out.parts.runner = { offset: [0, umbrellaRunner(UMB.shut * close), 0] };
+      out.body = { quat: quatAxisAngle([0, 1, 0], 0.15 * Math.sin(t * 0.5)) };
+    },
+    build(k, o) {
+      const R = 1.05;
+      const top = 0.72;
+      const droop = 0.42;
+      const handleCol = "#6b3f22";
+      for (let i = 0; i < 8; i++) {
+        const th = (i / 8) * TAU;
+        const axis = [Math.cos(th), 0, -Math.sin(th)];
+        const part = k.part("panel" + i, { pivot: [0, top, 0], axis });
+        const col =
+          o.style === "rainbow"
+            ? hsv(i / 8, 0.7, 0.95)
+            : o.style === "stripes"
+              ? i % 2
+                ? "#f7f4ee"
+                : o.color
+              : o.color;
+        const w = Math.PI / 8;
+        const panel = k.param(
+          (u, v) => {
+            const a = th + (u - 0.5) * 2 * w;
+            const s = v;
+            const scallop = 1 - 0.07 * Math.pow(Math.sin((u - 0.5) * Math.PI + Math.PI / 2), 2) * s;
+            const r =
+              s * R * (0.97 + 0.03 * Math.cos((u - 0.5) * 2 * w * 8)) * (2 - scallop) * 0.5 * 2;
+            return [
+              Math.sin(a) * r * scallop,
+              top - droop * Math.pow(s, 1.7) + 0.06 * s * (1 - s),
+              Math.cos(a) * r * scallop,
+            ];
+          },
+          { grid: 40 },
+        );
+        k.add(panel, {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          part,
+          flat: 0.12,
+          color: (c) => {
+            const e = Math.abs(c.u - 0.5) * 2;
+            const n = c.n[1] < 0 ? mul(c.n, -1) : c.n;
+            const base = lit(col, n, { amb: 0.66, dif: 0.42, spec: 0.25 });
+            if (e > 0.965) return shade(base, 0.6);
+            return c.v > 0.965 ? shade(base, 0.8) : base;
+          },
+        });
+        // A rib under the seam.
+        k.add(
+          k.tube(
+            (tt) => {
+              const r = tt * R * 0.99;
+              const a = th + w;
+              return [
+                Math.sin(a) * r * 0.93,
+                top - droop * Math.pow(tt, 1.7) + 0.06 * tt * (1 - tt) - 0.012,
+                Math.cos(a) * r * 0.93,
+              ];
+            },
+            0.009,
+            { samples: 32, grid: 16 },
+          ),
+          {
+            even: true,
+            opacity: 1,
+            jitter: 0.015,
+            part,
+            weight: 1.5,
+            flat: 0.3,
+            color: "#3b3b40",
+          },
+        );
+      }
+      // The runner (lane Hands-on H3): the sleeve that slides up the shaft
+      // to open the canopy, and its collar.
+      const runner = k.part("runner", { pivot: [0, UMB.ry, 0] });
+      k.add(evenCylinder(0.04, 0.04, 0.1), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, UMB.ry, 0],
+        part: runner,
+        flat: 0.2,
+        weight: 1.5,
+        color: (c) => lit("#2e2e33", c.n, { spec: 0.35 }),
+      });
+      k.add(evenCylinder(0.05, 0.05, 0.018), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, UMB.ry + 0.05, 0],
+        part: runner,
+        weight: 1.5,
+        color: (c) => chrome(c.n),
+      });
+      // Shaft, tip and a crook handle.
+      k.add(evenCylinder(0.022, 0.022, top + 0.95), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, (top - 0.95) / 2, 0],
+        weight: 1.5,
+        color: (c) => chrome(c.n),
+      });
+      k.add(evenCylinder(0.03, 0.005, 0.12), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, top + 0.06, 0],
+        weight: 2,
+        color: (c) => chrome(c.n),
+      });
+      k.add(
+        evenTube(
+          k,
+          (tt) => {
+            if (tt < 0.45) return [0, -0.95 - tt * 0.5, 0];
+            const a = ((tt - 0.45) / 0.55) * Math.PI;
+            return [0.14 - Math.cos(a) * 0.14, -1.175 - Math.sin(a) * 0.14, 0];
+          },
+          0.04,
+          { samples: 96, grid: 32, caps: true },
+        ),
+        {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          flat: 0.2,
+          weight: 1.3,
+          color: (c) => lit(handleCol, c.n, { spec: 0.45 }),
+        },
+      );
+    },
+  },
+
+  "desk-fan": {
+    alive: true,
+    options: [{ key: "color", label: "Color", type: "color", default: "#6cc2b3" }],
+    controls: [
+      { key: "power", label: "On", type: "toggle", default: 1, ease: 1.8 },
+      { key: "swing", label: "Swing", type: "toggle", default: 1, ease: 1 },
+    ],
+    action: { key: "power", label: "Switch on or off" },
+    // Hands-on (lane Hands-on H3): push the head up or down to tilt it on
+    // its stiff hinge; it stays where it is left (and keeps swinging and
+    // spinning), stopping with a knock at its tilt's ends.
+    hands: {
+      joints: [
+        {
+          type: "hinge",
+          part: "head",
+          pivot: FAN.yawAt,
+          axis: [1, 0, 0],
+          min: -0.5,
+          max: 0.32,
+          gravity: false,
+          damping: 14,
+          bounce: 0.05,
+          pos: [0, FAN.hub[1], 0.04],
+          pick: [0.42, 0.42, 0.34],
+          sound: (ev, vol) => ({ voice: "clack", f: 420, decay: 0.08, vol: vol * 0.6 }),
+          also: (a, parts) => {
+            const S = FAN.yawAt;
+            const Hc = FAN.hub;
+            const q = quatMul(quatAxisAngle([0, 1, 0], FAN_HAND.yaw), quatAxisAngle([1, 0, 0], a));
+            parts.head = { quat: q, offset: [0, 0, 0] };
+            const moved = add(S, quatRotate(q, sub(Hc, S)));
+            parts.blades = { quat: quatMul(q, quatAxisAngle([0, 0, 1], -FAN_HAND.spin)), offset: sub(moved, Hc) }; // prettier-ignore
+          },
+        },
+      ],
+    },
+    drive(t, c, out) {
+      const m = mem(c);
+      const spin = integrate(m, "spin", t, 24 * c.power * c.power);
+      const yaw = 0.55 * Math.sin(integrate(m, "osc", t, 0.55 * c.swing * c.power));
+      FAN_HAND.yaw = yaw;
+      FAN_HAND.spin = spin;
+      const qy = quatAxisAngle([0, 1, 0], yaw);
+      const qs = quatAxisAngle([0, 0, 1], -spin);
+      out.parts.head = { quat: qy };
+      const S = FAN.yawAt;
+      const Hc = FAN.hub;
+      const moved = add(S, quatRotate(qy, sub(Hc, S)));
+      out.parts.blades = { quat: quatMul(qy, qs), offset: sub(moved, Hc) };
+    },
+    build(k, o) {
+      const body = o.color;
+      const paint = (c) => lit(body, c.n, { amb: 0.66, dif: 0.42, spec: 0.45, pow: 26 });
+      const S = FAN.yawAt;
+      const Hc = FAN.hub;
+      // Base and stand.
+      k.add(
+        k.lathe(
+          [
+            [0.4, 0],
+            [0.4, 0.05],
+            [0.36, 0.09],
+            [0.12, 0.11],
+            [0.06, 0.13],
+            [0, 0.13],
+          ],
+          { grid: 64 },
+        ),
+        { even: true, opacity: 1, jitter: 0.015, flat: 0.15, color: paint },
+      );
+      for (const [x, col] of [
+        [-0.12, "#f4f1ea"],
+        [0, "#f4f1ea"],
+        [0.12, "#e05a47"],
+      ])
+        k.add(k.cylinder(0.03, 0.03), {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          pos: [x, 0.09, 0.3],
+          rot: [-15, 0, 0],
+          weight: 2,
+          color: (c) => lit(col, c.n),
+        });
+      k.add(k.cylinder(0.035, S[1] - 0.1), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, (S[1] + 0.1) / 2, S[2]],
+        color: (c) => chrome(c.n),
+      });
+      // The head: motor and cage turn together.
+      const head = k.part("head", { pivot: S, axis: [0, 1, 0] });
+      k.add(k.ellipsoid(0.16, 0.16, 0.2), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, Hc[1], Hc[2] - 0.22],
+        part: head,
+        flat: 0.15,
+        color: paint,
+      });
+      k.add(k.sphere(0.06), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, S[1], S[2]],
+        part: head,
+        color: paint,
+      });
+      const cz = Hc[2];
+      const Rg = 0.5;
+      // Thin wire: softly lit steel rather than mirror chrome, so a wire a
+      // few pixels wide reads as smooth metal, not black and white speckle.
+      const wire = {
+        part: head,
+        flat: 0.35,
+        weight: 1.2,
+        jitter: 0.01,
+        color: (c) => lit("#8a8f97", c.n, { amb: 0.72, dif: 0.35, spec: 0.3, pow: 10 }),
+      };
+      k.add(evenTorus(k, Rg, 0.016), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, Hc[1], cz + 0.02],
+        rot: [90, 0, 0],
+        ...wire,
+        weight: 2,
+      });
+      for (const r of [0.14, 0.26, 0.38])
+        k.add(evenTorus(k, r, 0.006), {
+          even: true,
+          opacity: 1,
+          jitter: 0.015,
+          pos: [0, Hc[1], cz + 0.09],
+          rot: [90, 0, 0],
+          ...wire,
+        });
+      k.add(evenTorus(k, Rg * 0.9, 0.008), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, Hc[1], cz - 0.1],
+        rot: [90, 0, 0],
+        ...wire,
+      });
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * TAU;
+        const dx = Math.sin(a);
+        const dy = Math.cos(a);
+        k.add(
+          k.tube(
+            (tt) => {
+              const r = 0.06 + tt * (Rg - 0.06);
+              return [dx * r, Hc[1] + dy * r, cz + 0.1 - 0.08 * tt * tt];
+            },
+            0.005,
+            { samples: 16, grid: 12 },
+          ),
+          wire,
+        );
+        k.add(
+          k.tube(
+            (tt) => {
+              const r = Rg * (1 - 0.1 * tt);
+              return [dx * r, Hc[1] + dy * r, cz + 0.02 - 0.12 * tt];
+            },
+            0.005,
+            { samples: 8, grid: 8 },
+          ),
+          wire,
+        );
+      }
+      k.add(k.cylinder(0.06, 0.02), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, Hc[1], cz + 0.1],
+        rot: [90, 0, 0],
+        part: head,
+        weight: 2,
+        color: (c) => chrome(c.n),
+      });
+      // Blades (their own part: spin plus the head's swing).
+      const blades = k.part("blades", { pivot: Hc, axis: [0, 0, 1] });
+      for (let b = 0; b < 4; b++) {
+        const th = (b / 4) * TAU + 0.3;
+        k.add(
+          k.param(
+            (u, v) => {
+              const r = 0.07 + v * 0.36;
+              const wa = 0.55 * Math.sin(Math.PI * Math.min(1, v * 1.15 + 0.1)) + 0.12;
+              const a = th + (u - 0.5) * wa;
+              return [Math.sin(a) * r, Hc[1] + Math.cos(a) * r, cz + (u - 0.5) * 0.09];
+            },
+            { grid: 24 },
+          ),
+          {
+            even: true,
+            jitter: 0.015,
+            part: blades,
+            flat: 0.12,
+            opacity: 0.9,
+            color: (c) => {
+              const n = c.n[2] < 0 ? mul(c.n, -1) : c.n;
+              return lit(mix(body, "#ffffff", 0.45), n, { amb: 0.7, dif: 0.35, spec: 0.4 });
+            },
+          },
+        );
+      }
+      k.add(k.cylinder(0.07, 0.07), {
+        even: true,
+        opacity: 1,
+        jitter: 0.015,
+        pos: [0, Hc[1], cz - 0.02],
+        rot: [90, 0, 0],
+        part: blades,
+        weight: 2,
+        color: paint,
+      });
+    },
+  },
+
+  lamp: {
+    alive: true,
+    density: 1,
+    options: [{ key: "color", label: "Color", type: "color", default: "#3c7fc4" }],
+    controls: [{ key: "light", label: "Light", type: "toggle", default: 1, ease: 0.35 }],
+    action: { key: "light", label: "Switch the light" },
+    // Hands-on (lane Hands-on H3): bend the arm at its joints to point the
+    // light: the lower arm on the base, the upper arm at the elbow and the
+    // shade at the top. The springs hold each where it is left, and the pool
+    // of light moves over the desk where the shade points.
+    hands: {
+      joints: [
+        { type: "hinge", part: "lower", name: "lower", pivot: LAMP.base, axis: [0, 0, 1], min: -0.45, max: 0.4, gravity: false, damping: 12, bounce: 0.05, pos: mul(add(LAMP.base, LAMP.elbow), 0.5), pick: [0.16, 0.42, 0.16] }, // prettier-ignore
+        { type: "hinge", part: "upper", name: "upper", parent: "lower", pivot: LAMP.elbow, axis: [0, 0, 1], min: -0.7, max: 0.6, gravity: false, damping: 12, bounce: 0.05, pos: mul(add(LAMP.elbow, LAMP.joint), 0.5), pick: [0.3, 0.2, 0.2] }, // prettier-ignore
+        {
+          type: "hinge",
+          part: "head",
+          name: "head",
+          parent: "upper",
+          pivot: LAMP.joint,
+          axis: [0, 0, 1],
+          min: -0.8,
+          max: 0.9,
+          gravity: false,
+          damping: 12,
+          bounce: 0.05,
+          pos: add(LAMP.head, mul(LAMP.dir, 0.08)),
+          pick: [0.3, 0.26, 0.3],
+          also: (a, parts) => {
+            const h = parts.head;
+            if (!h) return;
+            const on = LAMP_HAND.light;
+            parts.glow = { ...h, visible: on };
+            parts.beam = { ...h, visible: on };
+            // The pool: where the light now meets the desk.
+            const at = (p) => add(add(LAMP.joint, quatRotate(h.quat, sub(p, LAMP.joint))), h.offset); // prettier-ignore
+            const bulb = at(LAMP.bulbAt);
+            const d = quatRotate(h.quat, LAMP.dir);
+            const down = smoothstep(0.3, 0.6, -d[1]);
+            const pool = down > 0 ? add(bulb, mul(d, -bulb[1] / d[1])) : LAMP.pool;
+            parts.pool = { offset: sub(pool, LAMP.pool), visible: on * down };
+          },
+        },
+      ],
+    },
+    drive(t, c, out) {
+      LAMP_HAND.light = c.light;
+      out.parts.glow = { visible: c.light };
+      out.parts.beam = { visible: c.light };
+      out.parts.pool = { visible: c.light };
+    },
+    build(k, o) {
+      const paint = (c) => lit(o.color, c.n, { amb: 0.64, dif: 0.45, spec: 0.5, pow: 26 });
+      const { base, elbow, joint } = LAMP;
+      // The arms and the shade turn at the joints by hand (lane Hands-on H3).
+      const lower = k.part("lower", { pivot: base, axis: [0, 0, 1] });
+      const upper = k.part("upper", { pivot: elbow, axis: [0, 0, 1] });
+      const headPart = k.part("head", { pivot: joint, axis: [0, 0, 1] });
+      k.add(
+        k.lathe(
+          [
+            [0.36, 0],
+            [0.36, 0.05],
+            [0.32, 0.09],
+            [0.08, 0.11],
+            [0, 0.11],
+          ],
+          { grid: 64 },
+        ),
+        {
+          pos: [0, 0, -0.1],
+          flat: 0.15,
+          even: true,
+          opacity: 1,
+          jitter: 0.012,
+          color: paint,
+        },
+      );
+      k.add(k.cylinder(0.03, 0.03), {
+        pos: [0.22, 0.1, 0.1],
+        weight: 2,
+        color: (c) => chrome(c.n),
+      });
+      const rod = (a, b, r, part) =>
+        k.add(
+          k.tube((tt) => add(a, mul(sub(b, a), tt)), r, { samples: 16, grid: 24 }),
+          {
+            flat: 0.2,
+            weight: 1.3,
+            opacity: 1,
+            jitter: 0.012,
+            part,
+            color: paint,
+          },
+        );
+      for (const dz of [-0.035, 0.035]) {
+        rod(add(base, [0, 0, dz]), add(elbow, [0, 0, dz]), 0.018, lower);
+        rod(add(elbow, [0, 0, dz]), add(joint, [0, 0, dz]), 0.018, upper);
+      }
+      for (const [p, part] of [
+        [base, undefined],
+        [elbow, upper],
+        [joint, headPart],
+      ])
+        k.add(k.cylinder(0.045, 0.11), {
+          pos: p,
+          rot: [90, 0, 0],
+          weight: 2,
+          part,
+          color: (c) => chrome(c.n),
+        });
+      // Springs beside the arms.
+      const spring = (a, b, part) =>
+        k.add(
+          k.tube(
+            (tt) => {
+              const d = unit(sub(b, a));
+              const side = unit(cross(d, [0, 0, 1]));
+              const q = add(add(a, mul(sub(b, a), 0.2 + 0.5 * tt)), mul(side, 0.06));
+              return add(
+                q,
+                add(mul(side, 0.015 * Math.cos(tt * 70)), [0, 0, 0.015 * Math.sin(tt * 70)]),
+              );
+            },
+            0.004,
+            { samples: 400, grid: 16 },
+          ),
+          { weight: 1.5, flat: 0.4, part, color: (c) => chrome(c.n) },
+        );
+      spring(base, elbow, lower);
+      spring(elbow, joint, upper);
+      // The shade points down at the desk in front.
+      const { dir, head } = LAMP;
+      const q = quatFromTo([0, -1, 0], dir);
+      k.add(
+        k.lathe(
+          [
+            [0.05, 0.16],
+            [0.08, 0.1],
+            [0.16, 0.0],
+            [0.26, -0.12],
+            [0.3, -0.2],
+          ],
+          { grid: 64 },
+        ),
+        {
+          pos: head,
+          quat: q,
+          flat: 0.15,
+          even: true,
+          opacity: 1,
+          jitter: 0.012,
+          part: headPart,
+          color: (c) =>
+            dot(c.n, dir) > 0.2 ? lit("#f4efe2", mul(c.n, -1), { amb: 0.9, dif: 0.2 }) : paint(c),
+        },
+      );
+      const bulbAt = add(head, mul(dir, 0.07));
+      k.add(k.sphere(0.085), { pos: bulbAt, weight: 2, even: true, part: headPart, color: "#e9e4d8" }); // prettier-ignore
+      // (The glow and the beam turn with the head, about its joint.)
+      const glow = k.part("glow", { pivot: joint });
+      k.add(k.sphere(0.095), {
+        pos: bulbAt,
+        part: glow,
+        weight: 2,
+        pattern: false,
+        even: true,
+        jitter: 0.01,
+        color: (c) => keep(mix("#fff7d6", "#ffffff", 0.6)),
+      });
+      // A faint cone of light and a warm pool on the desk.
+      const beam = k.part("beam", { pivot: joint });
+      const poolPart = k.part("pool", { pivot: LAMP.pool });
+      const floorT = (0 - bulbAt[1]) / dir[1];
+      const pool = add(bulbAt, mul(dir, floorT));
+      // Both are spread evenly (not at random), so the light reads as a
+      // smooth glow rather than blotches.
+      const ref = unit(cross(dir, [0, 0, 1]));
+      const ref2 = cross(dir, ref);
+      k.cloud({ share: 0.08, size: 2, part: beam, pattern: false }, (rand, i, n) => {
+        // Jittered within its cell, so the even points show no lattice.
+        const cell = 1 / Math.cbrt(n);
+        const [e0, e1, e2] = evenPoint(i, 3).map((e) => {
+          const v = e + (rand() - 0.5) * cell * 0.4;
+          return v - Math.floor(v);
+        });
+        const s = Math.sqrt(e0);
+        const rr = (0.08 + s * 0.5) * Math.sqrt(e1);
+        const a = e2 * TAU;
+        const p = add(
+          add(bulbAt, mul(dir, s * floorT * 0.9)),
+          add(mul(ref, Math.cos(a) * rr), mul(ref2, Math.sin(a) * rr)),
+        );
+        return { p, dir, stretch: 6, color: "#ffe9a8", opacity: 0.025 + 0.035 * (1 - s) };
+      });
+      k.cloud({ share: 0.06, size: 3, part: poolPart, pattern: false }, (rand, i, n) => {
+        // A sunflower spiral: the evenest way to fill a disc.
+        const a = i * 2.39996323;
+        const r = Math.sqrt((i + 0.5) / n) * 0.62;
+        return {
+          p: [pool[0] + Math.sin(a) * r, 0.003, pool[2] + Math.cos(a) * r],
+          n: [0, 1, 0],
+          color: "#ffe39a",
+          opacity: 0.4 * (1 - (r / 0.62) ** 2),
+        };
+      });
+    },
+  },
+
+  "potion-bottle": {
+    // Lane Any pose: turned over in Hands-on, its rising splats keep to the
+    // toy's own frame (the puff leaves the neck), not the world's up.
+    gravity: false,
+    alive: true,
+    options: [{ key: "color", label: "Potion", type: "color", default: "#b44cff" }],
+    controls: [{ key: "pop", label: "Pop the cork", type: "pulse", ease: 1.8 }],
+    action: { key: "pop", label: "Pop the cork" },
+    // Hands-on (lane Hands-on H3): pull the cork and it holds, wiggles, then
+    // pops out with a puff of sparkles; set it back on the neck (or point at
+    // the neck) and it squeaks back in, held fast again.
+    hands: {
+      floor: -0.5,
+      pieces: () => [
+        { part: "cork", pos: [0, 0.88, 0], pivot: [0, 0.86, 0], solid: POTION_CORK, points: surfacePoints(POTION_CORK, 1), pick: [0.16, 0.16, 0.16], mass: 0.1, friction: 0.8, restitution: 0.35 }, // prettier-ignore
+        // The flask: ground for the cork, never picked up.
+        { pos: [0, 0, 0], solid: POTION_FLASK, pick: [1e-3, 1e-3, 1e-3] },
+      ],
+      joints: [
+        {
+          type: "break",
+          part: "cork",
+          at: [0, 0.8, 0],
+          pull: 0.16,
+          give: 0.04,
+          reseat: { snap: 0.25 },
+          sound: (ev) =>
+            ev.kind === "snap"
+              ? { voice: "pop", f: 520, vol: 0.8 }
+              : ev.kind === "socket"
+                ? { voice: "twist", f: 300, decay: 0.15, vol: 0.5 }
+                : undefined,
+          also: (v, parts) => {
+            const o = parts.cork?.offset;
+            POTION_HAND.off = o ? len(o) : 0;
+          },
+        },
+      ],
+      sound: (hit, vol) => ({ voice: "wood", f: 700, decay: 0.08, vol: vol * 0.5 }),
+    },
+    drive(t, c, out) {
+      // By hand: the puff when the cork leaves the neck (lane Hands-on H3).
+      const H = POTION_HAND;
+      const away = H.off > 0.06;
+      if (away && !H.out) H.t0 = t;
+      H.out = away;
+      const hp = clamp((t - H.t0) / 1.2, 0, 1);
+      const p = 1 - c.pop;
+      const on = c.pop > 0;
+      const fly = on ? bump(clamp(p / 0.75, 0, 1)) : 0;
+      out.parts.cork = { offset: [0.12 * fly, 0.55 * fly, 0], angle: on ? 2.4 * fly : 0 };
+      const puff = Math.max(on ? 1 - smoothstep(0.3, 0.8, p) : 0, hp < 1 ? 1 - smoothstep(0.25, 0.7, hp) : 0); // prettier-ignore
+      out.parts.puff = { visible: puff };
+      out.amount = 1 + 1.5 * Math.max(c.pop, hp < 1 ? 1 - hp : 0);
+    },
+    build(k, o) {
+      const potion = o.color;
+      const glassTint = "#a9cbd6";
+      const R = 0.5;
+      const level = 0.08;
+      const glass = (c) => {
+        const rim = 1 - Math.abs(dot(c.n, VIEW));
+        let col = mix(glassTint, "#ffffff", 0.6 * rim * rim);
+        col = mix(col, [1, 1, 1], 0.9 * Math.pow(Math.max(0, dot(c.n, HALF)), 40));
+        return col;
+      };
+      // The flask: a round body and a neck.
+      k.add(
+        k.lathe(
+          [
+            [0, -R],
+            [0.28, -0.44],
+            [0.46, -0.2],
+            [0.5, 0.02],
+            [0.42, 0.28],
+            [0.2, 0.44],
+            [0.13, 0.52],
+            [0.12, 0.8],
+            [0.15, 0.84],
+          ],
+          { grid: 96 },
+        ),
+        { flat: 0.15, opacity: 0.1, weight: 0.6, pattern: false, color: glass },
+      );
+      k.add(k.torus(0.14, 0.025), {
+        pos: [0, 0.84, 0],
+        flat: 0.2,
+        weight: 1.5,
+        opacity: 0.6,
+        pattern: false,
+        color: glass,
+      });
+      // The glowing potion inside.
+      const liquid = [];
+      for (let i = 0; i <= 12; i++) {
+        const y = -0.47 + (i / 12) * (level + 0.47);
+        const r =
+          y < 0.02
+            ? Math.sqrt(Math.max(0, 0.47 ** 2 - (y + 0.0) ** 2)) * (y < -0.2 ? 0.98 : 1)
+            : 0.47;
+        liquid.push([Math.min(r, 0.46), y]);
+      }
+      liquid.push([0, level]);
+      k.add(k.lathe(liquid, { grid: 80 }), {
+        flat: 0.25,
+        kind: "twinkle",
+        params: [0.05, 0],
+        pattern: false,
+        color: (c) => {
+          const top = c.p[1] > level - 0.02;
+          const glow = Math.pow(Math.max(0, dot(c.n, VIEW)), 1.5);
+          const depth = clamp((level - c.p[1]) / 0.55, 0, 1);
+          const col = mix(
+            shade(potion, 0.72 + 0.2 * (1 - depth)),
+            mix(potion, "#ffffff", 0.3),
+            glow,
+          );
+          return keep(top ? mix(potion, "#ffffff", 0.4) : col);
+        },
+      });
+      // Bubbles rising through it.
+      k.cloud({ share: 0.006, size: 1.3, pattern: false }, (rand) => {
+        const a = rand() * TAU;
+        const r = 0.28 * Math.sqrt(rand());
+        return {
+          p: [Math.sin(a) * r, -0.42 + rand() * 0.2, Math.cos(a) * r],
+          color: mix(potion, "#ffffff", 0.75),
+          opacity: 0.9,
+          kind: "rise",
+          params: [0.16, rand()],
+        };
+      });
+      // A cork that pops out, and a puff of sparkles.
+      const cork = k.part("cork", { pivot: [0, 0.86, 0], axis: [0, 0, 1] });
+      k.add(k.cone(0.105, 0.13, 0.2), {
+        pos: [0, 0.88, 0],
+        part: cork,
+        flat: 0.2,
+        weight: 1.5,
+        color: (c) =>
+          lit(
+            mix("#c49a6c", "#8d6340", 0.5 + 0.4 * c.noise(c.p[0] * 40, c.p[1] * 40, c.p[2] * 40)),
+            c.n,
+          ),
+      });
+      const puff = k.part("puff", { pivot: [0, 0.95, 0] });
+      k.cloud({ share: 0.03, size: 1.3, part: puff, pattern: false }, (rand) => ({
+        p: [(rand() - 0.5) * 0.2, 0.95 + rand() * 0.1, (rand() - 0.5) * 0.2],
+        color: mix(potion, "#ffffff", 0.3 + 0.7 * rand()),
+        opacity: 0.9,
+        kind: "rise",
+        params: [0.6 + 0.5 * rand(), rand()],
+      }));
+      k.reach([0, 1.45, 0]);
+    },
+  },
+
+  telescope: {
+    alive: true,
+    density: 0.6,
+    controls: [{ key: "open", label: "Extend", type: "toggle", default: 1, ease: 1.2 }],
+    action: { key: "open", label: "Extend or collapse" },
+    // Hands-on (lane Hands-on H3): pull the draw tubes out and push them back
+    // in by hand. The middle tube slides in the main tube and carries the
+    // eyepiece tube, which slides in it; both hold where they are left and
+    // knock at each end.
+    hands: {
+      joints: [
+        {
+          type: "slider",
+          part: "tube2",
+          pivot: TELE.mount,
+          axis: TELE.dir,
+          min: 0,
+          max: 0.3,
+          gravity: false,
+          friction: 2,
+          damping: 7,
+          bounce: 0.1,
+          start: (c) => 0.3 * (1 - ease3(c.open)),
+          pos: add(TELE.mount, mul(TELE.dir, -0.49)),
+          pick: [0.15, 0.15, 0.15],
+          sound: (ev, vol) => ({ voice: "metal", f: ev.v > 0.15 ? 520 : 760, decay: 0.12, vol: vol * 0.5 }), // prettier-ignore
+        },
+        {
+          type: "slider",
+          part: "tube3",
+          parent: "tube2",
+          pivot: TELE.mount,
+          axis: TELE.dir,
+          min: 0,
+          max: 0.3,
+          gravity: false,
+          friction: 2,
+          damping: 7,
+          bounce: 0.1,
+          start: (c) => 0.3 * (1 - ease3(c.open)),
+          pos: add(TELE.mount, mul(TELE.dir, -0.82)),
+          pick: [0.14, 0.14, 0.14],
+          sound: (ev, vol) => ({ voice: "metal", f: ev.v > 0.15 ? 640 : 900, decay: 0.1, vol: vol * 0.45 }), // prettier-ignore
+        },
+      ],
+    },
+    drive(t, c, out) {
+      const e = ease3(c.open);
+      const d = TELE.dir;
+      out.parts.tube2 = { offset: mul(d, 0.3 * (1 - e)) };
+      out.parts.tube3 = { offset: mul(d, 0.6 * (1 - e)) };
+      out.body = { quat: quatAxisAngle([0, 1, 0], 0.1 * Math.sin(t * 0.4)) };
+    },
+    build(k) {
+      const brass = "#d4a64a";
+      const wood = "#6d4428";
+      const { dir, mount } = TELE;
+      const q = quatFromTo([0, 1, 0], dir);
+      const seg = (from, to, r, part, col) =>
+        k.add(k.cylinder(r, to - from, { caps: true }), {
+          pos: add(mount, mul(dir, (from + to) / 2)),
+          quat: q,
+          part,
+          flat: 0.15,
+          color: (c) =>
+            col ? lit(col, c.n, { amb: 0.6, dif: 0.5, spec: 0.4 }) : chrome(c.n, brass),
+        });
+      // The main tube, with the big lens at the far end.
+      seg(-0.36, 0.56, 0.12, 0, "#2d3b55");
+      seg(0.5, 0.64, 0.14, 0);
+      seg(-0.4, -0.33, 0.13, 0);
+      seg(0.02, 0.08, 0.125, 0);
+      k.add(k.disc(0.12), {
+        pos: add(mount, mul(dir, 0.645)),
+        quat: q,
+        weight: 2,
+        pattern: false,
+        color: (c) => keep(mix("#15305c", "#9ad1ff", 0.35 + 0.5 * Math.max(0, dot(c.n, HALF)))),
+      });
+      // Draw tubes that slide out toward the eye.
+      const t2 = k.part("tube2", { pivot: mount });
+      const t3 = k.part("tube3", { pivot: mount });
+      seg(-0.68, -0.3, 0.095, t2);
+      seg(-0.7, -0.65, 0.103, t2);
+      seg(-0.98, -0.6, 0.068, t3);
+      seg(-1.02, -0.95, 0.08, t3, "#2a2a2e");
+      // Tripod.
+      const top = add(mount, [0, -0.1, 0]);
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * TAU + 0.6;
+        const foot = [Math.sin(a) * 0.6, -1.0, Math.cos(a) * 0.6];
+        k.add(
+          k.tube((tt) => add(top, mul(sub(foot, top), tt)), 0.026, { samples: 8, grid: 24 }),
+          {
+            flat: 0.2,
+            weight: 1.3,
+            color: (c) => lit(wood, c.n, { spec: 0.3 }),
+          },
+        );
+      }
+      k.add(k.sphere(0.075), { pos: top, weight: 2, color: (c) => chrome(c.n, brass) });
+      k.add(k.cylinder(0.03, 0.12), {
+        pos: add(top, [0, 0.07, 0]),
+        weight: 2,
+        color: (c) => chrome(c.n, brass),
+      });
+    },
+  },
+};
