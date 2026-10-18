@@ -14,6 +14,7 @@ ws.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && pending.has(d.
 const send = (method, params = {}) => new Promise((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
 await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable');
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: +w < 500 });
+if (+w < 500) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
 await send('Page.navigate', { url });
 await sleep(+wait);
 let stepResult = '';

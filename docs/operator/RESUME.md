@@ -1,13 +1,20 @@
 # Resuming the operator
 
-Where the portfolio work stood on October 14, 2026. A session picking the work back up reads this
-file, then `CLAUDE.md`, `docs/PLAYBOOK.md`, `docs/CONCEPTS.md` and the end of
+Where the portfolio work stood on October 18, 2026. A session picking the work back up reads this
+file, then `CLAUDE.md`, `docs/PLAYBOOK.md`, `docs/PIECES.md`, `docs/CONCEPTS.md` and the end of
 `docs/operator/walkthrough-notes.md` (round three).
 
 ## State
 
-Updated October 14, 2026, when the gallery and the templates went live.
+Updated October 18, 2026, when Ryan locked the ten pieces.
 
+- **Ten pieces are next**: standalone pages, not portfolios, built to push what people think a web
+  page can do (`docs/PIECES.md`, and the "Pieces" rows in `docs/CONCEPTS.md`). Ryan picked them
+  from three rounds of proposals on October 17 and 18. He said no to Friction (feel surfaces through
+  the mouse), Chorus (phones as one choir), Peep Box (head-tracked depth), Room Score (a room's
+  sounds as a score), Unmix (reversible syrup flow), Candlelight (lit by global illumination),
+  Lightspeed (relativistic scrolling) and Peekaboo (moves only when unwatched). His yeses treat the
+  page itself as the material.
 - **All eleven concepts are on main** and no pull request is open: v1 (Anagram Tiles, the repo root),
   one-splat, specimen, toybox, workshop, overprint, molecule, resonance, slice, atlas and arcade.
   Ripple and Query were dropped; their tips are the tags `archive/ripple-1` and `archive/query-1`.
@@ -30,10 +37,19 @@ Updated October 14, 2026, when the gallery and the templates went live.
 
 ## Next, in order
 
-1. **About ten more concepts**, pushing further than these eleven, with any tech stack, built at
-   Xhigh or Max, then made into templates. Ryan wants to brainstorm them first; the manual's "next"
-   prompt starts that.
-2. Any further change to a concept goes on a new branch from main in that concept's worktree, as
+1. **The pieces, three at a time.** `docs/operator/pieces-briefs.md` holds every brief, ready to
+   paste. Ryan opens one session per piece and pastes its brief, as with the concept lanes.
+   - Wave 1: Lineage, Crumple, Tenant (Xhigh).
+   - Wave 2: Broken, Motion Only, Ctrl+F (Xhigh).
+   - Wave 3: Feedback (Xhigh), Vessel and Handscroll (Max).
+   - Wave 4: the Wildcard (Max), alone or two side by side.
+
+   As each reports, recheck it with `tools/operator/check-lane.sh <slug> origin/main` (it knows
+   pieces), look at it at desktop and phone widths, rebuild staging (it merges every `piece/*`
+   branch), and record its territory in its registry row. Merge only on Ryan's go-ahead.
+2. **After the pieces:** a second gallery on Ryan's site for them, and templates of the ones he
+   wants to share, as with the portfolios.
+3. Any further change to a concept goes on a new branch from main in that concept's worktree, as
    `update/<slug>-<topic>`, with its own pull request. After it merges, refresh the published copy
    and the template (below).
 
