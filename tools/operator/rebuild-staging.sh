@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Rebuilds the staging preview: origin/main, then any open operator branch, then every concept branch
-# that is still open, with conflicts resolved toward staging. A concept whose pull request has merged
+# that is still open and every piece branch (origin/piece/*), with conflicts resolved toward staging. A concept whose pull request has merged
 # is already on main and its branch is gone, so it is skipped. Staging is a local branch in the
 # worktree .claude/worktrees/staging and is never pushed. Serve it with the launch config "staging"
 # (port 4180).
@@ -24,6 +24,10 @@ for s in $CONCEPTS; do
     git "${ID[@]}" merge -q --no-edit -X ours "origin/concept/${s}" 2>&1 | tail -1 || echo "MERGE FAILED ${s}"
   fi
 done
+PIECES=(${(f)"$(git for-each-ref --format='%(refname:lstrip=4)' refs/remotes/origin/piece/)"})
+for p in $PIECES; do
+  git "${ID[@]}" merge -q --no-edit -X ours "origin/piece/${p}" 2>&1 | tail -1 || echo "MERGE FAILED piece ${p}"
+done
 for s in $CONCEPTS; do
   if has "origin/concept/${s}"; then
     [ "$(git rev-parse "HEAD:concepts/${s}")" = "$(git rev-parse "origin/concept/${s}:concepts/${s}")" ] && printf '%s=branch tip ' "$s" || printf '%s=DIFFERS ' "$s"
@@ -32,6 +36,9 @@ for s in $CONCEPTS; do
   else
     printf '%s=MISSING ' "$s"
   fi
+done
+for p in $PIECES; do
+  [ "$(git rev-parse "HEAD:pieces/${p}" 2>/dev/null)" = "$(git rev-parse "origin/piece/${p}:pieces/${p}" 2>/dev/null)" ] && printf 'piece %s=branch tip ' "$p" || printf 'piece %s=DIFFERS ' "$p"
 done
 echo
 node tools/us-spelling.mjs . | tail -2; echo "staging spelling exit $?"

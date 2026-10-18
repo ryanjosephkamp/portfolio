@@ -1,26 +1,33 @@
 #!/bin/zsh
-# Rechecks one concept branch as pushed: its worktree is clean and at the tip, it changes nothing
-# outside its own folder, its new commits carry the noreply identity, the spelling check passes, and
-# the ten projects are on the page with the capstone last.
+# Rechecks one concept or piece branch as pushed: its worktree is clean and at the tip, it changes
+# nothing outside its own folder, its new commits carry the noreply identity, and the spelling check
+# passes. For a concept, also that the ten projects are on the page with the capstone last.
+# A slug with an origin/piece/<slug> branch is a piece (pieces/<slug>/); otherwise a concept.
 #
-#   tools/operator/check-lane.sh <slug> <tip before this round> [scratch dir]
+#   tools/operator/check-lane.sh <slug> <tip before this round, or origin/main for a new one> [scratch dir]
 
 slug=$1; old=$2; scratch=${3:-${TMPDIR:-/tmp}/check-lane}
 root=$(git rev-parse --show-toplevel) || exit 1
 git -C "$root" fetch -q origin
+if git -C "$root" rev-parse -q --verify "origin/piece/$slug" >/dev/null; then
+  kind=piece; dir=pieces/$slug
+else
+  kind=concept; dir=concepts/$slug
+fi
 
-wt=$(git -C "$root" worktree list --porcelain | awk -v b="refs/heads/concept/$slug" '/^worktree /{w=$2} $0=="branch "b{print w}')
+wt=$(git -C "$root" worktree list --porcelain | awk -v b="refs/heads/$kind/$slug" '/^worktree /{w=$2} $0=="branch "b{print w}')
 [ -n "$wt" ] && echo "worktree $wt: HEAD $(git -C "$wt" rev-parse --short HEAD), $(git -C "$wt" status --short | wc -l | tr -d ' ') uncommitted"
-echo "tip: $(git -C "$root" rev-parse --short origin/concept/$slug)"
-echo "--- files changed against main outside concepts/$slug/ (of $(git -C "$root" diff --name-only origin/main...origin/concept/$slug | wc -l | tr -d ' ')):"
-git -C "$root" diff --name-only origin/main...origin/concept/$slug | grep -v "^concepts/$slug/"
+echo "tip: $(git -C "$root" rev-parse --short origin/$kind/$slug)"
+echo "--- files changed against main outside $dir/ (of $(git -C "$root" diff --name-only origin/main...origin/$kind/$slug | wc -l | tr -d ' ')):"
+git -C "$root" diff --name-only origin/main...origin/$kind/$slug | grep -v "^$dir/"
 echo "--- new commits"
-git -C "$root" log --format='%h %ae | %ce | %s' $old..origin/concept/$slug | cut -c1-140
+git -C "$root" log --format='%h %ae | %ce | %s' $old..origin/$kind/$slug | cut -c1-140
 
-d=$scratch/$slug; rm -rf "$d" && mkdir -p "$d" && git -C "$root" archive origin/concept/$slug concepts/$slug | tar -x -C "$d"
-echo "--- spelling"; (cd "$d" && node "$root/tools/us-spelling.mjs" concepts/$slug; echo "spelling exit $?")
+d=$scratch/$slug; rm -rf "$d" && mkdir -p "$d" && git -C "$root" archive origin/$kind/$slug $dir | tar -x -C "$d"
+echo "--- spelling"; (cd "$d" && node "$root/tools/us-spelling.mjs" $dir; echo "spelling exit $?")
+[ $kind = piece ] && exit 0
 echo "--- projects"
-python3 -I - "$d/concepts/$slug/index.html" <<'PY'
+python3 -I - "$d/$dir/index.html" <<'PY'
 import re, sys
 html = open(sys.argv[1]).read()
 body = re.sub(r'<script[\s\S]*?</script>|<style[\s\S]*?</style>|<!--[\s\S]*?-->', '', html)

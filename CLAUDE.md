@@ -5,6 +5,11 @@ each self-contained, each built on its own branch `concept/<slug>` in its own wo
 [docs/CONCEPTS.md](docs/CONCEPTS.md) is the registry: every concept, its territory, its branch and
 its preview port.
 
+**Pieces** live in `pieces/<slug>/`, each on its own branch `piece/<slug>`: standalone pages, not
+portfolios, built to push what people think a web page can do. They follow
+[docs/PIECES.md](docs/PIECES.md). The project-first and claim-safe rules below, the playbook and
+FACTS.md are for portfolio pages; American English applies everywhere.
+
 ## Rules for every page and every commit
 
 - **American English.** US spelling and US dates (October 12, 2026) in pages, code, comments,
@@ -19,8 +24,9 @@ its preview port.
 
 - **Building or changing a concept site:** read [docs/PLAYBOOK.md](docs/PLAYBOOK.md) first. It is
   the process v1 was made with.
+- **Building or changing a piece:** read [docs/PIECES.md](docs/PIECES.md) first.
 - **Sync before you edit:** `git pull --rebase origin <your branch>`. The operator session pushes
-  small fixes to concept branches.
+  small fixes to concept and piece branches.
 - **Commits:**
   `git -c user.name="Ryan" -c user.email="192532973+ryanjosephkamp@users.noreply.github.com" commit …`
   The machine's default git email is private, and GitHub rejects any push (tags included) that

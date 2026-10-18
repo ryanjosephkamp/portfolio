@@ -25,6 +25,26 @@ Every built concept is published at `https://ryanjosephkamp.github.io/portfolios
 download on the `templates-v1` release. Both are copies from main, made on October 14, 2026;
 `docs/operator/RESUME.md` says how to refresh them.
 
+## Pieces
+
+Standalone pages, not portfolios, built to push what people think a web page can do.
+[PIECES.md](PIECES.md) has their rails, and `docs/operator/pieces-briefs.md` has each one's brief.
+Ryan locked these ten on October 18, 2026; they are built in this order, three at a time. Each
+builder picks its own look, so a piece's territory is recorded once it exists.
+
+| Slug | Premise | Signature | Branch | Port |
+| --- | --- | --- | --- | --- |
+| `lineage` | The page's design is its genome: two children each round, one picked, then a mutation | Pick the child you like; the evolved page is a link | `piece/lineage` (wave 1) | 4211 |
+| `crumple` | The page is a sheet of paper with real writing on it | Crumple it, throw it, smooth it out with the creases kept | `piece/crumple` (wave 1) | 4212 |
+| `tenant` | A creature lives in the page's real text layout | Hand it a word and see what it does with it | `piece/tenant` (wave 1) | 4213 |
+| `broken` | A page made of the ways web pages fail | Fix it, or break it further | `piece/broken` (wave 2) | 4214 |
+| `motion-only` | Every frame is noise; the words exist only in its motion | Take a screenshot and get static | `piece/motion-only` (wave 2) | 4215 |
+| `ctrl-f` | A page played with the browser's own controls, with a second page in its source | Find a word with the find bar | `piece/ctrl-f` (wave 2) | 4216 |
+| `feedback` | Video feedback as an instrument | Twist the camera and watch patterns grow | `piece/feedback` (wave 3) | 4217 |
+| `vessel` | Each window is a glass of water that pours into the next | Shake the window | `piece/vessel` (wave 3) | 4218 |
+| `handscroll` | An endless painted handscroll, generated as it unrolls | Unroll it | `piece/handscroll` (wave 3) | 4219 |
+| wildcard | Its builder's own idea | Its builder's own | `piece/<its slug>` (wave 4) | 4220 |
+
 ## Dropped
 
 Ryan dropped these after his walkthrough on October 13, 2026. Each pull request is closed, each
