@@ -39,10 +39,12 @@ export class OrbitCamera {
   view() {
     const e = this.eye();
     const f = norm(sub(this.target, e));
-    let r = cross([0, 1, 0], f);
-    if (Math.hypot(...r) < 1e-6) r = [1, 0, 0];
+    // Right-handed: right is forward × up. (Up × forward drew every cloud as its mirror image,
+    // and a drag turned the front the opposite way to the finger.)
+    let r = cross(f, [0, 1, 0]);
+    if (Math.hypot(...r) < 1e-6) r = [-1, 0, 0];
     r = norm(r);
-    const u = cross(f, r);
+    const u = cross(r, f);
     const m = new Float32Array(16);
     m[0] = r[0];
     m[4] = r[1];
